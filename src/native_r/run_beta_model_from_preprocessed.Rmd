@@ -1,0 +1,465 @@
+---
+title: "Coral Cover Beta Model - Using Pre-processed Data"
+author: "Adapted from SS original"
+date: "January 2026"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Overview
+
+This script runs the hierarchical beta regression model using the pre-processed 
+`data_for_maps.csv` file, which already contains:
+- Filtered data (NA values and invalid observations removed)
+- Pre-computed `site` and `region` indices
+- Pre-computed `diversity.standardized` values
+
+This allows direct comparison with the Python implementation which also uses
+`data_for_maps.csv`.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libraries}
+library(R2jags)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r set_directories}
+# Set to the directory containing data_for_maps.csv
+data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/data/sully_2022"
+output_dir <- data_dir / "output"
+
+```
+
+```{r load_preprocessed_data}
+# Load the pre-processed data (this is R's OUTPUT from the original script)
+data <- read.csv(file.path(data_dir, "data_for_maps.csv"), header=TRUE)
+
+cat("Loaded", nrow(data), "observations\n")
+cat("Number of unique sites:", length(unique(data$site)), "\n")
+cat("Number of unique regions:", length(unique(data$region)), "\n")
+
+# Check the site and region ranges
+cat("\nSite range:", min(data$site), "-", max(data$site), "\n")
+cat("Region range:", min(data$region), "-", max(data$region), "\n")
+```
+
+```{r examine_structure}
+# The data_for_maps.csv already has:
+# - site: R's pre-computed site index (1-based, but may not be consecutive)
+# - region: R's pre-computed region index (1-based, but may not be consecutive)
+# - diversity.standardized: Pre-computed standardized diversity per ecoregion
+
+# Check column names
+print(names(data))
+```
+
+```{r standardize_variables}
+# Standardize the predictors using the same function as the original
+standardize_function <- function(x) {
+  x.standardized <- (x - mean(na.omit(x))) / sd(na.omit(x))
+  return(x.standardized)
+}
+
+# Use absolute latitude (same as original)
+data$lat <- abs(data$Latitude.Degrees)
+
+# Standardize environmental variables
+# These are the raw values that need standardization for the model
+X_standardized <- data.frame(
+  lat = standardize_function(data$lat),
+  Depth = standardize_function(data$Depth),
+  Human_pop = standardize_function(data$Human_pop),
+  Cyclone = standardize_function(data$Cyclone),
+  SST_mean = standardize_function(data$SST_mean),
+  SSTA_Mean = standardize_function(data$SSTA_Mean),
+  SSTA_min = standardize_function(data$SSTA_min),
+  SSTA_freqstdev = standardize_function(data$SSTA_freqstdev),
+  SSTA_dhwmax = standardize_function(data$SSTA_dhwmax),
+  TSA_max = standardize_function(data$TSA_max),
+  TSA_freqstdev = standardize_function(data$TSA_freqstdev),
+  Turbidity_mean = standardize_function(data$Turbidity_mean),
+  Historical_SST_max = standardize_function(data$Historical_SST_max)
+)
+
+# Print standardization stats for comparison with Python
+cat("\nStandardization stats for comparison:\n")
+for (col in c("lat", "Depth", "Human_pop", "Cyclone", "SST_mean", "SSTA_Mean", 
+              "SSTA_min", "SSTA_freqstdev", "SSTA_dhwmax", "TSA_max", 
+              "TSA_freqstdev", "Turbidity_mean", "Historical_SST_max")) {
+  if (col == "lat") {
+    raw_col <- data$lat
+  } else {
+    raw_col <- data[[col]]
+  }
+  cat(sprintf("  %s: mean=%.6f, sd=%.6f\n", col, mean(na.omit(raw_col)), sd(na.omit(raw_col))))
+}
+```
+
+```{r build_design_matrix}
+# Build design matrix - same as original
+X <- model.matrix(~ lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean + 
+                    SSTA_min + SSTA_freqstdev + SSTA_dhwmax + TSA_max + 
+                    TSA_freqstdev + Turbidity_mean + Historical_SST_max, 
+                  data = X_standardized)
+
+cat("Design matrix dimensions:", dim(X), "\n")
+cat("Column names:", colnames(X), "\n")
+
+K <- ncol(X)
+N <- nrow(data)
+```
+
+```{r prepare_indices}
+# CRITICAL: Create dense, consecutive indices for JAGS
+# The site and region columns in data_for_maps.csv may not be consecutive (e.g., 1, 5, 10, ...)
+# We need to map them to 1, 2, 3, ... for JAGS
+
+# Create site mapping: sparse R indices -> dense consecutive indices
+unique_sites <- sort(unique(data$site))
+site_map <- setNames(1:length(unique_sites), unique_sites)
+data$site_dense <- site_map[as.character(data$site)]
+
+# Create region mapping: sparse R indices -> dense consecutive indices  
+unique_regions <- sort(unique(data$region))
+region_map <- setNames(1:length(unique_regions), unique_regions)
+data$region_dense <- region_map[as.character(data$region)]
+
+Nre <- length(unique_sites)  # Number of unique sites
+R <- length(unique_regions)   # Number of unique regions
+re <- data$site_dense         # Dense site index for each observation
+
+cat("Number of sites (Nre):", Nre, "\n")
+cat("Number of regions (R):", R, "\n")
+
+# Create site-to-region mapping
+# This needs to be ordered by dense site index (1, 2, 3, ...)
+site_region_df <- data %>% 
+  distinct(site_dense, region_dense) %>% 
+  arrange(site_dense)
+
+# CRITICAL: Verify that sites map to the correct regions
+# region_for_each_site[s] should give the region for site s
+region_for_each_site <- site_region_df$region_dense
+cat("Length of region_for_each_site:", length(region_for_each_site), "\n")
+cat("Should equal Nre:", Nre, "\n")
+
+# Verify the mapping is correct
+stopifnot(length(region_for_each_site) == Nre)
+stopifnot(all(site_region_df$site_dense == 1:Nre))
+```
+
+```{r prepare_diversity}
+# Get diversity per region (ordered by dense region index)
+# diversity.standardized is already in the data from R's original processing
+diversity_df <- data %>%
+  distinct(region_dense, diversity.standardized) %>%
+  arrange(region_dense)
+
+diversity <- diversity_df$diversity.standardized
+
+cat("Diversity vector length:", length(diversity), "\n")
+cat("Should equal R:", R, "\n")
+cat("Diversity range:", range(diversity), "\n")
+
+stopifnot(length(diversity) == R)
+```
+
+```{r transform_response}
+# Transform coral cover for beta distribution
+# y_beta = (y * (N-1) + 0.5) / N
+data$coral_cover_Beta <- (data$Average_coral_cover * (N - 1) + 0.5) / N
+
+cat("Response variable (coral_cover_Beta):\n")
+cat("  Range:", range(data$coral_cover_Beta), "\n")
+cat("  Mean:", mean(data$coral_cover_Beta), "\n")
+```
+
+```{r jags_data}
+# Prepare data for JAGS
+win.data <- list(
+  Y = data$coral_cover_Beta,
+  N = N,
+  X = X,
+  K = K,
+  re = re,                                  # Dense site index for each obs
+  R = R,                                    # Number of regions
+  Nre = Nre,                                # Number of sites
+  region_for_each_site = region_for_each_site,  # CRITICAL: correctly ordered
+  diversity = diversity                     # Ordered by dense region index
+)
+
+cat("\nJAGS data summary:\n")
+cat("  N (observations):", win.data$N, "\n")
+cat("  K (predictors):", win.data$K, "\n")
+cat("  Nre (sites):", win.data$Nre, "\n")
+cat("  R (regions):", win.data$R, "\n")
+```
+
+```{r jags_model}
+# Write JAGS model (same as original)
+sink("GLMM_coral_cover_preprocessed.txt")
+cat("
+    model{
+    #1A. Priors for fixed effects (vague priors: precision 0.0001 = SD 100)
+    for (i in 1:K) { beta[i] ~ dnorm(0, 0.0001) }
+    
+    # Hierarchical random effects
+    for (i in 1:Nre) { a[i] ~ dnorm(ecoregion[region_for_each_site[i]], tau) }
+    
+    # Ecoregion effects with diversity predictor
+    for(z in 1:R){
+      ecoregion[z] ~ dnorm(g[z], tau_ecoregion)
+      g[z] <- mu_global + beta_diversity * diversity[z]
+    }
+    
+    mu_global ~ dnorm(0, 0.0001)      # Global mean prior
+    beta_diversity ~ dnorm(0, 0.0001) # Diversity slope prior
+    
+    #1B. Half-Cauchy(25) prior for site-level SD
+    num ~ dnorm(0, 0.0016) 
+    denom ~ dnorm(0, 1)
+    sigma <- abs(num / denom)
+    tau <- 1 / (sigma * sigma)
+    
+    #1C. Half-Cauchy(25) prior for ecoregion-level SD
+    num_ecoregion ~ dnorm(0, 0.0016) 
+    denom_ecoregion ~ dnorm(0, 1)
+    sigma_ecoregion <- abs(num_ecoregion / denom_ecoregion)
+    tau_ecoregion <- 1 / (sigma_ecoregion * sigma_ecoregion)
+    
+    #1D. Half-Cauchy(25) prior for precision parameter theta
+    numtheta ~ dnorm(0, 0.0016) 
+    denomtheta ~ dnorm(0, 1)
+    theta <- abs(numtheta / denomtheta)
+
+    #2. Likelihood 
+    for (i in 1:N){       
+      Y[i] ~ dbeta(shape1[i], shape2[i])
+      shape1[i] <- theta * pi[i]
+      shape2[i] <- theta * (1 - pi[i])
+      
+      logit(pi[i]) <- eta[i]
+      eta[i] <- inprod(beta[], X[i,]) + a[re[i]]
+
+      # Expected value and variance
+      ExpY[i] <- pi[i] 
+      VarY[i] <- pi[i] * (1 - pi[i]) / (theta + 1)
+      PRes[i] <- (Y[i] - ExpY[i]) / sqrt(VarY[i])
+
+      # Posterior predictive check
+      YNew[i] ~ dbeta(shape1[i], shape2[i])
+      PResNew[i] <- (YNew[i] - ExpY[i]) / sqrt(VarY[i])
+      D[i] <- pow(PRes[i], 2)
+      DNew[i] <- pow(PResNew[i], 2)
+    } 
+    
+    Fit <- sum(D[1:N])
+    FitNew <- sum(DNew[1:N]) 
+}
+", fill = TRUE)
+sink()
+```
+
+```{r jags_inits}
+# Initial values (same as original)
+inits <- function() {
+  list(
+    beta = rnorm(K, 0, 0.1),
+    beta_diversity = rnorm(1, 0, 0.1),
+    a = rnorm(Nre, 0, 0.1),
+    num = rnorm(1, 0, 25), 
+    denom = rnorm(1, 0, 1),
+    numtheta = rnorm(1, 0, 25), 
+    denomtheta = rnorm(1, 0, 1),
+    num_ecoregion = rnorm(1, 0, 25), 
+    denom_ecoregion = rnorm(1, 0, 1)
+  )
+}
+
+# Parameters to monitor
+params <- c("beta", "beta_diversity", "a", "theta", "PRes", "Fit", "FitNew", 
+            "YNew", "ecoregion", "sigma", "sigma_ecoregion", "mu_global")
+```
+
+```{r run_jags, message=FALSE, warning=FALSE}
+# Run JAGS model - same settings as original
+cat("Running JAGS model...\n")
+cat("This may take several minutes.\n")
+
+J0 <- jags(
+  data = win.data,
+  inits = inits,
+  parameters = params,
+  model.file = "GLMM_coral_cover_preprocessed.txt",
+  n.thin = 10,
+  n.chains = 3,
+  n.burnin = 4000,
+  n.iter = 15000
+)
+
+cat("JAGS model complete.\n")
+```
+
+```{r extract_results}
+out <- J0$BUGSoutput
+
+# Extract coefficient estimates
+# Note: beta[1] is intercept, beta[2] is latitude, etc.
+beta_names <- c("Intercept", "Latitude", "Depth", "Human_pop", "Cyclone", 
+                "SST_mean", "SSTA_Mean", "SSTA_min", "SSTA_freqstdev", 
+                "SSTA_dhwmax", "TSA_max", "TSA_freqstdev", "Turbidity_mean", 
+                "Historical_SST_max")
+
+cat("\n", paste(rep("=", 60), collapse=""), "\n")
+cat("COEFFICIENT ESTIMATES\n")
+cat(paste(rep("=", 60), collapse=""), "\n\n")
+
+# Print coefficient summary
+for (i in 1:K) {
+  beta_samples <- out$sims.list$beta[, i]
+  cat(sprintf("%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+              beta_names[i], 
+              mean(beta_samples), 
+              sd(beta_samples),
+              quantile(beta_samples, 0.025),
+              quantile(beta_samples, 0.975)))
+}
+
+cat(sprintf("\n%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+            "beta_diversity",
+            mean(out$sims.list$beta_diversity),
+            sd(out$sims.list$beta_diversity),
+            quantile(out$sims.list$beta_diversity, 0.025),
+            quantile(out$sims.list$beta_diversity, 0.975)))
+
+cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+            "mu_global",
+            mean(out$sims.list$mu_global),
+            sd(out$sims.list$mu_global)))
+
+cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+            "theta",
+            mean(out$sims.list$theta),
+            sd(out$sims.list$theta)))
+
+cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+            "sigma (site SD)",
+            mean(out$sims.list$sigma),
+            sd(out$sims.list$sigma)))
+
+cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+            "sigma_ecoregion",
+            mean(out$sims.list$sigma_ecoregion),
+            sd(out$sims.list$sigma_ecoregion)))
+```
+
+```{r convergence_diagnostics}
+cat("\n", paste(rep("=", 60), collapse=""), "\n")
+cat("CONVERGENCE DIAGNOSTICS (R-hat)\n")
+cat(paste(rep("=", 60), collapse=""), "\n\n")
+
+# Print R-hat for key parameters
+print(J0$BUGSoutput$summary[c(paste0("beta[", 1:K, "]"), "beta_diversity", 
+                               "mu_global", "theta", "sigma", "sigma_ecoregion"),
+                            c("mean", "sd", "2.5%", "97.5%", "Rhat", "n.eff")])
+```
+
+```{r save_results}
+# Create summary dataframe (same format as original)
+J1_df <- data.frame(
+  variable = c("Latitude", "Depth", "Human_pop", "Cyclone", "SST_mean", 
+               "SSTA_Mean", "SSTA_min", "SSTA_freqstdev", "SSTA_dhwmax", 
+               "TSA_max", "TSA_freqstdev", "Turbidity_mean", "Historical_SST_max",
+               "Diversity"),
+  mean = c(sapply(2:K, function(i) mean(out$sims.list$beta[, i])),
+           mean(out$sims.list$beta_diversity)),
+  sd = c(sapply(2:K, function(i) sd(out$sims.list$beta[, i])),
+         sd(out$sims.list$beta_diversity)),
+  lower_2.5 = c(sapply(2:K, function(i) quantile(out$sims.list$beta[, i], 0.025)),
+                quantile(out$sims.list$beta_diversity, 0.025)),
+  upper_97.5 = c(sapply(2:K, function(i) quantile(out$sims.list$beta[, i], 0.975)),
+                 quantile(out$sims.list$beta_diversity, 0.975)),
+  lower_25 = c(sapply(2:K, function(i) quantile(out$sims.list$beta[, i], 0.25)),
+               quantile(out$sims.list$beta_diversity, 0.25)),
+  upper_75 = c(sapply(2:K, function(i) quantile(out$sims.list$beta[, i], 0.75)),
+               quantile(out$sims.list$beta_diversity, 0.75))
+)
+
+# Save to CSV for comparison with Python
+write.csv(J1_df, file.path(output_dir, "beta_est_from_preprocessed.csv"), row.names = FALSE)
+cat("\nSaved coefficient estimates to beta_est_from_preprocessed.csv\n")
+```
+
+```{r coefficient_plot}
+# Determine significance colors
+J1_df$color <- "gray"
+J1_df$color[J1_df$mean > 0 & J1_df$lower_2.5 >= 0] <- "blue"
+J1_df$color[J1_df$mean < 0 & J1_df$upper_97.5 <= 0] <- "red"
+
+# Create coefficient plot
+p <- ggplot(J1_df, aes(x = reorder(variable, mean), y = mean)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  geom_errorbar(aes(ymin = lower_2.5, ymax = upper_97.5), width = 0, size = 0.5) +
+  geom_errorbar(aes(ymin = lower_25, ymax = upper_75), width = 0, size = 1.3) +
+  geom_point(size = 3, shape = 21, fill = J1_df$color, color = "black") +
+  coord_flip() +
+  theme_gray(base_size = 14) +
+  labs(x = "", y = expression(paste("Estimated ", gamma, " coefficients"))) +
+  theme(legend.position = "none")
+
+print(p)
+
+ggsave(file.path(output_dir, "Beta_coeff_plot_from_preprocessed.png"), 
+       p, width = 9, height = 7, dpi = 300)
+cat("\nSaved coefficient plot to Beta_coeff_plot_from_preprocessed.png\n")
+```
+
+```{r model_fit}
+# Model fit statistics
+cat("\n", paste(rep("=", 60), collapse=""), "\n")
+cat("MODEL FIT\n")
+cat(paste(rep("=", 60), collapse=""), "\n\n")
+
+# Posterior predictive check
+cat(sprintf("Fit (observed): mean = %.2f\n", mean(out$sims.list$Fit)))
+cat(sprintf("FitNew (replicated): mean = %.2f\n", mean(out$sims.list$FitNew)))
+cat(sprintf("Bayesian p-value: %.3f\n", mean(out$sims.list$FitNew > out$sims.list$Fit)))
+
+# DIC
+cat(sprintf("DIC: %.2f\n", J0$BUGSoutput$DIC))
+cat(sprintf("pD (effective parameters): %.2f\n", J0$BUGSoutput$pD))
+```
+
+```{r predictions}
+# Get predictions
+Y_New <- out$mean$YNew
+Y_New[Y_New < 0] <- 0
+Y_New[Y_New > 1] <- 1
+
+# Calculate R-squared
+r_squared <- summary(lm(data$Average_coral_cover ~ Y_New))$r.squared
+cat(sprintf("\nR-squared (observed vs expected): %.4f\n", r_squared))
+
+# Save predictions
+data$Y_New_from_preprocessed <- Y_New
+write.csv(data[, c("Reef_ID", "Latitude.Degrees", "Longitude.Degrees", 
+                   "Average_coral_cover", "Y_New", "Y_New_from_preprocessed")],
+          file.path(output_dir, "predictions_comparison.csv"), row.names = FALSE)
+cat("Saved predictions to predictions_comparison.csv\n")
+```
+
+```{r cleanup}
+# Clean up temporary model file
+if (file.exists("GLMM_coral_cover_preprocessed.txt")) {
+  file.remove("GLMM_coral_cover_preprocessed.txt")
+}
+
+cat("\n", paste(rep("=", 60), collapse=""), "\n")
+cat("ANALYSIS COMPLETE\n")
+cat(paste(rep("=", 60), collapse=""), "\n")
+```
