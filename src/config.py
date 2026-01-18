@@ -33,11 +33,11 @@ repo_dir = get_repo_root()
 data_dir = repo_dir / "data"
 
 # DATA DIRECTORIES
-# Note: data might be in sully_hbb or sully_2022, depending on setup
-sully_hbb_data_dir = data_dir / "sully_hbb"  # Check if exists, otherwise use sully_2022
-if not sully_hbb_data_dir.exists():
-    sully_hbb_data_dir = data_dir / "sully_2022"
-
+sully_data_dir = data_dir / "sully_2022"
+economics_data_dir = data_dir / "economics"
+geographic_dir = data_dir / "geographic"
+gdp_dir = economics_data_dir / "gdp"
+tourism_dir = economics_data_dir / "tourism"
 
 # METADATA DIRECTORIES
 figures_dir = repo_dir / "figures"

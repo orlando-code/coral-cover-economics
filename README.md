@@ -99,6 +99,44 @@ Sully et al. - "Present and future bright and dark spots for coral reefs through
 
 MIT License
 
+## Interactive Map Visualization
+
+An interactive web-based choropleth map is available in `index.html` for visualizing:
+- Reef tourism as percentage of national GDP (logarithmic scale)
+- Total reef-associated tourism revenue
+- Coral cover projections under RCP scenarios (configurable)
+
+### Setting up the Interactive Map
+
+1. **Export data to JSON** from your Jupyter notebook:
+   ```python
+   from export_map_data import export_for_map
+   
+   # Export tourism GDP percentage
+   export_for_map(
+       corrected_by_country_tourism_value_gdp,
+       'data/tourism_gdp_pct.json',
+       required_columns=['reef_tourism_gdp_as_pct_of_national_gdp']
+   )
+   
+   # Export total tourism revenue
+   export_for_map(
+       corrected_by_country_tourism_value_gdp,
+       'data/tourism_total_revenue.json',
+       required_columns=['approx_price_corrected']
+   )
+   ```
+
+2. **Host on GitHub Pages**:
+   - Go to your repository Settings → Pages
+   - Select source branch (usually `main`)
+   - Save
+   - Access your map at: `https://orlando-code.github.io/coral-cover-economics/`
+
+3. **View locally**: Open `index.html` in a web browser (or use a local server)
+
+See `data/README.md` for detailed data export instructions.
+
 ## Notes
 
 **Important**: This codebase imports `reefshift.utils.config` which is not included in this repository. You may need to:
