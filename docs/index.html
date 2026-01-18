@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coral Reef Economics | Climate Impact Analysis</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-card-hover: #1f2937;
+            --accent-blue: #3b82f6;
+            --accent-coral: #f97316;
+            --accent-teal: #14b8a6;
+            --accent-red: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --gradient-coral: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            --gradient-ocean: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 15, 26, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 0 2rem;
+        }
+        
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        
+        .nav-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-coral);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .nav-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+        
+        .nav-link.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        /* Main content */
+        .main {
+            padding-top: 80px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Page sections */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Hero section */
+        .hero {
+            text-align: center;
+            padding: 3rem 0 4rem;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-blue);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .stat-value.loss { color: var(--accent-red); }
+        .stat-value.value { color: var(--accent-teal); }
+        .stat-value.neutral { color: var(--accent-blue); }
+        
+        .stat-detail {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Chart containers */
+        .chart-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .chart-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .control-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        select, .btn {
+            font-family: inherit;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        select:hover, .btn:hover {
+            border-color: var(--accent-blue);
+        }
+        
+        select:focus, .btn:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-primary {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        /* Toggle buttons */
+        .toggle-group {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+        
+        .toggle-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        .toggle-btn:hover:not(.active) {
+            color: var(--text-primary);
+        }
+        
+        /* Map container */
+        #map-container {
+            height: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* Leaflet customization */
+        .leaflet-container {
+            background: #1a2332;
+            font-family: inherit;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .leaflet-popup-tip {
+            background: var(--bg-card);
+        }
+        
+        .popup-content {
+            font-size: 0.9rem;
+        }
+        
+        .popup-content strong {
+            color: var(--accent-teal);
+        }
+        
+        .popup-loss {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+        
+        /* Table styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+        
+        .data-table .number {
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+        
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: var(--text-secondary);
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="#" class="nav-brand">
+                <div class="nav-brand-icon">🪸</div>
+                <span>Coral Economics</span>
+            </a>
+            <div class="nav-links">
+                <a class="nav-link active" data-page="overview">Overview</a>
+                <a class="nav-link" data-page="map">Point Map</a>
+                <a class="nav-link" data-page="trajectories">Trajectories</a>
+                <a class="nav-link" data-page="countries">By Country</a>
+                <a class="nav-link" data-page="gdp">GDP Impact</a>
+                <a class="nav-link" data-page="models">Models</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Overview Page -->
+            <section id="page-overview" class="page active">
+                <div class="hero">
+                    <h1>Economic Impact of Coral Cover Loss</h1>
+                    <p>Projected tourism value loss under climate change scenarios (RCP 4.5 & 8.5) through 2100, using linear and compound depreciation models.</p>
+                </div>
+                
+                <div class="stats-grid" id="summary-stats">
+                    <div class="loading"><div class="spinner"></div>Loading...</div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Scenario Comparison</h2>
+                            <p class="chart-subtitle">Annual value loss at endpoint by scenario and model</p>
+                        </div>
+                    </div>
+                    <div id="scenario-comparison-chart" style="height: 400px;"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Cumulative Impact Over Time</h2>
+                            <p class="chart-subtitle">Total accumulated losses from 2017 to 2100</p>
+                        </div>
+                        <div class="controls">
+                            <div class="toggle-group">
+                                <button class="toggle-btn active" data-metric="cumulative_loss">Cumulative Loss</button>
+                                <button class="toggle-btn" data-metric="annual_loss">Annual Loss</button>
+                                <button class="toggle-btn" data-metric="coral_cover">Coral Cover</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="trajectory-chart" style="height: 400px;"></div>
+                </div>
+            </section>
+            
+            <!-- Point Map Page -->
+            <section id="page-map" class="page">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Reef Value Loss by Location</h2>
+                            <p class="chart-subtitle">Point-by-point visualization of projected economic impact</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Scenario:</span>
+                                <select id="map-scenario">
+                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
+                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
+                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
+                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="map-model">
+                                    <option value="Linear_3.81pct_pp">Linear (3.81%/pp)</option>
+                                    <option value="Compound_3.81pct_pp" selected>Compound (3.81%/pp)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="map-container">
+                        <div id="map"></div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #22c55e;"></div>
+                            <span>< 10% loss</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #eab308;"></div>
+                            <span>10-25% loss</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #f97316;"></div>
+                            <span>25-50% loss</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ef4444;"></div>
+                            <span>> 50% loss</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Trajectories Page -->
+            <section id="page-trajectories" class="page">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Coral Cover Trajectories</h2>
+                            <p class="chart-subtitle">Projected global average coral cover under different scenarios</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Interpolation:</span>
+                                <select id="traj-interpolation">
+                                    <option value="all">All</option>
+                                    <option value="linear">Linear</option>
+                                    <option value="exponential">Exponential</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="coral-cover-chart" style="height: 350px;"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Annual Economic Value</h2>
+                            <p class="chart-subtitle">Projected tourism value over time</p>
+                        </div>
+                    </div>
+                    <div id="annual-value-chart" style="height: 350px;"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Cumulative Losses</h2>
+                            <p class="chart-subtitle">Total accumulated economic losses</p>
+                        </div>
+                    </div>
+                    <div id="cumulative-chart" style="height: 350px;"></div>
+                </div>
+            </section>
+            
+            <!-- Countries Page -->
+            <section id="page-countries" class="page">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Country-Level Impact</h2>
+                            <p class="chart-subtitle">Projected value loss by country</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Scenario:</span>
+                                <select id="country-scenario">
+                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
+                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
+                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
+                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="country-model">
+                                    <option value="Linear (3.81%/pp)">Linear</option>
+                                    <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="country-chart" style="height: 500px;"></div>
+                </div>
+            </section>
+            
+            <!-- GDP Impact Page -->
+            <section id="page-gdp" class="page">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">GDP Impact Analysis</h2>
+                            <p class="chart-subtitle">Projected tourism loss as percentage of national GDP</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Scenario:</span>
+                                <select id="gdp-scenario">
+                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
+                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
+                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
+                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="gdp-model">
+                                    <option value="Linear (3.81%/pp)">Linear</option>
+                                    <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="gdp-chart" style="height: 500px;"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Scenario Comparison by GDP Impact</h2>
+                            <p class="chart-subtitle">Side-by-side comparison of all scenarios</p>
+                        </div>
+                    </div>
+                    <div id="gdp-comparison-chart" style="height: 450px;"></div>
+                    <div class="legend" style="margin-top: 1rem;">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #3b82f6;"></div>
+                            <span>RCP 4.5</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ef4444;"></div>
+                            <span>RCP 8.5</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="opacity: 0.5; background: #94a3b8;"></div>
+                            <span>2050 (lighter)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #94a3b8;"></div>
+                            <span>2100 (darker)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Models Page -->
+            <section id="page-models" class="page">
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Depreciation Model Comparison</h2>
+                            <p class="chart-subtitle">How economic value changes with coral cover loss</p>
+                        </div>
+                    </div>
+                    <div id="model-chart" style="height: 400px;"></div>
+                    <div style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
+                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Model Descriptions</h3>
+                        <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                            <div>
+                                <strong style="color: var(--accent-blue);">Linear Model (3.81%/pp)</strong>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    Economic value decreases by 3.81% for each percentage point decrease in coral cover. 
+                                    Based on Chen et al. (2014).
+                                </p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent-coral);">Compound Model (3.81%/pp)</strong>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    Value decreases compound with each percentage point of cover loss. 
+                                    Remaining value = V₀ × (1 - 0.0381)^|Δcover|
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+
+    <script>
+        // ============================================================
+        // DATA LOADING
+        // ============================================================
+        
+        let summaryData = null;
+        let trajectoryData = null;
+        let countryData = null;
+        let gdpImpactData = null;
+        let modelCurves = null;
+        let siteManifest = null;
+        let currentSiteData = null;
+        let map = null;
+        let siteLayer = null;
+        
+        const DATA_PATH = 'data/';
+        
+        async function loadData() {
+            try {
+                const [summary, trajectories, countries, curves, manifest, gdpImpacts] = await Promise.all([
+                    fetch(DATA_PATH + 'summary.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'trajectories.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'country_results.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'model_curves.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'manifest.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'gdp_impacts.json').then(r => r.json()).catch(() => null),
+                ]);
+                
+                summaryData = summary;
+                trajectoryData = trajectories;
+                countryData = countries;
+                gdpImpactData = gdpImpacts;
+                modelCurves = curves;
+                siteManifest = manifest;
+                
+                console.log('Data loaded successfully');
+                initializeDashboard();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('summary-stats').innerHTML = 
+                    '<p style="color: var(--accent-red);">Error loading data. Please run the export script first.</p>';
+            }
+        }
+        
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        
+        function initializeDashboard() {
+            renderSummaryStats();
+            renderScenarioComparison();
+            renderOverviewTrajectory('cumulative_loss');
+            renderModelComparison();
+            initializeMap();
+            
+            // Set up event listeners
+            setupNavigation();
+            setupControls();
+        }
+        
+        function setupNavigation() {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const page = e.target.dataset.page;
+                    
+                    // Update nav
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    // Show page
+                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                    document.getElementById('page-' + page).classList.add('active');
+                    
+                    // Initialize page-specific content
+                    if (page === 'map') {
+                        setTimeout(() => {
+                            if (map) map.invalidateSize();
+                            loadSiteData();
+                        }, 100);
+                    } else if (page === 'trajectories') {
+                        renderTrajectoryPage();
+                    } else if (page === 'countries') {
+                        renderCountryChart();
+                    } else if (page === 'gdp') {
+                        renderGdpChart();
+                        renderGdpComparison();
+                    }
+                });
+            });
+        }
+        
+        function setupControls() {
+            // Overview trajectory toggle
+            document.querySelectorAll('.toggle-btn[data-metric]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.toggle-btn[data-metric]').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderOverviewTrajectory(e.target.dataset.metric);
+                });
+            });
+            
+            // Map controls
+            document.getElementById('map-scenario').addEventListener('change', loadSiteData);
+            document.getElementById('map-model').addEventListener('change', loadSiteData);
+            
+            // Trajectory interpolation
+            document.getElementById('traj-interpolation').addEventListener('change', renderTrajectoryPage);
+            
+            // Country controls
+            document.getElementById('country-scenario').addEventListener('change', renderCountryChart);
+            document.getElementById('country-model').addEventListener('change', renderCountryChart);
+            
+            // GDP controls
+            document.getElementById('gdp-scenario').addEventListener('change', renderGdpChart);
+            document.getElementById('gdp-model').addEventListener('change', renderGdpChart);
+        }
+        
+        // ============================================================
+        // RENDERING FUNCTIONS
+        // ============================================================
+        
+        function renderSummaryStats() {
+            if (!summaryData) return;
+            
+            const worstCase = summaryData.snapshot_results.find(r => 
+                r.scenario.includes('rcp85') && r.scenario.includes('2100')
+            ) || summaryData.snapshot_results[summaryData.snapshot_results.length - 1];
+            
+            const cumulative = summaryData.cumulative_results.find(r => 
+                r.scenario.toLowerCase().includes('rcp85') && r.interpolation === 'linear'
+            ) || summaryData.cumulative_results[0];
+            
+            const html = `
+                <div class="stat-card">
+                    <div class="stat-label">Baseline Tourism Value</div>
+                    <div class="stat-value value">$${worstCase.original_value_billions.toFixed(1)}B</div>
+                    <div class="stat-detail">Annual reef-associated tourism</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Worst-Case Annual Loss (2100)</div>
+                    <div class="stat-value loss">-$${worstCase.total_loss_billions.toFixed(1)}B</div>
+                    <div class="stat-detail">${worstCase.loss_fraction_pct.toFixed(1)}% decline under RCP 8.5</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Cumulative Loss (2017-2100)</div>
+                    <div class="stat-value loss">-$${cumulative.total_cumulative_loss_trillions.toFixed(2)}T</div>
+                    <div class="stat-detail">Total lost value over 83 years</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Coral Cover Change</div>
+                    <div class="stat-value neutral">${cumulative.cover_change_pp.toFixed(1)}pp</div>
+                    <div class="stat-detail">${cumulative.baseline_cover_pct.toFixed(1)}% → ${cumulative.final_cover_pct.toFixed(1)}%</div>
+                </div>
+            `;
+            
+            document.getElementById('summary-stats').innerHTML = html;
+        }
+        
+        function renderScenarioComparison() {
+            if (!summaryData) return;
+            
+            const results = summaryData.snapshot_results;
+            
+            const scenarios = [...new Set(results.map(r => r.scenario))];
+            const models = [...new Set(results.map(r => r.model))];
+            
+            const traces = models.map(model => ({
+                x: results.filter(r => r.model === model).map(r => r.scenario),
+                y: results.filter(r => r.model === model).map(r => r.total_loss_billions),
+                name: model,
+                type: 'bar',
+                marker: {
+                    color: model.includes('Linear') ? '#3b82f6' : '#f97316'
+                }
+            }));
+            
+            const layout = {
+                barmode: 'group',
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Scenario'
+                },
+                yaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Annual Loss ($ Billion)'
+                },
+                legend: { 
+                    orientation: 'h', 
+                    y: -0.15,
+                    font: { size: 12 }
+                },
+                margin: { t: 20, r: 20, b: 80, l: 60 }
+            };
+            
+            Plotly.newPlot('scenario-comparison-chart', traces, layout, {responsive: true});
+        }
+        
+        function renderOverviewTrajectory(metric) {
+            if (!trajectoryData) return;
+            
+            const colors = {
+                'rcp45': '#3b82f6',
+                'rcp85': '#ef4444'
+            };
+            
+            const dashes = {
+                'linear': 'solid',
+                'exponential': 'dash'
+            };
+            
+            // Filter to show only one model for clarity
+            const filtered = trajectoryData.filter(t => t.model.includes('Compound'));
+            
+            const metricMap = {
+                'cumulative_loss': { data: 'cumulative_loss', title: 'Cumulative Loss ($ Trillion)' },
+                'annual_loss': { data: 'annual_loss', title: 'Annual Loss ($ Billion)' },
+                'coral_cover': { data: 'coral_cover', title: 'Coral Cover (%)' }
+            };
+            
+            const config = metricMap[metric];
+            
+            const traces = filtered.map(t => ({
+                x: t.years,
+                y: t[config.data],
+                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
+                mode: 'lines',
+                line: {
+                    color: colors[t.scenario.toLowerCase()] || '#94a3b8',
+                    dash: dashes[t.interpolation] || 'solid',
+                    width: 2
+                }
+            }));
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Year'
+                },
+                yaxis: { 
+                    gridcolor: '#334155',
+                    title: config.title
+                },
+                legend: { 
+                    orientation: 'h', 
+                    y: -0.15,
+                    font: { size: 11 }
+                },
+                margin: { t: 20, r: 20, b: 80, l: 60 }
+            };
+            
+            Plotly.newPlot('trajectory-chart', traces, layout, {responsive: true});
+        }
+        
+        function renderTrajectoryPage() {
+            if (!trajectoryData) return;
+            
+            const interpolation = document.getElementById('traj-interpolation').value;
+            
+            let filtered = trajectoryData;
+            if (interpolation !== 'all') {
+                filtered = trajectoryData.filter(t => t.interpolation === interpolation);
+            }
+            
+            const colors = { 'rcp45': '#3b82f6', 'rcp85': '#ef4444' };
+            const dashes = { 'linear': 'solid', 'exponential': 'dash' };
+            
+            // Coral cover chart
+            const coralTraces = filtered.map(t => ({
+                x: t.years,
+                y: t.coral_cover,
+                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
+                mode: 'lines',
+                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
+            }));
+            
+            Plotly.newPlot('coral-cover-chart', coralTraces, {
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8' },
+                xaxis: { gridcolor: '#334155', title: 'Year' },
+                yaxis: { gridcolor: '#334155', title: 'Coral Cover (%)' },
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 20, r: 20, b: 60, l: 60 }
+            }, {responsive: true});
+            
+            // Annual value chart
+            const valueTraces = filtered.map(t => ({
+                x: t.years,
+                y: t.annual_value,
+                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
+                mode: 'lines',
+                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
+            }));
+            
+            Plotly.newPlot('annual-value-chart', valueTraces, {
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8' },
+                xaxis: { gridcolor: '#334155', title: 'Year' },
+                yaxis: { gridcolor: '#334155', title: 'Annual Value ($ Billion)' },
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 20, r: 20, b: 60, l: 60 }
+            }, {responsive: true});
+            
+            // Cumulative loss chart
+            const cumulativeTraces = filtered.map(t => ({
+                x: t.years,
+                y: t.cumulative_loss,
+                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
+                mode: 'lines',
+                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
+            }));
+            
+            Plotly.newPlot('cumulative-chart', cumulativeTraces, {
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8' },
+                xaxis: { gridcolor: '#334155', title: 'Year' },
+                yaxis: { gridcolor: '#334155', title: 'Cumulative Loss ($ Trillion)' },
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 20, r: 20, b: 60, l: 60 }
+            }, {responsive: true});
+        }
+        
+        function renderCountryChart() {
+            if (!countryData) return;
+            
+            const scenario = document.getElementById('country-scenario').value;
+            const model = document.getElementById('country-model').value;
+            
+            const filtered = countryData.filter(c => 
+                c.scenario.toLowerCase().includes(scenario.split('_').slice(-2).join('_')) &&
+                c.model === model
+            ).sort((a, b) => b.value_loss - a.value_loss).slice(0, 20);
+            
+            const trace = {
+                y: filtered.map(c => c.country),
+                x: filtered.map(c => c.value_loss / 1e6),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: filtered.map(c => c.loss_fraction),
+                    colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#f97316'], [1, '#ef4444']],
+                    colorbar: {
+                        title: 'Loss %',
+                        tickformat: '.0%'
+                    }
+                },
+                text: filtered.map(c => `${(c.loss_fraction * 100).toFixed(1)}%`),
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Value Loss ($ Million)'
+                },
+                yaxis: { 
+                    autorange: 'reversed'
+                },
+                margin: { t: 20, r: 100, b: 60, l: 150 }
+            };
+            
+            Plotly.newPlot('country-chart', [trace], layout, {responsive: true});
+        }
+        
+        function renderGdpChart() {
+            if (!gdpImpactData) return;
+            
+            const scenario = document.getElementById('gdp-scenario').value;
+            const model = document.getElementById('gdp-model').value;
+            
+            const filtered = gdpImpactData.filter(c => 
+                c.scenario.toLowerCase().includes(scenario.split('_').slice(-2).join('_')) &&
+                c.model === model &&
+                c.loss_as_gdp_pct > 0
+            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, 25);
+            
+            const trace = {
+                y: filtered.map(c => c.country),
+                x: filtered.map(c => c.loss_as_gdp_pct),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: filtered.map(c => c.loss_as_gdp_pct),
+                    colorscale: [[0, '#22c55e'], [0.1, '#eab308'], [0.3, '#f97316'], [1, '#ef4444']],
+                    colorbar: {
+                        title: '% GDP',
+                        tickformat: '.1f'
+                    }
+                },
+                text: filtered.map(c => `${c.loss_as_gdp_pct.toFixed(2)}%`),
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Projected Loss as % of National GDP'
+                },
+                yaxis: { 
+                    autorange: 'reversed'
+                },
+                margin: { t: 20, r: 100, b: 60, l: 150 }
+            };
+            
+            Plotly.newPlot('gdp-chart', [trace], layout, {responsive: true});
+        }
+        
+        function renderGdpComparison() {
+            if (!gdpImpactData) return;
+            
+            // Get top countries by worst-case GDP impact
+            const worstCase = gdpImpactData.filter(c => 
+                c.scenario.includes('rcp85') && c.scenario.includes('2100') &&
+                c.model.includes('Compound')
+            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, 15);
+            
+            const topCountries = worstCase.map(c => c.country);
+            
+            // Create traces for each scenario/model combo
+            const scenarios = [
+                { key: 'rcp45_2050', name: 'RCP 4.5 - 2050', color: '#3b82f6', opacity: 0.5 },
+                { key: 'rcp45_2100', name: 'RCP 4.5 - 2100', color: '#3b82f6', opacity: 1 },
+                { key: 'rcp85_2050', name: 'RCP 8.5 - 2050', color: '#ef4444', opacity: 0.5 },
+                { key: 'rcp85_2100', name: 'RCP 8.5 - 2100', color: '#ef4444', opacity: 1 },
+            ];
+            
+            const traces = scenarios.map(s => {
+                const data = gdpImpactData.filter(c => 
+                    c.scenario.toLowerCase().includes(s.key) &&
+                    c.model.includes('Compound') &&
+                    topCountries.includes(c.country)
+                );
+                
+                const countryMap = {};
+                data.forEach(d => { countryMap[d.country] = d.loss_as_gdp_pct; });
+                
+                return {
+                    y: topCountries,
+                    x: topCountries.map(c => countryMap[c] || 0),
+                    name: s.name,
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: {
+                        color: s.color,
+                        opacity: s.opacity
+                    }
+                };
+            });
+            
+            const layout = {
+                barmode: 'group',
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Projected Loss as % of National GDP'
+                },
+                yaxis: { 
+                    autorange: 'reversed'
+                },
+                legend: { 
+                    orientation: 'h', 
+                    y: -0.15,
+                    font: { size: 11 }
+                },
+                margin: { t: 20, r: 20, b: 80, l: 150 }
+            };
+            
+            Plotly.newPlot('gdp-comparison-chart', traces, layout, {responsive: true});
+        }
+        
+        function renderModelComparison() {
+            if (!modelCurves) return;
+            
+            const traces = Object.entries(modelCurves).map(([key, curve]) => ({
+                x: curve.delta_cc,
+                y: curve.remaining_value,
+                name: curve.name,
+                mode: 'lines',
+                line: {
+                    color: key === 'linear' ? '#3b82f6' : '#f97316',
+                    width: 3
+                }
+            }));
+            
+            const layout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Change in Coral Cover (percentage points)',
+                    zeroline: true,
+                    zerolinecolor: '#64748b'
+                },
+                yaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Remaining Value (%)',
+                    range: [0, 120]
+                },
+                legend: { 
+                    orientation: 'h', 
+                    y: -0.15
+                },
+                margin: { t: 20, r: 20, b: 60, l: 60 },
+                shapes: [{
+                    type: 'line',
+                    x0: 0, x1: 0,
+                    y0: 0, y1: 120,
+                    line: { color: '#64748b', width: 1, dash: 'dot' }
+                }]
+            };
+            
+            Plotly.newPlot('model-chart', traces, layout, {responsive: true});
+        }
+        
+        // ============================================================
+        // MAP FUNCTIONS
+        // ============================================================
+        
+        function initializeMap() {
+            map = L.map('map').setView([0, 0], 2);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap, &copy; CARTO',
+                maxZoom: 18
+            }).addTo(map);
+            
+            siteLayer = L.layerGroup().addTo(map);
+        }
+        
+        async function loadSiteData() {
+            if (!siteManifest) return;
+            
+            const scenario = document.getElementById('map-scenario').value;
+            const model = document.getElementById('map-model').value;
+            
+            const filename = `sites_${scenario}_${model}.json`;
+            
+            try {
+                const response = await fetch(DATA_PATH + filename);
+                if (!response.ok) {
+                    console.log('Site data not found:', filename);
+                    return;
+                }
+                
+                const geojson = await response.json();
+                renderSites(geojson);
+            } catch (error) {
+                console.error('Error loading site data:', error);
+            }
+        }
+        
+        function renderSites(geojson) {
+            siteLayer.clearLayers();
+            
+            const getColor = (lossFraction) => {
+                if (lossFraction < 0.1) return '#22c55e';
+                if (lossFraction < 0.25) return '#eab308';
+                if (lossFraction < 0.5) return '#f97316';
+                return '#ef4444';
+            };
+            
+            geojson.features.forEach(feature => {
+                const props = feature.properties;
+                const coords = feature.geometry.coordinates;
+                
+                const marker = L.circleMarker([coords[1], coords[0]], {
+                    radius: 4,
+                    fillColor: getColor(props.loss_fraction),
+                    color: '#1a2332',
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+                
+                marker.bindPopup(`
+                    <div class="popup-content">
+                        <strong>${props.country || 'Unknown'}</strong><br>
+                        Original: $${(props.original_value / 1000).toFixed(1)}k<br>
+                        <span class="popup-loss">Loss: ${(props.loss_fraction * 100).toFixed(1)}%</span><br>
+                        Coral change: ${(props.coral_change * 100).toFixed(1)}pp
+                    </div>
+                `);
+                
+                siteLayer.addLayer(marker);
+            });
+            
+            console.log(`Rendered ${geojson.features.length} sites`);
+        }
+        
+        // ============================================================
+        // INITIALIZE
+        // ============================================================
+        
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
