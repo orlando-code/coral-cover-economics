@@ -70,10 +70,14 @@ def export_site_results(
         if sample_fraction < 1.0:
             gdf = gdf.sample(frac=sample_fraction, random_state=42)
 
-        # Convert to WGS84 and get centroids
+        # Convert to WGS84 and get centroids in a projected CRS for accuracy
         gdf = gdf.to_crs("EPSG:4326")
         if gdf.geometry.geom_type.iloc[0] in ["Polygon", "MultiPolygon"]:
-            centroids = gdf.geometry.centroid
+            # Reproject to a projected CRS (Web Mercator) to calculate centroids
+            gdf_proj = gdf.to_crs("EPSG:3857")
+            centroids_proj = gdf_proj.geometry.centroid
+            # Transform centroids back to WGS84 for output
+            centroids = centroids_proj.to_crs("EPSG:4326")
         else:
             centroids = gdf.geometry
 
