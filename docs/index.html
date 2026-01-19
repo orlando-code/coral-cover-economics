@@ -604,27 +604,40 @@
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Coral Cover Trajectories</h2>
-                            <p class="chart-subtitle">Projected global average coral cover under different scenarios</p>
+                            <p class="chart-subtitle">Projected global average coral cover under different scenarios (same for all models)</p>
                         </div>
                         <div class="controls">
                             <div class="control-group">
                                 <span class="control-label">Interpolation:</span>
                                 <select id="traj-interpolation">
-                                    <option value="all">All</option>
-                                    <option value="linear">Linear</option>
+                                    <option value="linear" selected>Linear</option>
                                     <option value="exponential">Exponential</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div id="coral-cover-chart" style="height: 350px;"></div>
+                    <p class="chart-note" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic;">
+                        Note: Coral cover trajectories are the same across economic models - only the scenario (RCP) and interpolation method affect coral cover projections.
+                    </p>
                 </div>
                 
                 <div class="chart-section">
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Annual Economic Value</h2>
-                            <p class="chart-subtitle">Projected tourism value over time</p>
+                            <p class="chart-subtitle">Projected tourism value over time by depreciation model</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="traj-model">
+                                    <option value="all">All Models</option>
+                                    <option value="Linear">Linear (3.81%/pp)</option>
+                                    <option value="Compound" selected>Compound (3.81%/pp)</option>
+                                    <option value="Tipping Point">Tipping Point (10%)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div id="annual-value-chart" style="height: 350px;"></div>
@@ -634,7 +647,7 @@
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Cumulative Losses</h2>
-                            <p class="chart-subtitle">Total accumulated economic losses</p>
+                            <p class="chart-subtitle">Total accumulated economic losses by model</p>
                         </div>
                     </div>
                     <div id="cumulative-chart" style="height: 350px;"></div>
@@ -874,8 +887,9 @@
             document.getElementById('map-model').addEventListener('change', loadSiteData);
             document.getElementById('map-choropleth-toggle').addEventListener('change', toggleChoropleth);
             
-            // Trajectory interpolation
+            // Trajectory controls
             document.getElementById('traj-interpolation').addEventListener('change', renderTrajectoryPage);
+            document.getElementById('traj-model').addEventListener('change', renderTrajectoryPage);
             
             // Country controls
             document.getElementById('country-scenario').addEventListener('change', renderCountryChart);
@@ -1032,66 +1046,102 @@
             if (!trajectoryData) return;
             
             const interpolation = document.getElementById('traj-interpolation').value;
-            
-            let filtered = trajectoryData;
-            if (interpolation !== 'all') {
-                filtered = trajectoryData.filter(t => t.interpolation === interpolation);
-            }
+            const modelFilter = document.getElementById('traj-model').value;
             
             const colors = { 'rcp45': '#3b82f6', 'rcp85': '#ef4444' };
             const dashes = { 'linear': 'solid', 'exponential': 'dash' };
+            const modelColors = {
+                'Linear': '#3b82f6',
+                'Compound': '#f97316', 
+                'Tipping Point': '#ef4444'
+            };
             
-            // Coral cover chart
-            const coralTraces = filtered.map(t => ({
+            // For coral cover, we only need unique scenario+interpolation combos (not per model)
+            // since coral cover is the same for all economic models
+            const coralFiltered = trajectoryData.filter(t => {
+                // Pick only one model (first one) to avoid duplicates
+                const interpMatch = t.interpolation === interpolation;
+                const isFirstModel = t.model.includes('Linear'); // Just pick one to avoid duplicates
+                return interpMatch && isFirstModel;
+            });
+            
+            const coralTraces = coralFiltered.map(t => ({
                 x: t.years,
                 y: t.coral_cover,
-                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
+                name: `${t.scenario.toUpperCase()}`,
                 mode: 'lines',
-                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
+                line: { 
+                    color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                    width: 3 
+                }
             }));
             
             Plotly.newPlot('coral-cover-chart', coralTraces, {
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { color: '#94a3b8' },
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { gridcolor: '#334155', title: 'Year' },
                 yaxis: { gridcolor: '#334155', title: 'Coral Cover (%)' },
-                legend: { orientation: 'h', y: -0.2 },
+                legend: { orientation: 'h', y: -0.15 },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
             
-            // Annual value chart
-            const valueTraces = filtered.map(t => ({
-                x: t.years,
-                y: t.annual_value,
-                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
-                mode: 'lines',
-                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
-            }));
+            // For economic charts, filter by both interpolation and model
+            let economicFiltered = trajectoryData.filter(t => t.interpolation === interpolation);
+            if (modelFilter !== 'all') {
+                economicFiltered = economicFiltered.filter(t => t.model.includes(modelFilter));
+            }
+            
+            // Annual value chart - distinguish by model and scenario
+            const valueTraces = economicFiltered.map(t => {
+                const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                return {
+                    x: t.years,
+                    y: t.annual_value,
+                    name: `${t.scenario.toUpperCase()} - ${modelShort}`,
+                    mode: 'lines',
+                    line: { 
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                        dash: t.model.includes('Linear') ? 'solid' : 
+                              t.model.includes('Compound') ? 'dash' : 'dot',
+                        width: 2 
+                    }
+                };
+            });
             
             Plotly.newPlot('annual-value-chart', valueTraces, {
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { color: '#94a3b8' },
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { gridcolor: '#334155', title: 'Year' },
                 yaxis: { gridcolor: '#334155', title: 'Annual Value ($ Billion)' },
-                legend: { orientation: 'h', y: -0.2 },
+                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
             
             // Cumulative loss chart
-            const cumulativeTraces = filtered.map(t => ({
-                x: t.years,
-                y: t.cumulative_loss,
-                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
-                mode: 'lines',
-                line: { color: colors[t.scenario.toLowerCase()] || '#94a3b8', dash: dashes[t.interpolation], width: 2 }
-            }));
+            const cumulativeTraces = economicFiltered.map(t => {
+                const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                return {
+                    x: t.years,
+                    y: t.cumulative_loss,
+                    name: `${t.scenario.toUpperCase()} - ${modelShort}`,
+                    mode: 'lines',
+                    line: { 
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                        dash: t.model.includes('Linear') ? 'solid' : 
+                              t.model.includes('Compound') ? 'dash' : 'dot',
+                        width: 2 
+                    }
+                };
+            });
             
             Plotly.newPlot('cumulative-chart', cumulativeTraces, {
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { color: '#94a3b8' },
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { gridcolor: '#334155', title: 'Year' },
                 yaxis: { gridcolor: '#334155', title: 'Cumulative Loss ($ Trillion)' },
-                legend: { orientation: 'h', y: -0.2 },
+                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
         }
@@ -1409,37 +1459,38 @@
         
         function renderChoropleth() {
             if (!countryData || !countryBoundaries) {
-                console.warn('Country data or boundaries not loaded');
+                console.warn('Country data or boundaries not loaded. countryData:', !!countryData, 'countryBoundaries:', !!countryBoundaries);
                 return;
             }
             
             const scenario = document.getElementById('map-scenario').value;
             const model = document.getElementById('map-model').value;
             
-            // Parse scenario to match country data format
-            const scenarioMatch = scenario.match(/(rcp\d+)_(\d+)/i);
-            if (!scenarioMatch) return;
+            console.log('Rendering choropleth for scenario:', scenario, 'model:', model);
             
-            const rcp = scenarioMatch[1].toLowerCase();
-            const year = scenarioMatch[2];
-            const scenarioKey = `${rcp}_yr_${year}`;
-            
-            // Filter country data for current scenario and model
             // Normalize model names for matching
             const normalizeModelName = (name) => {
-                return name.replace(/\s+/g, '_')
+                return name.toLowerCase()
+                    .replace(/\s+/g, '_')
                     .replace(/\//g, '_')
                     .replace(/%/g, 'pct')
                     .replace(/[()]/g, '')
                     .replace(/=/g, '');
             };
             
+            // Filter country data for current scenario and model
+            // scenario is like "y_future_rcp45_2050", data scenarios are the same format
             const filtered = countryData.filter(c => {
                 const cScenario = c.scenario.toLowerCase();
+                const targetScenario = scenario.toLowerCase();
                 const cModel = normalizeModelName(c.model);
                 const targetModel = normalizeModelName(model);
-                return cScenario.includes(scenarioKey) && cModel === targetModel;
+                const scenarioMatch = cScenario === targetScenario;
+                const modelMatch = cModel === targetModel;
+                return scenarioMatch && modelMatch;
             });
+            
+            console.log('Filtered countries:', filtered.length);
             
             // Create lookup map by country name (try multiple name variations)
             const countryMetrics = {};
