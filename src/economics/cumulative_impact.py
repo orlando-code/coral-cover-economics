@@ -10,7 +10,10 @@ The key insight is that annual losses compound over time - a reef that loses
 coral cover gradually accumulates economic losses each year, not just at the endpoint.
 """
 
+import json
+import pickle
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import numpy as np
@@ -258,6 +261,45 @@ class CumulativeImpactResult:
                 "cumulative_loss": self.cumulative_losses,
             }
         )
+
+    def save(self, path: Path) -> None:
+        """Save cumulative impact result to disk."""
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save the full object
+        with open(path, "wb") as f:
+            pickle.dump(self, f)
+
+        # Also save metadata and trajectory data as JSON
+        metadata = {
+            "scenario": self.trajectory.scenario,
+            "interpolation_method": self.trajectory.interpolation_method,
+            "model_name": self.model.name,
+            "model_type": type(self.model).__name__,
+            "value_type": self.value_type,
+            "baseline_value": float(self.baseline_value),
+            "discount_rate": float(self.discount_rate),
+            "start_year": int(self.trajectory.start_year),
+            "end_year": int(self.trajectory.end_year),
+            "total_cumulative_loss": float(self.total_cumulative_loss),
+            "annual_loss_at_end": float(self.annual_loss_at_end),
+            "average_annual_loss": float(self.average_annual_loss),
+        }
+
+        metadata_path = path.with_suffix(".json")
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
+    @classmethod
+    def load(cls, path: Path) -> "CumulativeImpactResult":
+        """Load cumulative impact result from disk."""
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Cumulative result file not found: {path}")
+
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
 
 def calculate_cumulative_impact(

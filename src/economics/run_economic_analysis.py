@@ -23,6 +23,10 @@ import argparse
 import warnings
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, Dict
+
+if TYPE_CHECKING:
+    from src.economics.cumulative_impact import CumulativeImpactResult
 
 from src import config, utils
 from src.economics import (
@@ -93,6 +97,85 @@ CONFIG = {
     "top_n_countries": 20,
     "export_web_data": True,
 }
+
+# =============================================================================
+# LOAD PREVIOUS RESULTS
+# =============================================================================
+
+
+def load_previous_results(run_name: str, verbose: bool = True):
+    """
+    Load previous results from a saved run.
+
+    Parameters
+    ----------
+    run_name : str
+        Name of the run directory (e.g., "run_20260119_105256")
+    verbose : bool
+        Print loading progress
+
+    Returns
+    -------
+    dict
+        Dictionary with 'results' and 'cumulative_results' keys
+    """
+    if verbose:
+        print("\n" + "=" * 60)
+        print("LOADING PREVIOUS RESULTS")
+        print("=" * 60)
+
+    results_dir = Path(CONFIG["results_dir"])
+    run_dir = results_dir / run_name
+    if not run_dir.exists():
+        raise FileNotFoundError(f"Run directory {run_dir} not found")
+
+    if verbose:
+        print(f"  Loading from: {run_dir}")
+
+    results = AnalysisResults.load(run_dir / "results")
+    cumulative_results = load_cumulative_results(run_dir, verbose=verbose)
+
+    if verbose:
+        print(f"\n  ✓ Loaded {len(results.results)} analysis results")
+        print(f"  ✓ Loaded {len(cumulative_results)} cumulative impact results")
+
+    return {
+        "results": results,
+        "cumulative_results": cumulative_results,
+    }
+
+
+def load_cumulative_results(
+    run_dir: Path, verbose: bool = True
+) -> Dict[str, "CumulativeImpactResult"]:
+    """Load cumulative results from saved files."""
+    from src.economics.cumulative_impact import CumulativeImpactResult
+
+    cumulative_results_dir = run_dir / "cumulative_results"
+    if not cumulative_results_dir.exists():
+        if verbose:
+            print(
+                f"  ⚠️  Cumulative results directory not found: {cumulative_results_dir}"
+            )
+        return {}
+
+    results = {}
+
+    # Load all .pkl files in the directory
+    for pkl_file in cumulative_results_dir.glob("*.pkl"):
+        try:
+            result = CumulativeImpactResult.load(pkl_file)
+            # Use filename (without extension) as key
+            key = pkl_file.stem
+            results[key] = result
+        except Exception as e:
+            if verbose:
+                print(f"  ⚠️  Failed to load {pkl_file.name}: {e}")
+
+    if verbose:
+        print(f"  ✓ Loaded {len(results)} cumulative impact results")
+
+    return results
 
 
 # =============================================================================
@@ -354,6 +437,10 @@ def step_generate_outputs(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = output_dir / f"run_{timestamp}"
 
+    # Create matching run directory in results_dir (organized like figures_dir)
+    results_run_dir = results_dir / f"run_{timestamp}"
+    results_run_dir.mkdir(parents=True, exist_ok=True)
+
     # Create subdirectories
     subdirs = {
         "models": run_dir / "01_model_comparison",
@@ -392,19 +479,23 @@ def step_generate_outputs(
         )
 
     # -------------------------------------------------------------------------
-    # 3. Per-scenario figures (organized by scenario)
+    # 3. Per-scenario figures (organized by model, then scenario)
     # -------------------------------------------------------------------------
     if verbose:
         print("\n  📈 Generating per-scenario figures...")
 
     for key, result in results.results.items():
-        # Create subdirectory for this scenario
-        safe_key = utils.sanitize_filename(key)
-        scenario_dir = subdirs["scenarios"] / safe_key
+        # Organize by model first, then scenario
+        model_name = utils.sanitize_filename(result.model.name)
+        scenario_slug = utils.sanitize_filename(result.scenario)
+
+        # Create model subdirectory, then scenario subdirectory
+        model_dir = subdirs["scenarios"] / model_name
+        scenario_dir = model_dir / scenario_slug
         scenario_dir.mkdir(parents=True, exist_ok=True)
 
         if verbose:
-            print(f"      {key}...")
+            print(f"      {key} ({model_name})...")
 
         generate_figure_set(
             result=result,
@@ -413,7 +504,7 @@ def step_generate_outputs(
         )
 
     # -------------------------------------------------------------------------
-    # 4. GDP impact plots (depreciation as % of GDP)
+    # 4. GDP impact plots (depreciation as % of GDP, organized by model)
     # -------------------------------------------------------------------------
     if data and "gdp" in data and data["gdp"] is not None:
         if verbose:
@@ -422,14 +513,20 @@ def step_generate_outputs(
         gdp_data = data["gdp"]
 
         for key, result in results.results.items():
-            safe_key = utils.sanitize_filename(key)
+            # Organize by model first
+            model_name = utils.sanitize_filename(result.model.name)
+            scenario_slug = utils.sanitize_filename(result.scenario)
+
+            # Create model subdirectory
+            model_dir = subdirs["gdp_impact"] / model_name
+            model_dir.mkdir(parents=True, exist_ok=True)
 
             # Bar chart
             fig = plot_loss_as_gdp_pct_bar(
                 result,
                 gdp_data,
                 top_n=20,
-                save_path=subdirs["gdp_impact"] / f"{safe_key}_gdp_pct_bar.png",
+                save_path=model_dir / f"{scenario_slug}_gdp_pct_bar.png",
             )
             if fig:
                 plt.close(fig)
@@ -438,7 +535,7 @@ def step_generate_outputs(
             fig = plot_loss_as_gdp_pct_choropleth(
                 result,
                 gdp_data,
-                save_path=subdirs["gdp_impact"] / f"{safe_key}_gdp_pct_choropleth.html",
+                save_path=model_dir / f"{scenario_slug}_gdp_pct_choropleth.html",
             )
 
     # -------------------------------------------------------------------------
@@ -540,28 +637,77 @@ def step_generate_outputs(
     if verbose:
         print("\n  💾 Saving CSV results...")
 
-    # Summary table
+    # Create summary subdirectory in results_run_dir
+    results_summary_dir = results_run_dir / "summary"
+    results_summary_dir.mkdir(parents=True, exist_ok=True)
+
+    # Summary table (save to both locations for convenience)
     summary = results.summary_table()
     summary.to_csv(subdirs["summary"] / f"summary_{timestamp}.csv", index=False)
-    summary.to_csv(results_dir / f"summary_{timestamp}.csv", index=False)
+    summary.to_csv(results_summary_dir / f"summary_{timestamp}.csv", index=False)
 
-    # Per-country results
+    # Per-country results (save to both locations)
     for key, result in results.results.items():
         by_country = result.by_country
         safe_key = utils.sanitize_filename(key)
         by_country.to_csv(
             subdirs["summary"] / f"{safe_key}_by_country.csv", index=False
         )
+        by_country.to_csv(
+            results_summary_dir / f"{safe_key}_by_country.csv", index=False
+        )
+
+    # -------------------------------------------------------------------------
+    # 8. Save full results objects (for reloading)
+    # -------------------------------------------------------------------------
+    if verbose:
+        print("\n  💾 Saving full results objects...")
+
+    # Save AnalysisResults to results_run_dir (for loading)
+    results_save_dir = results_run_dir / "results"
+    results.save(results_save_dir)
+
+    # Also save to run_dir for completeness
+    run_results_dir = run_dir / "results"
+    results.save(run_results_dir)
+
+    # Save cumulative results to results_run_dir
+    if cumulative_results:
+        cumulative_save_dir = results_run_dir / "cumulative_results"
+        cumulative_save_dir.mkdir(parents=True, exist_ok=True)
+
+        for key, result in cumulative_results.items():
+            safe_key = utils.sanitize_filename(key)
+            result.save(cumulative_save_dir / f"{safe_key}.pkl")
+
+        # Also save to run_dir for completeness
+        run_cumulative_dir = run_dir / "cumulative_results"
+        run_cumulative_dir.mkdir(parents=True, exist_ok=True)
+        for key, result in cumulative_results.items():
+            safe_key = utils.sanitize_filename(key)
+            result.save(run_cumulative_dir / f"{safe_key}.pkl")
+
+        if verbose:
+            print(f"  ✓ Saved {len(cumulative_results)} cumulative impact results")
 
     if verbose:
         print(f"\n✓ Outputs saved to {run_dir}")
         print("  ├── 01_model_comparison/")
         print("  ├── 02_verification/")
         print("  ├── 03_scenario_results/")
+        print("  │   ├── {model_name}/")
+        print("  │   │   └── {scenario}/")
         print("  ├── 04_gdp_impact/")
+        print("  │   └── {model_name}/")
         print("  ├── 05_trajectories/")
-        print("  └── 06_summary/")
-        print(f"✓ Results also copied to {results_dir}")
+        print("  │   └── {model_name}/")
+        print("  ├── 06_summary/")
+        print("  ├── results/ (for reloading)")
+        print("  └── cumulative_results/ (for reloading)")
+        print(f"\n✓ Results saved to {results_run_dir}")
+        print("  ├── summary/ (CSV files)")
+        print("  ├── results/ (pickle files for reloading)")
+        print("  └── cumulative_results/ (pickle files for reloading)")
 
     return run_dir
 
@@ -731,6 +877,12 @@ def main():
         action="store_true",
         help="Export data for web visualization",
     )
+    parser.add_argument(
+        "--load-run",
+        type=str,
+        default=None,
+        help="Load previous results from a run directory (e.g., 'run_20260119_105256')",
+    )
 
     args = parser.parse_args()
 
@@ -748,6 +900,20 @@ def main():
         CONFIG["models"] = {m: {} for m in args.models}
     if args.export_web_data:
         CONFIG["export_web_data"] = args.export_web_data
+
+    # Load previous results if requested
+    if args.load_run:
+        print(f"\n{'=' * 60}")
+        print(f"LOADING PREVIOUS RESULTS: {args.load_run}")
+        print(f"{'=' * 60}\n")
+        loaded = load_previous_results(args.load_run, verbose=not args.quiet)
+        print("\n✓ Results loaded successfully!")
+        print("\nTo use these results, access them via:")
+        print("  - loaded['results']: AnalysisResults object")
+        print(
+            "  - loaded['cumulative_results']: Dict of CumulativeImpactResult objects"
+        )
+        return loaded
 
     # Run pipeline
     run_pipeline(verbose=not args.quiet)
