@@ -300,7 +300,7 @@ def export_gdp_impact(
 def run_export(output_dir: Optional[Path] = None, sample_fraction: float = 0.1) -> Path:
     """Run the full export pipeline."""
     if output_dir is None:
-        output_dir = Path("docs/data")
+        output_dir = Path("docs/exported_data")
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
