@@ -1,6 +1,8 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -94,3 +96,70 @@ COVARIATE_LABELS_DICT = {
     "human_pop_stzd": "Local human population",
     "turbidity_mean_stzd": "Mean turbidity",
 }
+
+
+WA_COLORMAP = [
+    "#3A9AB2",
+    "#6FB2C1",
+    "#91BAB6",
+    "#A5C2A3",
+    "#BDC881",
+    "#DCCB4E",
+    "#E3B710",
+    "#E79805",
+    "#EC7A05",
+    "#EF5703",
+    "#F11B00",
+]
+
+
+def get_wa_colormap(
+    n_colours: int = 5, index: int = None
+) -> mcolors.ListedColormap | str:
+    """
+    Get the Wes Anderson (Life Aquatic) colormap with n_colours equally spaced colors,
+    or a specific color by index.
+
+    Args:
+        n_colours (int): The number of colours to include, equally spaced along
+            the full colormap. Default is 5. Ignored if index is provided.
+        index (int, optional): If provided, return a single color at this index
+            from the full colormap. Index 0 is the first color, -1 is the last.
+            Can use negative indexing.
+
+    Returns:
+        ListedColormap or str: If index is None, returns a ListedColormap with
+            n_colours equally spaced colors. If index is provided, returns a
+            single color as a hex string.
+
+    Examples:
+        >>> cmap = get_wa_colormap(5)  # Get 5 equally spaced colors
+        >>> mid_color = get_wa_colormap(index=5)  # Get the 6th color (mid-point)
+        >>> mid_color = get_wa_colormap(index=len(WA_COLORMAP)//2)  # True mid-point
+        >>> last_color = get_wa_colormap(index=-1)  # Last color
+    """
+    if index is not None:
+        # Return a specific color by index
+        if abs(index) >= len(WA_COLORMAP):
+            raise IndexError(
+                f"Index {index} out of range. Colormap has {len(WA_COLORMAP)} colors "
+                f"(valid indices: 0 to {len(WA_COLORMAP) - 1} or -{len(WA_COLORMAP)} to -1)"
+            )
+        return WA_COLORMAP[index]
+
+    # Return colormap with n_colours equally spaced colors
+    if n_colours <= 0:
+        raise ValueError("n_colours must be positive")
+
+    if n_colours >= len(WA_COLORMAP):
+        # If requesting more or equal colors than available, return all
+        selected_colors = WA_COLORMAP
+    else:
+        # Sample equally spaced indices
+        indices = np.linspace(0, len(WA_COLORMAP) - 1, n_colours, dtype=int)
+        selected_colors = [WA_COLORMAP[i] for i in indices]
+
+    return mcolors.ListedColormap(selected_colors, name="wa_colormap")
+
+
+# TODO: helper to get midpoint value

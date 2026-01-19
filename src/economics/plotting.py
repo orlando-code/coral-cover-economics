@@ -14,6 +14,7 @@ import plotly.graph_objects as go
 from matplotlib.patches import Patch
 
 from src import utils
+from src.plots import plot_utils
 
 from .analysis import AnalysisResults, DepreciationResult
 from .depreciation_models import DepreciationModel
@@ -24,8 +25,8 @@ from .depreciation_models import DepreciationModel
 
 # Color palette (colorblind-friendly)
 COLOURS = {
-    "rcp45": "#3498db",  # Blue
-    "rcp85": "#e74c3c",  # Red
+    "rcp45": plot_utils.get_wa_colormap(n_colours=100, index=0),  # Blue
+    "rcp85": plot_utils.get_wa_colormap(n_colours=100, index=-1),  # Red
     "tourism": "#2ecc71",  # Green
     "protection": "#9b59b6",  # Purple
     "neutral": "#7f8c8d",  # Gray
@@ -50,7 +51,104 @@ NESTED_SCENARIO_LABELS = {
     "RCP85": {2050: "RCP 8.5 (2050)", 2100: "RCP 8.5 (2100)"},
 }
 
+# Scenario comparison plot configuration
+SCENARIO_COMPARISON_CONFIG = {
+    "model_order": ["Linear", "Compound", "Tipping Point"],
+    "year_order": ["2100", "2050"],  # 2100 behind, 2050 overlay
+    "rcp_order": ("RCP45", "RCP85"),
+    "bar_width": 0.15,
+    "country_spacing": 1.4,
+    "country_height_factor": 0.7,  # Height per country
+    "min_figure_height": 6,
+    "model_hatches": {
+        "Linear": "",
+        "Compound": "///",
+        "Tipping Point": "...",
+    },
+    "bar_alphas": {"2100": 0.35, "2050": 0.85},
+    "hatch_linewidth": 0.8,
+    "bar_edgecolor": "black",
+    "bar_linewidth": 1.2,
+    "legend": {
+        "fontsize": 14,
+        "title_fontsize": 16,
+        "scenario_bbox": (0.98, 0.7),
+        "model_bbox": (0.912, 0.3),
+    },
+    "axis": {
+        "ylabel_fontsize": 11,
+        "xlabel_fontsize": 13,
+        "xlabel": "Value Loss (Million USD)",
+        "y_tick_pad": 10,
+    },
+    "grid": {
+        "minor_interval": 250,  # Million USD
+        "minor_alpha": 0.4,
+        "major_alpha": 0.75,
+    },
+    "vline": {
+        "color": "black",
+        "linewidth": 1.2,
+        "alpha": 0.8,
+    },
+    "figure": {
+        "dpi": 300,
+        "save_dpi": 150,
+        "bottom_margin": 0.08,
+    },
+}
 
+# GDP impact comparison plot configuration
+GDP_IMPACT_COMPARISON_CONFIG = {
+    "figure": {
+        "width": 14,
+        "min_height": 8,
+        "country_height_factor": 0.5,
+        "dpi": 300,
+        "save_dpi": 150,
+        "bottom_margin": 0.08,
+    },
+    "bar": {
+        "total_height": 0.75,
+        "edgecolor_no_hatch": "white",
+        "edgecolor_hatch": "black",
+        "linewidth": 0.5,
+    },
+    "model_hatches": {
+        "Linear": "",
+        "Compound": "///",
+    },
+    "year_alphas": {"2050": 0.6, "2100": 1.0},
+    "axis": {
+        "ylabel_fontsize": 10,
+        "xlabel_fontsize": 12,
+        "xlabel": "Projected Value Loss as % of National GDP",
+        "title_fontsize": 14,
+    },
+    "legend": {
+        "fontsize": 9,
+        "title": "Scenario (Model)",
+        "title_fontsize": 10,
+        "ncol": 2,
+        "loc": "lower right",
+    },
+    "grid": {
+        "alpha": 0.3,
+        "linestyle": "--",
+    },
+    "footer": {
+        "text": "Color: RCP scenario (blue=4.5, red=8.5) | Opacity: Year (light=2050, dark=2100) | Hatch: Model (solid=Linear, ///=Compound)",
+        "fontsize": 8,
+        "x": 0.02,
+        "y": 0.02,
+        "style": "italic",
+        "color": "gray",
+    },
+}
+
+country_mapping = {
+    "N. Mariana Is.": "Northern Mariana Islands",
+}
 # =============================================================================
 # UTILS
 # =============================================================================
@@ -135,10 +233,11 @@ def plot_model_comparison(
     Figure
         Matplotlib figure.
     """
-    from .depreciation_models import CompoundModel, LinearModel, TippingPointModel
+    from .depreciation_models import CompoundModel, LinearModel
 
     if models is None:
-        models = [LinearModel(), CompoundModel(), TippingPointModel()]
+        # models = [LinearModel(), CompoundModel(), TippingPointModel()]
+        models = [LinearModel(), CompoundModel()]
 
     if delta_cc_range is None:
         delta_cc_range = np.linspace(0, -1.0, 101)  # 0 to -100pp
@@ -254,9 +353,10 @@ def plot_scenario_comparison(
     save_path: Path = None,
 ) -> plt.Figure:
     """
-    Compare scenarios side-by-side for top countries with distinct styling.
+    Compare scenarios side-by-side for top countries with overlaid 2100/2050 bars.
 
-    Uses: color for RCP scenario, hatching for model type, grouped by year.
+    2050 bars overlay (in darker alpha) up to the corresponding height on 2100.
+    Bar widths are wider; models ordered linear, compound, tipping point.
 
     Parameters
     ----------
@@ -273,7 +373,11 @@ def plot_scenario_comparison(
     -------
     Figure
     """
-    # Get scenarios for this value type
+    import matplotlib.colors as mcolors
+
+    cfg = SCENARIO_COMPARISON_CONFIG
+
+    # Extract relevant results
     relevant_results = [
         (k, r)
         for k, r in results.results.items()
@@ -284,24 +388,26 @@ def plot_scenario_comparison(
         warnings.warn("Need at least 2 results to compare scenarios")
         return None
 
-    # Style mappings
-    model_hatches = {
-        "Linear": "",
-        "Compound": "///",
-        "Tipping Point": "...",
-    }  # No hatch for linear, diagonal for compound
-    year_alphas = {"2050": 0.6, "2100": 1.0}  # Lighter for 2050
-
-    # Use first result to get top countries (by worst-case scenario)
-    # Find the worst-case scenario (RCP85 2100) to rank countries
-    worst_case = None
+    # Collate results into dict {(rcp, model, year): result}
+    scenario_dict = {}
     for key, result in relevant_results:
-        if "85" in result.scenario and "2100" in result.scenario:
-            worst_case = result
-            break
-    if worst_case is None:
-        _, worst_case = relevant_results[-1]
+        rcp, year, model_type = parse_scenario(result.scenario, result.model.name)
+        scenario_dict[(rcp.upper(), model_type, year)] = result
 
+    # Get top countries from worst-case scenario
+    model_order = cfg["model_order"]
+    year_order = cfg["year_order"]
+    rcp_order = cfg["rcp_order"]
+
+    worst_key = None
+    for model_name in model_order:
+        worst_key = ("RCP85", model_name, "2100")
+        if worst_key in scenario_dict:
+            break
+    if worst_key not in scenario_dict and len(scenario_dict) > 0:
+        worst_key = list(scenario_dict.keys())[0]
+
+    worst_case = scenario_dict[worst_key]
     country_col = (
         "country"
         if "country" in worst_case.by_country.columns
@@ -309,115 +415,171 @@ def plot_scenario_comparison(
     )
     top_countries = worst_case.by_country.head(top_n)[country_col].tolist()
 
-    # Sort results by RCP, year, model for consistent ordering
+    # Prepare data: {rcp: {model: {year: losses}}}
+    data = {rcp: {model: {} for model in model_order} for rcp in rcp_order}
+    for rcp in rcp_order:
+        for model in model_order:
+            for year in year_order:
+                res = scenario_dict.get((rcp, model, year))
+                if res is not None:
+                    byc = res.by_country[
+                        res.by_country[country_col].isin(top_countries)
+                    ]
+                    byc = (
+                        byc.set_index(country_col).reindex(top_countries).reset_index()
+                    )
+                    data[rcp][model][year] = byc["value_loss"].values / 1e6
+                else:
+                    data[rcp][model][year] = np.zeros(len(top_countries))
 
-    relevant_results = sorted(relevant_results, key=sort_key)
+    # Setup figure
+    fig, ax = plt.subplots(
+        figsize=(
+            10,
+            max(cfg["min_figure_height"], top_n * cfg["country_height_factor"]),
+        ),
+        dpi=cfg["figure"]["dpi"],
+    )
 
-    # Prepare figure
-    fig, ax = plt.subplots(figsize=(14, max(8, top_n * 0.5)))
+    # Calculate positions and offsets
+    bar_width = cfg["bar_width"]
+    y_pos = np.arange(len(top_countries)) * cfg["country_spacing"]
 
-    n_scenarios = len(relevant_results)
-    bar_height = 0.75 / n_scenarios
-    offsets = np.linspace(-0.375 + bar_height / 2, 0.375 - bar_height / 2, n_scenarios)
+    rcp_cluster_gap = 4 * bar_width
+    model_gap = bar_width
+    rcp_offsets = {
+        "RCP45": +rcp_cluster_gap / 2,
+        "RCP85": -rcp_cluster_gap / 2,
+    }
+    model_offsets = {model: (i - 1) * model_gap for i, model in enumerate(model_order)}
 
-    # Track legend handles
-    legend_handles = []
-    legend_labels = []
+    plt.rcParams["hatch.linewidth"] = cfg["hatch_linewidth"]
 
-    for i, (key, result) in enumerate(relevant_results):
-        by_country = result.by_country.copy()
-        by_country = by_country[by_country[country_col].isin(top_countries)]
+    # Draw bars
+    for model in model_order:
+        for rcp in rcp_order:
+            y_vals = y_pos + rcp_offsets[rcp] + model_offsets[model]
+            color = COLOURS[rcp.lower()]
+            hatch = cfg["model_hatches"][model]
+            has_hatch = bool(hatch)
 
-        # Reorder to match top_countries
-        by_country = (
-            by_country.set_index(country_col).reindex(top_countries).reset_index()
+            for year, alpha in cfg["bar_alphas"].items():
+                losses = data[rcp][model].get(year, np.zeros(len(top_countries)))
+                ax.barh(
+                    y_vals[::-1],
+                    losses,
+                    height=bar_width,
+                    color=mcolors.to_rgba(color, alpha),
+                    hatch=hatch,
+                    edgecolor=cfg["bar_edgecolor"] if has_hatch else "none",
+                    linewidth=cfg["bar_linewidth"] if has_hatch else 1,
+                    zorder=1 if year == "2100" else 3,
+                )
+
+    # Draw vertical lines
+    cluster_half_height = (
+        abs(rcp_offsets["RCP45"] - rcp_offsets["RCP85"]) / 2
+        + abs(model_offsets[model_order[-1]])
+        + bar_width / 2
+    )
+    vline_cfg = cfg["vline"]
+    for y in y_pos[::-1]:
+        ax.vlines(
+            x=0,
+            ymin=y - cluster_half_height,
+            ymax=y + cluster_half_height,
+            color=vline_cfg["color"],
+            linewidth=vline_cfg["linewidth"],
+            alpha=vline_cfg["alpha"],
+            zorder=4,
         )
 
-        countries = by_country[country_col].values[::-1]
-        losses = by_country["value_loss"].values[::-1]
+    # Create legends
+    legend_cfg = cfg["legend"]
 
-        rcp, year, model_type = parse_scenario(result.scenario, result.model.name)
+    # Scenario legend (RCP colors + year indicators)
+    scenario_handles = [
+        Patch(facecolor=get_scenario_color(rcp), edgecolor="none") for rcp in rcp_order
+    ]
+    scenario_handles.extend(
+        [
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2100"]),
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2050"]),
+        ]
+    )
+    scenario_labels = [RCP_LABELS[rcp] for rcp in rcp_order] + [
+        "2100 (background)",
+        "2050 (overlay)",
+    ]
 
-        color = COLOURS[rcp.lower()]
-        hatch = model_hatches[model_type]
-        alpha = year_alphas[year]
-
-        y_pos = np.arange(len(countries)) + offsets[i]
-
-        ax.barh(
-            y_pos,
-            losses / 1e6,
-            height=bar_height,
-            color=color,
-            alpha=alpha,
-            hatch=hatch,
-            edgecolor="white" if not hatch else "black",
-            linewidth=1,
-        )
-
-    legend_handles = []
-    legend_labels = []
-
-    # Years (with alpha to show opacity difference)
-    for year in sorted(year_alphas.keys()):
-        legend_handles.append(Patch(facecolor="grey", alpha=year_alphas[year]))
-        legend_labels.append(year)
-
-    # RCP scenarios (colors only, no year)
-    for rcp_key in ["RCP45", "RCP85"]:
-        legend_handles.append(
-            Patch(facecolor=get_scenario_color(rcp_key), edgecolor="none")
-        )
-        legend_labels.append(RCP_LABELS[rcp_key])
-
-    # Model hatches
-    for model_type, hatch in model_hatches.items():
-        if hatch:  # Only show hatch if there is one
-            legend_handles.append(
+    # Model legend (hatches)
+    model_handles = []
+    for model in model_order:
+        hatch = cfg["model_hatches"][model]
+        if hatch:
+            model_handles.append(
                 Patch(facecolor="white", hatch=hatch, edgecolor="black")
             )
         else:
-            legend_handles.append(Patch(facecolor="grey", edgecolor="black"))
-        legend_labels.append(model_type)
+            model_handles.append(Patch(facecolor="grey", edgecolor="black"))
 
-    ax.set_yticks(np.arange(len(top_countries)))
-    ax.set_yticklabels(top_countries[::-1], fontsize=10)
-    ax.set_xlabel("Value Loss ($ Million)", fontsize=12)
-    ax.set_title(
-        f"Scenario Comparison: Top {top_n} Countries by Projected Tourism Value Loss",
-        fontsize=14,
-        fontweight="bold",
+    legend1 = ax.legend(
+        scenario_handles,
+        scenario_labels,
+        loc="upper right",
+        fontsize=legend_cfg["fontsize"],
+        title="Scenario",
+        frameon=False,
+        bbox_to_anchor=legend_cfg["scenario_bbox"],
+        title_fontproperties={"weight": "bold", "size": legend_cfg["title_fontsize"]},
     )
 
-    # Create organized legend
-    ax.legend(
-        legend_handles,
-        legend_labels,
-        loc="lower right",
-        fontsize=9,
-        title="Scenario (Model)",
-        title_fontsize=10,
-        ncol=2,
+    legend2 = ax.legend(
+        model_handles,
+        model_order,
+        loc="upper right",
+        fontsize=legend_cfg["fontsize"],
+        title="Model",
+        frameon=False,
+        bbox_to_anchor=legend_cfg["model_bbox"],
+        title_fontproperties={"weight": "bold", "size": legend_cfg["title_fontsize"]},
     )
 
-    ax.grid(True, axis="x", alpha=0.3, linestyle="--")
-    ax.set_axisbelow(True)
+    legend2._legend_box.align = "left"
+    legend1._legend_box.align = "left"
+    ax.add_artist(legend1)
+    ax.add_artist(legend2)
 
-    # # Add legend explanation
-    # fig.text(
-    #     0.02,
-    #     0.0,
-    #     "Color: RCP scenario (blue=4.5, red=8.5) | Opacity: Year (light=2050, dark=2100) | Hatch: Model (solid=Linear, ///=Compound)",
-    #     fontsize=8,
-    #     style="italic",
-    #     color="gray",
-    # )
+    # Axis formatting
+    axis_cfg = cfg["axis"]
+    ax.set_yticks(y_pos[::-1])
+    ax.set_yticklabels(top_countries, fontsize=axis_cfg["ylabel_fontsize"])
+    ax.set_xlabel(axis_cfg["xlabel"], fontsize=axis_cfg["xlabel_fontsize"])
+
+    # Grid
+    grid_cfg = cfg["grid"]
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(grid_cfg["minor_interval"]))
+    ax.grid(
+        True,
+        axis="x",
+        linestyle=":",
+        alpha=grid_cfg["minor_alpha"],
+        which="minor",
+        zorder=0,
+    )
+    ax.grid(True, axis="x", linestyle=":", alpha=grid_cfg["major_alpha"])
+
+    # Spines and ticks
+    ax.tick_params(axis="y", length=0)
+    for sp in ["top", "right", "left"]:
+        ax.spines[sp].set_visible(False)
+    ax.tick_params(axis="y", which="major", pad=axis_cfg["y_tick_pad"])
 
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.08)
+    plt.subplots_adjust(bottom=cfg["figure"]["bottom_margin"])
 
     if save_path:
-        fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        fig.savefig(save_path, dpi=cfg["figure"]["save_dpi"], bbox_inches="tight")
         print(f"Saved: {save_path}")
 
     return fig
@@ -627,10 +789,11 @@ def plot_model_comparison_interactive(
     Figure
         Plotly figure.
     """
-    from .depreciation_models import CompoundModel, LinearModel, TippingPointModel
+    from .depreciation_models import CompoundModel, LinearModel
 
     if models is None:
-        models = [LinearModel(), CompoundModel(), TippingPointModel()]
+        # models = [LinearModel(), CompoundModel(), TippingPointModel()]
+        models = [LinearModel(), CompoundModel()]
 
     delta_cc_range = np.linspace(0, -1.0, 101)
     x_values = np.abs(delta_cc_range) * 100  # Percentage points
@@ -1867,183 +2030,203 @@ def plot_gdp_impact_scenario_comparison(
     top_n: int = 15,
     save_path: Path = None,
 ) -> plt.Figure:
-    """
-    Compare GDP impact across scenarios, similar to tourism_scenario_comparison.
+    import matplotlib.colors as mcolors
 
-    Uses: color for RCP scenario, hatching for model type, grouped by year.
+    cfg = SCENARIO_COMPARISON_CONFIG
 
-    Parameters
-    ----------
-    results : AnalysisResults
-        Analysis results container.
-    gdp_data : DataFrame
-        GDP data with 'iso_a3' and 'gdp' columns.
-    top_n : int
-        Number of countries.
-    save_path : Path, optional
-        Save path.
-
-    Returns
-    -------
-    Figure
-    """
-    from .analysis import AnalysisResults
-
-    if not isinstance(results, AnalysisResults):
-        warnings.warn("Expected AnalysisResults object")
-        return None
-
+    # --- Extract results ---
     relevant_results = list(results.results.items())
-
     if len(relevant_results) < 2:
         warnings.warn("Need at least 2 results to compare scenarios")
         return None
 
-    # Parse scenarios into components for styling
-    def parse_scenario(scenario_name, model_name):
-        rcp = "RCP45" if "45" in scenario_name else "RCP85"
-        year = "2100" if "2100" in scenario_name else "2050"
-        model_type = "Linear" if "linear" in model_name.lower() else "Compound"
-        return rcp, year, model_type
-
-    # Style mappings
-    model_hatches = {"Linear": "", "Compound": "///"}
-    year_alphas = {"2050": 0.6, "2100": 1.0}
-
-    # Calculate GDP impact for each result
+    # GDP lookup
     gdp_map = gdp_data.set_index("iso_a3")["gdp"]
 
-    # Find worst-case scenario for ranking
-    worst_case = None
-    worst_case_loss = 0
-    for key, result in relevant_results:
-        if "85" in result.scenario and "2100" in result.scenario:
-            if result.total_loss > worst_case_loss:
-                worst_case = result
-                worst_case_loss = result.total_loss
-    if worst_case is None:
-        _, worst_case = relevant_results[-1]
+    # --- Collate results {(rcp, model, year): by_country_df} ---
+    scenario_dict = {}
+    for _, result in relevant_results:
+        rcp, year, model = parse_scenario(result.scenario, result.model.name)
+        byc = result.by_country.copy()
+
+        # Attach ISO codes if needed
+        if "iso_a3" not in byc.columns and "iso_a3" in result.gdf.columns:
+            iso_map = result.gdf.groupby(result._get_country_column())["iso_a3"].first()
+            byc["iso_a3"] = byc[result._get_country_column()].map(iso_map)
+
+        byc["national_gdp"] = byc["iso_a3"].map(gdp_map)
+        byc["loss_as_gdp_pct"] = 100 * byc["value_loss"] / byc["national_gdp"]
+
+        scenario_dict[(rcp.upper(), model, year)] = byc
+
+    # --- Determine top countries (worst-case RCP85 / 2100) ---
+    model_order = cfg["model_order"]
+    rcp_order = cfg["rcp_order"]
+
+    worst_key = ("RCP85", model_order[-1], "2100")
+    worst_case = scenario_dict.get(worst_key, list(scenario_dict.values())[0])
 
     country_col = (
-        "country"
-        if "country" in worst_case.by_country.columns
-        else worst_case.by_country.columns[0]
+        "country" if "country" in worst_case.columns else worst_case.columns[0]
     )
 
-    # Calculate loss as % of GDP for ranking
-    worst_country = worst_case.by_country.copy()
-    iso_col = "iso_a3" if "iso_a3" in worst_country.columns else None
-    if iso_col is None and "iso_a3" in worst_case.gdf.columns:
-        iso_map = worst_case.gdf.groupby(worst_case._get_country_column())[
-            "iso_a3"
-        ].first()
-        worst_country["iso_a3"] = worst_country[country_col].map(iso_map)
-        iso_col = "iso_a3"
+    worst_case = worst_case.dropna(subset=["loss_as_gdp_pct"])
+    top_countries = worst_case.nlargest(top_n, "loss_as_gdp_pct")[country_col].tolist()
 
-    worst_country["national_gdp"] = worst_country[iso_col].map(gdp_map)
-    worst_country["loss_as_gdp_pct"] = (
-        100 * worst_country["value_loss"] / worst_country["national_gdp"]
+    # --- Prepare data: {rcp: {model: {year: values}}} ---
+    data = {rcp: {m: {} for m in model_order} for rcp in rcp_order}
+    for (rcp, model, year), df in scenario_dict.items():
+        if rcp not in rcp_order or model not in model_order:
+            continue
+        df = df[df[country_col].isin(top_countries)]
+        df = df.set_index(country_col).reindex(top_countries).reset_index()
+        data[rcp][model][year] = df["loss_as_gdp_pct"].fillna(0).values
+
+    # --- Figure ---
+    fig, ax = plt.subplots(
+        figsize=(
+            10,
+            max(cfg["min_figure_height"], top_n * cfg["country_height_factor"]),
+        ),
+        dpi=cfg["figure"]["dpi"],
     )
-    worst_country = worst_country.dropna(subset=["loss_as_gdp_pct"])
-    top_countries = worst_country.nlargest(top_n, "loss_as_gdp_pct")[
-        country_col
-    ].tolist()
 
-    # Sort results
-    relevant_results = sorted(relevant_results, key=sort_key)
+    bar_width = cfg["bar_width"]
+    y_pos = np.arange(len(top_countries)) * cfg["country_spacing"]
 
-    # Prepare figure
-    fig, ax = plt.subplots(figsize=(14, max(8, top_n * 0.5)))
+    rcp_cluster_gap = 4 * bar_width
+    model_gap = bar_width
 
-    n_scenarios = len(relevant_results)
-    bar_height = 0.75 / n_scenarios
-    offsets = np.linspace(-0.375 + bar_height / 2, 0.375 - bar_height / 2, n_scenarios)
+    rcp_offsets = {
+        "RCP45": +rcp_cluster_gap / 2,
+        "RCP85": -rcp_cluster_gap / 2,
+    }
+    model_offsets = {m: (i - 1) * model_gap for i, m in enumerate(model_order)}
 
-    legend_handles = []
-    legend_labels = []
+    plt.rcParams["hatch.linewidth"] = cfg["hatch_linewidth"]
 
-    for i, (key, result) in enumerate(relevant_results):
-        by_country = result.by_country.copy()
+    # --- Draw bars ---
+    for model in model_order:
+        for rcp in rcp_order:
+            y_vals = y_pos + rcp_offsets[rcp] + model_offsets[model]
+            color = COLOURS[rcp.lower()]
+            hatch = cfg["model_hatches"][model]
 
-        # Get ISO codes
-        iso_col = "iso_a3" if "iso_a3" in by_country.columns else None
-        if iso_col is None and "iso_a3" in result.gdf.columns:
-            iso_map = result.gdf.groupby(result._get_country_column())["iso_a3"].first()
-            by_country["iso_a3"] = by_country[country_col].map(iso_map)
-            iso_col = "iso_a3"
+            for year, alpha in cfg["bar_alphas"].items():
+                vals = data[rcp][model].get(year, np.zeros(len(top_countries)))
+                ax.barh(
+                    y_vals[::-1],
+                    vals,
+                    height=bar_width,
+                    color=mcolors.to_rgba(color, alpha),
+                    hatch=hatch,
+                    edgecolor=cfg["bar_edgecolor"] if hatch else "none",
+                    linewidth=cfg["bar_linewidth"] if hatch else 1,
+                    zorder=1 if year == "2100" else 3,
+                )
 
-        by_country["national_gdp"] = by_country[iso_col].map(gdp_map)
-        by_country["loss_as_gdp_pct"] = (
-            100 * by_country["value_loss"] / by_country["national_gdp"]
+    # Create legends
+    legend_cfg = cfg["legend"]
+
+    # Scenario legend (RCP colors + year indicators)
+    scenario_handles = [
+        Patch(facecolor=get_scenario_color(rcp), edgecolor="none") for rcp in rcp_order
+    ]
+    scenario_handles.extend(
+        [
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2100"]),
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2050"]),
+        ]
+    )
+    scenario_labels = [RCP_LABELS[rcp] for rcp in rcp_order] + [
+        "2100 (background)",
+        "2050 (overlay)",
+    ]
+
+    # Model legend (hatches)
+    model_handles = []
+    for model in model_order:
+        hatch = cfg["model_hatches"][model]
+        if hatch:
+            model_handles.append(
+                Patch(facecolor="white", hatch=hatch, edgecolor="black")
+            )
+        else:
+            model_handles.append(Patch(facecolor="grey", edgecolor="black"))
+
+    legend1 = ax.legend(
+        scenario_handles,
+        scenario_labels,
+        loc="upper right",
+        fontsize=legend_cfg["fontsize"],
+        title="Scenario",
+        frameon=False,
+        bbox_to_anchor=legend_cfg["scenario_bbox"],
+        title_fontproperties={"weight": "bold", "size": legend_cfg["title_fontsize"]},
+    )
+
+    legend2 = ax.legend(
+        model_handles,
+        model_order,
+        loc="upper right",
+        fontsize=legend_cfg["fontsize"],
+        title="Model",
+        frameon=False,
+        bbox_to_anchor=legend_cfg["model_bbox"],
+        title_fontproperties={"weight": "bold", "size": legend_cfg["title_fontsize"]},
+    )
+
+    legend2._legend_box.align = "left"
+    legend1._legend_box.align = "left"
+    ax.add_artist(legend1)
+    ax.add_artist(legend2)
+
+    # --- Country spine ---
+    cluster_half_height = (
+        abs(rcp_offsets["RCP45"] - rcp_offsets["RCP85"]) / 2
+        + abs(model_offsets[model_order[-1]])
+        + bar_width / 2
+    )
+
+    for y in y_pos[::-1]:
+        ax.vlines(
+            x=0,
+            ymin=y - cluster_half_height,
+            ymax=y + cluster_half_height,
+            color=cfg["vline"]["color"],
+            linewidth=cfg["vline"]["linewidth"],
+            alpha=cfg["vline"]["alpha"],
+            zorder=4,
         )
 
-        by_country = by_country[by_country[country_col].isin(top_countries)]
-        by_country = (
-            by_country.set_index(country_col).reindex(top_countries).reset_index()
-        )
-
-        countries = by_country[country_col].values[::-1]
-        gdp_pcts = by_country["loss_as_gdp_pct"].fillna(0).values[::-1]
-
-        rcp, year, model_type = parse_scenario(result.scenario, result.model.name)
-
-        color = COLOURS[rcp.lower()]
-        hatch = model_hatches[model_type]
-        alpha = year_alphas[year]
-
-        y_pos = np.arange(len(countries)) + offsets[i]
-
-        bars = ax.barh(
-            y_pos,
-            gdp_pcts,
-            height=bar_height,
-            color=color,
-            alpha=alpha,
-            hatch=hatch,
-            edgecolor="white" if not hatch else "black",
-            linewidth=0.5,
-        )
-
-        label = f"{rcp} {year} ({model_type})"
-        legend_handles.append(bars[0])
-        legend_labels.append(label)
-
-    ax.set_yticks(np.arange(len(top_countries)))
-    ax.set_yticklabels(top_countries[::-1], fontsize=10)
-    ax.set_xlabel("Projected Value Loss as % of National GDP", fontsize=12)
-    ax.set_title(
-        f"GDP Impact Comparison: Top {top_n} Countries by Projected Loss as % of GDP",
-        fontsize=14,
-        fontweight="bold",
+    # --- Axis formatting ---
+    ax.set_yticks(y_pos[::-1])
+    ax.set_yticklabels(
+        [country_mapping.get(c, c).replace(" ", "\n") for c in top_countries],
+        fontsize=cfg["axis"]["ylabel_fontsize"],
+    )
+    ax.set_xlabel(
+        "Reef tourism loss as percentage of national GDP",
+        fontsize=cfg["axis"]["xlabel_fontsize"],
     )
 
-    ax.legend(
-        legend_handles,
-        legend_labels,
-        loc="lower right",
-        fontsize=9,
-        title="Scenario (Model)",
-        title_fontsize=10,
-        ncol=2,
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(cfg["grid"]["minor_interval"]))
+    ax.grid(
+        True, axis="x", linestyle=":", alpha=cfg["grid"]["minor_alpha"], which="minor"
     )
+    ax.grid(True, axis="x", linestyle=":", alpha=cfg["grid"]["major_alpha"])
 
-    ax.grid(True, axis="x", alpha=0.3, linestyle="--")
-    ax.set_axisbelow(True)
+    ax.tick_params(axis="y", length=0)
+    for sp in ["top", "right", "left"]:
+        ax.spines[sp].set_visible(False)
 
-    fig.text(
-        0.02,
-        0.02,
-        "Color: RCP scenario (blue=4.5, red=8.5) | Opacity: Year (light=2050, dark=2100) | Hatch: Model (solid=Linear, ///=Compound)",
-        fontsize=8,
-        style="italic",
-        color="gray",
-    )
+    # --- Legends (identical to scenario plot) ---
+    # (reuse exactly the same legend code block)
 
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.08)
+    plt.subplots_adjust(bottom=cfg["figure"]["bottom_margin"])
 
     if save_path:
-        fig.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"Saved: {save_path}")
+        fig.savefig(save_path, dpi=cfg["figure"]["save_dpi"], bbox_inches="tight")
 
     return fig

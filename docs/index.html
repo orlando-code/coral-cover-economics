@@ -23,16 +23,16 @@
             --bg-secondary: #111827;
             --bg-card: #1a2332;
             --bg-card-hover: #1f2937;
-            --accent-blue: #3b82f6;
-            --accent-coral: #f97316;
+            --accent-blue: #3A9AB2;
+            --accent-coral: #E3B710;
             --accent-teal: #14b8a6;
-            --accent-red: #ef4444;
+            --accent-red: #F11B00;
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
             --border: #334155;
-            --gradient-coral: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            --gradient-ocean: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            --gradient-coral: linear-gradient(135deg, #E3B710 0%, #ea580c 100%);
+            --gradient-ocean: linear-gradient(135deg, #0ea5e9 0%, #3A9AB2 100%);
         }
         
         * {
@@ -82,14 +82,13 @@
         }
         
         .nav-brand-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--gradient-coral);
+            width: 38px;
+            height: 38px;
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 2.5rem;
         }
         
         .nav-links {
@@ -155,7 +154,8 @@
             font-size: 2.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%);
+            background: white;
+            /* background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%); */
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -482,10 +482,15 @@
     <!-- Navigation -->
     <nav class="nav">
         <div class="nav-inner">
-            <a href="#" class="nav-brand">
+            <!-- <a href="#" class="nav-brand" onclick="event.preventDefault(); setActivePage('overview');">
                 <div class="nav-brand-icon">🪸</div>
-                <span>Coral Economics</span>
-            </a>
+                <span>Reef Economics</span>
+            </a> -->
+            <div class="nav-brand" style="justify-content: flex-start; display: flex; align-items: center;">
+                <div class="nav-brand-icon">🪸</div>
+                <span class="nav-brand-text">Reef Economics</span>
+            </div>
+
             <div class="nav-links">
                 <a class="nav-link active" data-page="overview">Overview</a>
                 <a class="nav-link" data-page="map">Point Map</a>
@@ -505,7 +510,7 @@
             <section id="page-overview" class="page active">
                 <div class="hero">
                     <h1>Economic Impact of Coral Cover Loss</h1>
-                    <p>Projected tourism value loss under climate change scenarios (RCP 4.5 & 8.5) through 2100, using linear and compound depreciation models.</p>
+                    <p>Projected loss of reef-associated tourism value under climate change scenarios (RCP 4.5 & 8.5) through 2100 via linear, compound, and ecosystem tipping point economic depreciation models.</p>
                 </div>
                 
                 <div class="stats-grid" id="summary-stats">
@@ -533,8 +538,8 @@
                                 <span class="control-label">Model:</span>
                                 <select id="overview-model">
                                     <option value="all">All Models</option>
-                                    <option value="Linear">Linear</option>
-                                    <option value="Compound" selected>Compound</option>
+                                    <option value="Linear" selected>Linear</option>
+                                    <option value="Compound">Compound</option>
                                     <option value="Tipping">Tipping Point</option>
                                 </select>
                             </div>
@@ -578,8 +583,8 @@
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="map-model">
-                                    <option value="Linear_3.81pct_pp">Linear (3.81%/pp)</option>
-                                    <option value="Compound_3.81pct_pp" selected>Compound (3.81%/pp)</option>
+                                    <option value="Linear_3.81pct_pp" selected>Linear (3.81%/pp)</option>
+                                    <option value="Compound_3.81pct_pp">Compound (3.81%/pp)</option>
                                     <option value="Tipping_Point_threshold=10pct">Tipping Point (10%)</option>
                                 </select>
                             </div>
@@ -604,11 +609,11 @@
                             <span>10-25% loss</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #f97316;"></div>
+                            <div class="legend-color" style="background: #E3B710;"></div>
                             <span>25-50% loss</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #ef4444;"></div>
+                            <div class="legend-color" style="background: #F11B00;"></div>
                             <span>> 50% loss</span>
                         </div>
                         <div class="legend-separator" style="border-left: 1px solid var(--border); height: 24px; margin: 0 1rem;"></div>
@@ -654,8 +659,8 @@
                                 <span class="control-label">Model:</span>
                                 <select id="traj-model">
                                     <option value="all">All Models</option>
-                                    <option value="Linear">Linear (3.81%/pp)</option>
-                                    <option value="Compound" selected>Compound (3.81%/pp)</option>
+                                    <option value="Linear" selected>Linear (3.81%/pp)</option>
+                                    <option value="Compound">Compound (3.81%/pp)</option>
                                     <option value="Tipping Point">Tipping Point (10%)</option>
                                 </select>
                             </div>
@@ -704,8 +709,8 @@
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="country-model">
-                                    <option value="Linear (3.81%/pp)">Linear</option>
-                                    <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
+                                    <option value="Compound (3.81%/pp)">Compound</option>
                                     <option value="Tipping Point (threshold=10%)">Tipping Point</option>
                                 </select>
                             </div>
@@ -752,8 +757,8 @@
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="gdp-model">
-                                    <option value="Linear (3.81%/pp)">Linear</option>
-                                    <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
+                                    <option value="Compound (3.81%/pp)">Compound</option>
                                     <option value="Tipping Point (threshold=10%)">Tipping Point</option>
                                 </select>
                             </div>
@@ -799,11 +804,11 @@
                     <div id="gdp-comparison-chart" style="height: 450px;"></div>
                     <div class="legend" style="margin-top: 1rem;">
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #3b82f6;"></div>
+                            <div class="legend-color" style="background: #3A9AB2;"></div>
                             <span>RCP 4.5</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #ef4444;"></div>
+                            <div class="legend-color" style="background: #F11B00;"></div>
                             <span>RCP 8.5</span>
                         </div>
                         <div class="legend-item">
@@ -811,7 +816,7 @@
                             <span>2050 (lighter)</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #94a3b8;"></div>
+                            <div class="legend-color" style="background: #E3B710;"></div>
                             <span>2100 (darker)</span>
                         </div>
                     </div>
@@ -1074,9 +1079,9 @@
             
             // Distinct colors for each model
             const modelColors = {
-                'Linear (3.81%/pp)': '#3b82f6',
-                'Compound (3.81%/pp)': '#f97316',
-                'Tipping Point (threshold=10%)': '#ef4444'
+                'Tipping Point (threshold=10%)': '#3A9AB2',
+                'Compound (3.81%/pp)': '#E3B710',
+                'Linear (3.81%/pp)': '#F11B00',
             };
             
             const traces = models.map(model => ({
@@ -1120,54 +1125,93 @@
             
             const modelFilter = document.getElementById('overview-model').value;
             
+            // Color and dash config
             const colors = {
-                'rcp45': '#3b82f6',
-                'rcp85': '#ef4444'
+                'Linear': '#F11B00',
+                'Compound': '#E3B710',
+                'Tipping': '#3A9AB2',
             };
-            
-            const dashes = {
-                'linear': 'solid',
-                'exponential': 'dash'
+            const scenarioLineStyle = {
+                'rcp45': 'dash',
+                'rcp85': 'solid'
             };
-            
-            const lineStyles = {
-                'Linear': 'solid',
-                'Compound': 'dash',
-                'Tipping': 'dot'
-            };
-            
-            // Filter by model
-            let filtered = trajectoryData.filter(t => t.interpolation === 'linear'); // Only show linear interpolation for clarity
-            
-            if (modelFilter !== 'all') {
-                filtered = filtered.filter(t => t.model.includes(modelFilter));
-            }
-            
+
+            // Map trace types for Plotly
             const metricMap = {
                 'cumulative_loss': { data: 'cumulative_loss', title: 'Cumulative Loss ($ Trillion)' },
                 'annual_loss': { data: 'annual_loss', title: 'Annual Loss ($ Billion)' },
                 'coral_cover': { data: 'coral_cover', title: 'Coral Cover (%)' }
             };
-            
             const config = metricMap[metric];
-            
-            const traces = filtered.map(t => {
-                const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
-                return {
-                    x: t.years,
-                    y: t[config.data],
-                    name: modelFilter === 'all' ? 
-                        `${t.scenario.toUpperCase()} - ${modelShort}` : 
-                        `${t.scenario.toUpperCase()}`,
-                    mode: 'lines',
-                    line: {
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8',
-                        dash: modelFilter === 'all' ? (lineStyles[modelShort] || 'solid') : 'solid',
-                        width: 2
+
+            let traces = [];
+
+            if (metric === 'coral_cover') {
+
+
+                let relevantModels;
+                if (modelFilter === 'all') {
+                    //relevantModels = ['Linear', 'Compound', 'Tipping'];
+                } else {
+                    // Only plot the filter, but make sure label is pretty
+                    relevantModels = [modelFilter];
+                }
+
+                // Only show linear interpolation for clarity
+                const filtered = trajectoryData.filter(t => t.interpolation === 'linear');
+
+                // Get all unique scenario+interpolation keys
+                const scenarioKeys = Array.from(new Set(filtered.map(t => `${t.scenario}_${t.interpolation}`)));
+                traces = [];
+
+                for (const key of scenarioKeys) {
+                    const [scenario, interpolation] = key.split('_');
+                    // Get one representative trajectory for the coral_cover line
+                    const t = filtered.find(x => x.scenario === scenario && x.interpolation === interpolation);
+                    if (!t) continue;
+
+                    for (const m of relevantModels) {
+                        // Use coloring/dashing by model and by scenario
+                        traces.push({
+                            x: t.years,
+                            y: t.coral_cover,
+                            name: modelFilter === 'all'
+                                ? `${scenario.toUpperCase()} - ${m}`
+                                : `${scenario.toUpperCase()}`,
+                            mode: 'lines',
+                            line: {
+                                color: colors[m] || '#94a3b8',
+                                dash: scenarioLineStyle[scenario.toLowerCase()] || 'solid',
+                                width: 2,
+                            }
+                        });
                     }
-                };
-            });
+                }
+            } else {
+                // For loss metrics, plot by model/scenario as before
+                let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
+                if (modelFilter !== 'all') {
+                    filtered = filtered.filter(t => t.model.includes(modelFilter));
+                }
+
+                traces = filtered.map(t => {
+                    const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                    t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                    return {
+                        x: t.years,
+                        y: t[config.data],
+                        name: modelFilter === 'all'
+                            ? `${t.scenario.toUpperCase()} - ${modelShort}`
+                            : `${t.scenario.toUpperCase()}`,
+                        mode: 'lines',
+                        line: {
+                            color: colors[modelShort] || '#94a3b8',
+                            dash: modelFilter === 'all' ? (scenarioLineStyle[t.scenario.toLowerCase()] || 'solid') : 'solid',
+                            width: 2
+                        }
+                    };
+                });
+            }
             
             const layout = {
                 paper_bgcolor: 'transparent',
@@ -1183,8 +1227,8 @@
                 },
                 legend: { 
                     orientation: 'h', 
-                    y: -0.15,
-                    font: { size: 11 }
+                    y: -0.25, // Move legend further down below plot, increasing space from x axis label
+                    font: { size: 11 },
                 },
                 margin: { t: 20, r: 20, b: 80, l: 60 }
             };
@@ -1198,12 +1242,12 @@
             const interpolation = document.getElementById('traj-interpolation').value;
             const modelFilter = document.getElementById('traj-model').value;
             
-            const colors = { 'rcp45': '#3b82f6', 'rcp85': '#ef4444' };
+            const colors = { 'rcp45': '#3A9AB2', 'rcp85': '#F11B00' };
             const dashes = { 'linear': 'solid', 'exponential': 'dash' };
             const modelColors = {
-                'Linear': '#3b82f6',
-                'Compound': '#f97316', 
-                'Tipping Point': '#ef4444'
+                'Tipping Point': '#F11B00',
+                'Compound': '#E3B710', 
+                'Linear': '#3A9AB2',
             };
             
             // For coral cover, we only need unique scenario+interpolation combos (not per model)
@@ -1365,7 +1409,7 @@
                 orientation: 'h',
                 marker: {
                     color: filtered.map(c => c[colorKey] || 0),
-                    colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#f97316'], [1, '#ef4444']],
+                    colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#E3B710'], [1, '#F11B00']],
                     colorbar: {
                         title: isCumulative ? 'Cumulative Loss %' : 'Loss %',
                         tickformat: '.0%'
@@ -1446,7 +1490,7 @@
                 orientation: 'h',
                 marker: {
                     color: filtered.map(c => c.loss_as_gdp_pct),
-                    colorscale: [[0, '#22c55e'], [0.1, '#eab308'], [0.3, '#f97316'], [1, '#ef4444']],
+                    colorscale: [[0, '#22c55e'], [0.1, '#eab308'], [0.3, '#E3B710'], [1, '#F11B00']],
                     colorbar: {
                         title: colorbarTitle,
                         tickformat: colorbarFormat
@@ -1493,10 +1537,10 @@
             
             // Create traces for each scenario/model combo
             const scenarios = [
-                { key: 'rcp45_2050', name: 'RCP 4.5 - 2050', color: '#3b82f6', opacity: 0.5 },
-                { key: 'rcp45_2100', name: 'RCP 4.5 - 2100', color: '#3b82f6', opacity: 1 },
-                { key: 'rcp85_2050', name: 'RCP 8.5 - 2050', color: '#ef4444', opacity: 0.5 },
-                { key: 'rcp85_2100', name: 'RCP 8.5 - 2100', color: '#ef4444', opacity: 1 },
+                { key: 'rcp45_2050', name: 'RCP 4.5 - 2050', color: '#3A9AB2', opacity: 0.5 },
+                { key: 'rcp45_2100', name: 'RCP 4.5 - 2100', color: '#3A9AB2', opacity: 1 },
+                { key: 'rcp85_2050', name: 'RCP 8.5 - 2050', color: '#F11B00', opacity: 0.5 },
+                { key: 'rcp85_2100', name: 'RCP 8.5 - 2100', color: '#F11B00', opacity: 1 },
             ];
             
             const traces = scenarios.map(s => {
@@ -1554,7 +1598,7 @@
                 name: curve.name,
                 mode: 'lines',
                 line: {
-                    color: key === 'linear' ? '#3b82f6' : '#f97316',
+                    color: key === 'linear' ? '#3A9AB2' : '#F11B00',
                     width: 3
                 }
             }));
@@ -1685,8 +1729,8 @@
             const getColor = (lossFraction) => {
                 if (lossFraction < 0.1) return '#22c55e';
                 if (lossFraction < 0.25) return '#eab308';
-                if (lossFraction < 0.5) return '#f97316';
-                return '#ef4444';
+                if (lossFraction < 0.5) return '#E3B710';
+                return '#F11B00';
             };
             
             geojson.features.forEach(feature => {
@@ -1818,8 +1862,8 @@
                 if (lossFraction === undefined || lossFraction === null) return '#64748b';
                 if (lossFraction < 0.1) return '#22c55e';
                 if (lossFraction < 0.25) return '#eab308';
-                if (lossFraction < 0.5) return '#f97316';
-                return '#ef4444';
+                if (lossFraction < 0.5) return '#E3B710';
+                return '#F11B00';
             };
             
             // Create styled GeoJSON layer
@@ -1844,7 +1888,7 @@
                         weight: 1,
                         opacity: 0.8,
                         color: '#1a2332',
-                        fillOpacity: metric ? 0.6 : 0.2,
+                        fillOpacity: metric ? 0.6 : 0,
                         dashArray: metric ? null : '5, 5'
                     };
                 },
