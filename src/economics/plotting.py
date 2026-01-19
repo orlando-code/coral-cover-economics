@@ -11,6 +11,7 @@ from typing import Dict, List
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
+from matplotlib.patches import Patch
 
 from src import utils
 
@@ -22,7 +23,7 @@ from .depreciation_models import DepreciationModel
 # =============================================================================
 
 # Color palette (colorblind-friendly)
-COLORS = {
+COLOURS = {
     "rcp45": "#3498db",  # Blue
     "rcp85": "#e74c3c",  # Red
     "tourism": "#2ecc71",  # Green
@@ -38,14 +39,46 @@ SCENARIO_LABELS = {
     "RCP85_2100": "RCP 8.5 (2100)",
 }
 
+# RCP scenario labels (without year)
+RCP_LABELS = {
+    "RCP45": "RCP 4.5",
+    "RCP85": "RCP 8.5",
+}
+
+NESTED_SCENARIO_LABELS = {
+    "RCP45": {2050: "RCP 4.5 (2050)", 2100: "RCP 4.5 (2100)"},
+    "RCP85": {2050: "RCP 8.5 (2050)", 2100: "RCP 8.5 (2100)"},
+}
+
+
+# =============================================================================
+# UTILS
+# =============================================================================
+
+
+def parse_scenario(scenario_name, model_name):
+    """Extract RCP, year from scenario name."""
+    rcp = "RCP45" if "45" in scenario_name else "RCP85"
+    year = "2100" if "2100" in scenario_name else "2050"
+    if "linear" in model_name.lower():
+        model_type = "Linear"
+    elif "compound" in model_name.lower():
+        model_type = "Compound"
+    elif "tipping point" in model_name.lower():
+        model_type = "Tipping Point"
+    else:
+        model_type = "Unknown"
+
+    return rcp, year, model_type
+
 
 def get_scenario_color(scenario: str) -> str:
     """Get color for a scenario."""
     if "85" in scenario:
-        return COLORS["rcp85"]
+        return COLOURS["rcp85"]
     elif "45" in scenario:
-        return COLORS["rcp45"]
-    return COLORS["neutral"]
+        return COLOURS["rcp45"]
+    return COLOURS["neutral"]
 
 
 def format_currency(value: float, precision: int = 1) -> str:
@@ -59,6 +92,12 @@ def format_currency(value: float, precision: int = 1) -> str:
     elif abs(value) >= 1e3:
         return f"${value / 1e3:.{precision}f}K"
     return f"${value:.{precision}f}"
+
+
+def sort_key(item):
+    key, result = item
+    rcp, year, model = parse_scenario(result.scenario, result.model.name)
+    return (rcp, year, model)
 
 
 # =============================================================================
@@ -245,19 +284,11 @@ def plot_scenario_comparison(
         warnings.warn("Need at least 2 results to compare scenarios")
         return None
 
-    # Parse scenarios into components for styling
-    def parse_scenario(scenario_name, model_name):
-        """Extract RCP, year from scenario name."""
-        rcp = "RCP45" if "45" in scenario_name else "RCP85"
-        year = "2100" if "2100" in scenario_name else "2050"
-        model_type = "Linear" if "linear" in model_name.lower() else "Compound"
-        return rcp, year, model_type
-
     # Style mappings
-    rcp_colors = {"RCP45": "#3498db", "RCP85": "#e74c3c"}  # Blue for 4.5, Red for 8.5
     model_hatches = {
         "Linear": "",
-        "Compound": "///",
+        "Compound": "/",
+        "Tipping Point": "X",
     }  # No hatch for linear, diagonal for compound
     year_alphas = {"2050": 0.6, "2100": 1.0}  # Lighter for 2050
 
@@ -279,10 +310,6 @@ def plot_scenario_comparison(
     top_countries = worst_case.by_country.head(top_n)[country_col].tolist()
 
     # Sort results by RCP, year, model for consistent ordering
-    def sort_key(item):
-        key, result = item
-        rcp, year, model = parse_scenario(result.scenario, result.model.name)
-        return (rcp, year, model)
 
     relevant_results = sorted(relevant_results, key=sort_key)
 
@@ -311,7 +338,7 @@ def plot_scenario_comparison(
 
         rcp, year, model_type = parse_scenario(result.scenario, result.model.name)
 
-        color = rcp_colors[rcp]
+        color = COLOURS[rcp.lower()]
         hatch = model_hatches[model_type]
         alpha = year_alphas[year]
 
@@ -328,10 +355,30 @@ def plot_scenario_comparison(
             linewidth=0.5,
         )
 
-        # Build legend label
-        label = f"{rcp} {year} ({model_type})"
-        legend_handles.append(bars[0])
-        legend_labels.append(label)
+    legend_handles = []
+    legend_labels = []
+
+    # Years (with alpha to show opacity difference)
+    for year in sorted(year_alphas.keys()):
+        legend_handles.append(Patch(facecolor="grey", alpha=year_alphas[year]))
+        legend_labels.append(year)
+
+    # RCP scenarios (colors only, no year)
+    for rcp_key in ["RCP45", "RCP85"]:
+        legend_handles.append(
+            Patch(facecolor=get_scenario_color(rcp_key), edgecolor="none")
+        )
+        legend_labels.append(RCP_LABELS[rcp_key])
+
+    # Model hatches
+    for model_type, hatch in model_hatches.items():
+        if hatch:  # Only show hatch if there is one
+            legend_handles.append(
+                Patch(facecolor="white", hatch=hatch, edgecolor="black")
+            )
+        else:
+            legend_handles.append(Patch(facecolor="grey", edgecolor="black"))
+        legend_labels.append(model_type)
 
     ax.set_yticks(np.arange(len(top_countries)))
     ax.set_yticklabels(top_countries[::-1], fontsize=10)
@@ -356,15 +403,15 @@ def plot_scenario_comparison(
     ax.grid(True, axis="x", alpha=0.3, linestyle="--")
     ax.set_axisbelow(True)
 
-    # Add legend explanation
-    fig.text(
-        0.02,
-        0.02,
-        "Color: RCP scenario (blue=4.5, red=8.5) | Opacity: Year (light=2050, dark=2100) | Hatch: Model (solid=Linear, ///=Compound)",
-        fontsize=8,
-        style="italic",
-        color="gray",
-    )
+    # # Add legend explanation
+    # fig.text(
+    #     0.02,
+    #     0.0,
+    #     "Color: RCP scenario (blue=4.5, red=8.5) | Opacity: Year (light=2050, dark=2100) | Hatch: Model (solid=Linear, ///=Compound)",
+    #     fontsize=8,
+    #     style="italic",
+    #     color="gray",
+    # )
 
     plt.tight_layout()
     plt.subplots_adjust(bottom=0.08)
@@ -1860,7 +1907,6 @@ def plot_gdp_impact_scenario_comparison(
         return rcp, year, model_type
 
     # Style mappings
-    rcp_colors = {"RCP45": "#3498db", "RCP85": "#e74c3c"}
     model_hatches = {"Linear": "", "Compound": "///"}
     year_alphas = {"2050": 0.6, "2100": 1.0}
 
@@ -1904,11 +1950,6 @@ def plot_gdp_impact_scenario_comparison(
     ].tolist()
 
     # Sort results
-    def sort_key(item):
-        key, result = item
-        rcp, year, model = parse_scenario(result.scenario, result.model.name)
-        return (rcp, year, model)
-
     relevant_results = sorted(relevant_results, key=sort_key)
 
     # Prepare figure
@@ -1946,7 +1987,7 @@ def plot_gdp_impact_scenario_comparison(
 
         rcp, year, model_type = parse_scenario(result.scenario, result.model.name)
 
-        color = rcp_colors[rcp]
+        color = COLOURS[rcp.lower()]
         hatch = model_hatches[model_type]
         alpha = year_alphas[year]
 

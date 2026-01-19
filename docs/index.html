@@ -529,6 +529,15 @@
                             <p class="chart-subtitle">Total accumulated losses from 2017 to 2100</p>
                         </div>
                         <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="overview-model">
+                                    <option value="all">All Models</option>
+                                    <option value="Linear">Linear</option>
+                                    <option value="Compound" selected>Compound</option>
+                                    <option value="Tipping">Tipping Point</option>
+                                </select>
+                            </div>
                             <div class="toggle-group">
                                 <button class="toggle-btn active" data-metric="cumulative_loss">Cumulative Loss</button>
                                 <button class="toggle-btn" data-metric="annual_loss">Annual Loss</button>
@@ -593,6 +602,10 @@
                         <div class="legend-item">
                             <div class="legend-color" style="background: #ef4444;"></div>
                             <span>> 50% loss</span>
+                        </div>
+                        <div class="legend-separator" style="border-left: 1px solid var(--border); height: 24px; margin: 0 1rem;"></div>
+                        <div class="legend-item" id="choropleth-legend" style="display: none;">
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Choropleth: Country-level aggregates</span>
                         </div>
                     </div>
                 </div>
@@ -677,6 +690,23 @@
                                 <select id="country-model">
                                     <option value="Linear (3.81%/pp)">Linear</option>
                                     <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                    <option value="Tipping Point (threshold=10%)">Tipping Point</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Show:</span>
+                                <select id="country-limit">
+                                    <option value="10">Top 10</option>
+                                    <option value="20" selected>Top 20</option>
+                                    <option value="50">Top 50</option>
+                                    <option value="all">All Countries</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Metric:</span>
+                                <select id="country-metric">
+                                    <option value="value_loss" selected>Value Loss ($)</option>
+                                    <!-- <option value="loss_fraction">Loss Fraction (%)</option> -->
                                 </select>
                             </div>
                         </div>
@@ -708,6 +738,23 @@
                                 <select id="gdp-model">
                                     <option value="Linear (3.81%/pp)">Linear</option>
                                     <option value="Compound (3.81%/pp)" selected>Compound</option>
+                                    <option value="Tipping Point (threshold=10%)">Tipping Point</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Show:</span>
+                                <select id="gdp-limit">
+                                    <option value="10">Top 10</option>
+                                    <option value="25" selected>Top 25</option>
+                                    <option value="50">Top 50</option>
+                                    <option value="all">All Countries</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Metric:</span>
+                                <select id="gdp-metric">
+                                    <option value="loss_as_gdp_pct" selected>% of GDP</option>
+                                    <option value="value_loss">Value Loss ($)</option>
                                 </select>
                             </div>
                         </div>
@@ -720,6 +767,17 @@
                         <div>
                             <h2 class="chart-title">Scenario Comparison by GDP Impact</h2>
                             <p class="chart-subtitle">Side-by-side comparison of all scenarios</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Show:</span>
+                                <select id="gdp-comparison-limit">
+                                    <option value="10">Top 10</option>
+                                    <option value="15" selected>Top 15</option>
+                                    <option value="25">Top 25</option>
+                                    <option value="all">All Countries</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div id="gdp-comparison-chart" style="height: 450px;"></div>
@@ -753,7 +811,9 @@
                             <p class="chart-subtitle">How economic value changes with coral cover loss</p>
                         </div>
                     </div>
-                    <div id="model-chart" style="height: 400px;"></div>
+                    <div style="display: flex; justify-content: center; align-items: center;">
+                        <div id="model-chart" style="height: 500px; width: 100%; max-width: 700px;"></div>
+                    </div>
                     <div style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
                         <h3 style="margin-bottom: 1rem; font-size: 1rem;">Model Descriptions</h3>
                         <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
@@ -878,8 +938,16 @@
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.toggle-btn[data-metric]').forEach(b => b.classList.remove('active'));
                     e.target.classList.add('active');
-                    renderOverviewTrajectory(e.target.dataset.metric);
+                    const currentMetric = e.target.dataset.metric;
+                    renderOverviewTrajectory(currentMetric);
                 });
+            });
+            
+            // Overview model selector
+            document.getElementById('overview-model').addEventListener('change', () => {
+                const activeBtn = document.querySelector('.toggle-btn[data-metric].active');
+                const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
+                renderOverviewTrajectory(metric);
             });
             
             // Map controls
@@ -894,10 +962,17 @@
             // Country controls
             document.getElementById('country-scenario').addEventListener('change', renderCountryChart);
             document.getElementById('country-model').addEventListener('change', renderCountryChart);
+            document.getElementById('country-limit').addEventListener('change', renderCountryChart);
+            document.getElementById('country-metric').addEventListener('change', renderCountryChart);
             
             // GDP controls
             document.getElementById('gdp-scenario').addEventListener('change', renderGdpChart);
             document.getElementById('gdp-model').addEventListener('change', renderGdpChart);
+            document.getElementById('gdp-limit').addEventListener('change', renderGdpChart);
+            document.getElementById('gdp-metric').addEventListener('change', renderGdpChart);
+            
+            // GDP comparison controls
+            document.getElementById('gdp-comparison-limit').addEventListener('change', renderGdpComparison);
         }
         
         // ============================================================
@@ -946,16 +1021,32 @@
             
             const results = summaryData.snapshot_results;
             
-            const scenarios = [...new Set(results.map(r => r.scenario))];
             const models = [...new Set(results.map(r => r.model))];
             
+            // Map ugly scenario names to nice labels
+            const formatScenario = (s) => {
+                const match = s.match(/rcp(\d+)_(\d+)/i);
+                if (match) {
+                    return `RCP ${match[1].charAt(0)}.${match[1].charAt(1)} - ${match[2]}`;
+                }
+                return s.replace('y_future_', '').replace(/_/g, ' ').toUpperCase();
+            };
+            
+            // Distinct colors for each model
+            const modelColors = {
+                'Linear (3.81%/pp)': '#3b82f6',
+                'Compound (3.81%/pp)': '#f97316',
+                'Tipping Point (threshold=10%)': '#ef4444'
+            };
+            
             const traces = models.map(model => ({
-                x: results.filter(r => r.model === model).map(r => r.scenario),
+                x: results.filter(r => r.model === model).map(r => formatScenario(r.scenario)),
                 y: results.filter(r => r.model === model).map(r => r.total_loss_billions),
-                name: model,
+                name: model.includes('Linear') ? 'Linear' : 
+                      model.includes('Compound') ? 'Compound' : 'Tipping Point',
                 type: 'bar',
                 marker: {
-                    color: model.includes('Linear') ? '#3b82f6' : '#f97316'
+                    color: modelColors[model] || '#94a3b8'
                 }
             }));
             
@@ -966,7 +1057,8 @@
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { 
                     gridcolor: '#334155',
-                    title: 'Scenario'
+                    title: 'Scenario',
+                    tickangle: 0
                 },
                 yaxis: { 
                     gridcolor: '#334155',
@@ -974,10 +1066,10 @@
                 },
                 legend: { 
                     orientation: 'h', 
-                    y: -0.15,
+                    y: -0.2,
                     font: { size: 12 }
                 },
-                margin: { t: 20, r: 20, b: 80, l: 60 }
+                margin: { t: 20, r: 20, b: 100, l: 60 }
             };
             
             Plotly.newPlot('scenario-comparison-chart', traces, layout, {responsive: true});
@@ -985,6 +1077,8 @@
         
         function renderOverviewTrajectory(metric) {
             if (!trajectoryData) return;
+            
+            const modelFilter = document.getElementById('overview-model').value;
             
             const colors = {
                 'rcp45': '#3b82f6',
@@ -996,8 +1090,18 @@
                 'exponential': 'dash'
             };
             
-            // Filter to show only one model for clarity
-            const filtered = trajectoryData.filter(t => t.model.includes('Compound'));
+            const lineStyles = {
+                'Linear': 'solid',
+                'Compound': 'dash',
+                'Tipping': 'dot'
+            };
+            
+            // Filter by model
+            let filtered = trajectoryData.filter(t => t.interpolation === 'linear'); // Only show linear interpolation for clarity
+            
+            if (modelFilter !== 'all') {
+                filtered = filtered.filter(t => t.model.includes(modelFilter));
+            }
             
             const metricMap = {
                 'cumulative_loss': { data: 'cumulative_loss', title: 'Cumulative Loss ($ Trillion)' },
@@ -1007,17 +1111,23 @@
             
             const config = metricMap[metric];
             
-            const traces = filtered.map(t => ({
-                x: t.years,
-                y: t[config.data],
-                name: `${t.scenario.toUpperCase()} (${t.interpolation})`,
-                mode: 'lines',
-                line: {
-                    color: colors[t.scenario.toLowerCase()] || '#94a3b8',
-                    dash: dashes[t.interpolation] || 'solid',
-                    width: 2
-                }
-            }));
+            const traces = filtered.map(t => {
+                const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                return {
+                    x: t.years,
+                    y: t[config.data],
+                    name: modelFilter === 'all' ? 
+                        `${t.scenario.toUpperCase()} - ${modelShort}` : 
+                        `${t.scenario.toUpperCase()}`,
+                    mode: 'lines',
+                    line: {
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8',
+                        dash: modelFilter === 'all' ? (lineStyles[modelShort] || 'solid') : 'solid',
+                        width: 2
+                    }
+                };
+            });
             
             const layout = {
                 paper_bgcolor: 'transparent',
@@ -1058,11 +1168,16 @@
             
             // For coral cover, we only need unique scenario+interpolation combos (not per model)
             // since coral cover is the same for all economic models
+            // Use a Set to get unique scenario+interpolation combos
+            const seenCoralKeys = new Set();
             const coralFiltered = trajectoryData.filter(t => {
-                // Pick only one model (first one) to avoid duplicates
                 const interpMatch = t.interpolation === interpolation;
-                const isFirstModel = t.model.includes('Linear'); // Just pick one to avoid duplicates
-                return interpMatch && isFirstModel;
+                if (!interpMatch) return false;
+                
+                const key = `${t.scenario}_${t.interpolation}`;
+                if (seenCoralKeys.has(key)) return false;
+                seenCoralKeys.add(key);
+                return true;
             });
             
             const coralTraces = coralFiltered.map(t => ({
@@ -1151,26 +1266,56 @@
             
             const scenario = document.getElementById('country-scenario').value;
             const model = document.getElementById('country-model').value;
+            const limitValue = document.getElementById('country-limit').value;
+            const metric = document.getElementById('country-metric').value;
             
-            const filtered = countryData.filter(c => 
-                c.scenario.toLowerCase().includes(scenario.split('_').slice(-2).join('_')) &&
-                c.model === model
-            ).sort((a, b) => b.value_loss - a.value_loss).slice(0, 20);
+            // Match scenario exactly
+            let filtered = countryData.filter(c => 
+                c.scenario === scenario && c.model === model
+            );
+            
+            // Sort by selected metric
+            if (metric === 'value_loss') {
+                filtered = filtered.sort((a, b) => b.value_loss - a.value_loss);
+            } else {
+                filtered = filtered.sort((a, b) => b.loss_fraction - a.loss_fraction);
+            }
+            
+            // Apply limit
+            if (limitValue !== 'all') {
+                filtered = filtered.slice(0, parseInt(limitValue));
+            }
+            
+            // Dynamic height based on number of countries
+            const chartHeight = Math.max(400, filtered.length * 25);
+            document.getElementById('country-chart').style.height = chartHeight + 'px';
+            
+            // Configure based on metric
+            let xData, xTitle, textFn;
+            if (metric === 'value_loss') {
+                xData = filtered.map(c => c.value_loss / 1e6);
+                xTitle = 'Value Loss ($ Million)';
+                textFn = c => `$${(c.value_loss / 1e6).toFixed(1)}M`;
+            } else {
+                xData = filtered.map(c => c.loss_fraction * 100);
+                xTitle = 'Loss Fraction (%)';
+                textFn = c => `${(c.loss_fraction * 100).toFixed(1)}%`;
+            }
             
             const trace = {
                 y: filtered.map(c => c.country),
-                x: filtered.map(c => c.value_loss / 1e6),
+                x: xData,
                 type: 'bar',
                 orientation: 'h',
                 marker: {
                     color: filtered.map(c => c.loss_fraction),
                     colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#f97316'], [1, '#ef4444']],
                     colorbar: {
-                        title: 'Loss %',
+                        title: 'Loss % (by original value)',   <!-- <br> as % of original value -->
                         tickformat: '.0%'
                     }
                 },
-                text: filtered.map(c => `${(c.loss_fraction * 100).toFixed(1)}%`),
+                text: filtered.map(textFn),
                 textposition: 'outside'
             };
             
@@ -1180,7 +1325,7 @@
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { 
                     gridcolor: '#334155',
-                    title: 'Value Loss ($ Million)'
+                    title: xTitle
                 },
                 yaxis: { 
                     autorange: 'reversed'
@@ -1196,27 +1341,62 @@
             
             const scenario = document.getElementById('gdp-scenario').value;
             const model = document.getElementById('gdp-model').value;
+            const limitValue = document.getElementById('gdp-limit').value;
+            const metric = document.getElementById('gdp-metric').value;
             
-            const filtered = gdpImpactData.filter(c => 
-                c.scenario.toLowerCase().includes(scenario.split('_').slice(-2).join('_')) &&
-                c.model === model &&
-                c.loss_as_gdp_pct > 0
-            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, 25);
+            // Match scenario exactly
+            let filtered = gdpImpactData.filter(c => 
+                c.scenario === scenario && c.model === model
+            );
+            
+            // Filter and sort by selected metric
+            if (metric === 'loss_as_gdp_pct') {
+                filtered = filtered.filter(c => c.loss_as_gdp_pct > 0)
+                    .sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct);
+            } else {
+                filtered = filtered.filter(c => c.value_loss > 0)
+                    .sort((a, b) => b.value_loss - a.value_loss);
+            }
+            
+            // Apply limit
+            if (limitValue !== 'all') {
+                filtered = filtered.slice(0, parseInt(limitValue));
+            }
+            
+            // Dynamic height based on number of countries
+            const chartHeight = Math.max(400, filtered.length * 22);
+            document.getElementById('gdp-chart').style.height = chartHeight + 'px';
+            
+            // Configure based on metric
+            let xData, xTitle, textFn, colorbarTitle, colorbarFormat;
+            if (metric === 'loss_as_gdp_pct') {
+                xData = filtered.map(c => c.loss_as_gdp_pct);
+                xTitle = 'Projected Loss as % of National GDP';
+                textFn = c => `${c.loss_as_gdp_pct.toFixed(2)}%`;
+                colorbarTitle = '% GDP';
+                colorbarFormat = '.1f';
+            } else {
+                xData = filtered.map(c => c.value_loss / 1e6);
+                xTitle = 'Value Loss ($ Million)';
+                textFn = c => `$${(c.value_loss / 1e6).toFixed(1)}M`;
+                colorbarTitle = 'Loss $M';
+                colorbarFormat = '.0f';
+            }
             
             const trace = {
                 y: filtered.map(c => c.country),
-                x: filtered.map(c => c.loss_as_gdp_pct),
+                x: xData,
                 type: 'bar',
                 orientation: 'h',
                 marker: {
                     color: filtered.map(c => c.loss_as_gdp_pct),
                     colorscale: [[0, '#22c55e'], [0.1, '#eab308'], [0.3, '#f97316'], [1, '#ef4444']],
                     colorbar: {
-                        title: '% GDP',
-                        tickformat: '.1f'
+                        title: colorbarTitle,
+                        tickformat: colorbarFormat
                     }
                 },
-                text: filtered.map(c => `${c.loss_as_gdp_pct.toFixed(2)}%`),
+                text: filtered.map(textFn),
                 textposition: 'outside'
             };
             
@@ -1226,7 +1406,7 @@
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { 
                     gridcolor: '#334155',
-                    title: 'Projected Loss as % of National GDP'
+                    title: xTitle
                 },
                 yaxis: { 
                     autorange: 'reversed'
@@ -1240,13 +1420,20 @@
         function renderGdpComparison() {
             if (!gdpImpactData) return;
             
+            const limitValue = document.getElementById('gdp-comparison-limit').value;
+            const limit = limitValue === 'all' ? 9999 : parseInt(limitValue);
+            
             // Get top countries by worst-case GDP impact
             const worstCase = gdpImpactData.filter(c => 
                 c.scenario.includes('rcp85') && c.scenario.includes('2100') &&
                 c.model.includes('Compound')
-            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, 15);
+            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, limit);
             
             const topCountries = worstCase.map(c => c.country);
+            
+            // Dynamic height based on number of countries
+            const chartHeight = Math.max(400, topCountries.length * 30);
+            document.getElementById('gdp-comparison-chart').style.height = chartHeight + 'px';
             
             // Create traces for each scenario/model combo
             const scenarios = [
@@ -1320,22 +1507,24 @@
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
+                autosize: true,
                 xaxis: { 
                     gridcolor: '#334155',
                     title: 'Change in Coral Cover (percentage points)',
                     zeroline: true,
-                    zerolinecolor: '#64748b'
+                    zerolinecolor: '#64748b',
+                    range: [-50, 0]
                 },
                 yaxis: { 
                     gridcolor: '#334155',
                     title: 'Remaining Value (%)',
-                    range: [0, 120]
+                    range: [0, 100]
                 },
                 legend: { 
                     orientation: 'h', 
                     y: -0.15
                 },
-                margin: { t: 20, r: 20, b: 60, l: 60 },
+                margin: { t: 20, r: 30, b: 70, l: 60 },
                 shapes: [{
                     type: 'line',
                     x0: 0, x1: 0,
@@ -1444,16 +1633,21 @@
                 renderChoropleth();
             }
         }
-        
+
         function toggleChoropleth() {
             const enabled = document.getElementById('map-choropleth-toggle').checked;
+            const legendEl = document.getElementById('choropleth-legend');
+            
             if (enabled) {
                 renderChoropleth();
+                if (legendEl) legendEl.style.display = 'flex';
             } else {
                 if (choroplethLayer) {
                     map.removeLayer(choroplethLayer);
                     choroplethLayer = L.layerGroup();
                 }
+                if (legendEl) legendEl.style.display = 'none';
+                removeChoroplethLegend();
             }
         }
         
@@ -1578,8 +1772,41 @@
             
             choroplethLayer.addLayer(styledGeoJson);
             choroplethLayer.addTo(map);
+            
+            // Add or update legend control
+            addChoroplethLegend();
         }
         
+        let choroplethLegendControl = null;
+        
+        function addChoroplethLegend() {
+            // Remove existing legend if any
+            if (choroplethLegendControl) {
+                map.removeControl(choroplethLegendControl);
+            }
+            
+            choroplethLegendControl = L.control({position: 'bottomright'});
+            
+            choroplethLegendControl.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'choropleth-legend');
+                div.style.cssText = 'background: none; padding: 0; border: none; font-family: Instrument Sans, sans-serif; font-size: 12px; color: #64748b;';
+                
+                // Only the text at the bottom (no colored boxes or label)
+                div.innerHTML = '<div style="color: #64748b; font-size: 11px; padding: 0.25em 0.5em; background: none;">Dashed = No data</div>';
+                
+                return div;
+            };
+            
+            choroplethLegendControl.addTo(map);
+        }
+        
+        function removeChoroplethLegend() {
+            if (choroplethLegendControl) {
+                map.removeControl(choroplethLegendControl);
+                choroplethLegendControl = null;
+            }
+        }
+
         // ============================================================
         // INITIALIZE
         // ============================================================
