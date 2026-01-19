@@ -608,7 +608,7 @@ def step_export_web_data(
         print("=" * 60)
 
     if output_dir is None:
-        output_dir = Path("docs/data")
+        output_dir = Path("docs/exported_data")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Export using pre-computed results (no re-running the pipeline!)
