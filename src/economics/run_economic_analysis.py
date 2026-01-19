@@ -741,6 +741,8 @@ def step_export_web_data(
     """Step 7: Export data for web visualization using pre-computed results."""
     from src.economics.export_web_data import (
         export_country_results,
+        export_cumulative_country_results,
+        export_cumulative_site_results,
         export_gdp_impact,
         export_model_comparison,
         export_site_results,
@@ -766,6 +768,10 @@ def step_export_web_data(
 
     if cumulative_results:
         export_trajectory_data(cumulative_results, output_dir)
+        export_cumulative_country_results(results, cumulative_results, output_dir)
+        export_cumulative_site_results(
+            results, cumulative_results, output_dir, sample_fraction=sample_fraction
+        )
 
     export_summary_stats(results, cumulative_results or {}, output_dir)
     export_model_comparison(output_dir)

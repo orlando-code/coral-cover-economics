@@ -287,8 +287,8 @@ def plot_scenario_comparison(
     # Style mappings
     model_hatches = {
         "Linear": "",
-        "Compound": "/",
-        "Tipping Point": "X",
+        "Compound": "///",
+        "Tipping Point": "...",
     }  # No hatch for linear, diagonal for compound
     year_alphas = {"2050": 0.6, "2100": 1.0}  # Lighter for 2050
 
@@ -344,7 +344,7 @@ def plot_scenario_comparison(
 
         y_pos = np.arange(len(countries)) + offsets[i]
 
-        bars = ax.barh(
+        ax.barh(
             y_pos,
             losses / 1e6,
             height=bar_height,
@@ -352,7 +352,7 @@ def plot_scenario_comparison(
             alpha=alpha,
             hatch=hatch,
             edgecolor="white" if not hatch else "black",
-            linewidth=0.5,
+            linewidth=1,
         )
 
     legend_handles = []
