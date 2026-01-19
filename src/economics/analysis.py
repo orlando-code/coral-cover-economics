@@ -95,11 +95,11 @@ class DepreciationResult:
         """Save result to disk using pickle."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Save the full object (GeoDataFrame and model included)
         with open(path, "wb") as f:
             pickle.dump(self, f)
-        
+
         # Also save metadata as JSON for inspection
         metadata = {
             "scenario": self.scenario,
@@ -111,7 +111,7 @@ class DepreciationResult:
             "total_loss": float(self.total_loss),
             "loss_fraction": float(self.loss_fraction),
         }
-        
+
         metadata_path = path.with_suffix(".json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
@@ -122,7 +122,7 @@ class DepreciationResult:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Result file not found: {path}")
-        
+
         with open(path, "rb") as f:
             return pickle.load(f)
 
@@ -175,24 +175,24 @@ class AnalysisResults:
         """Save all results to disk."""
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
-        
+
         # Save each individual result
         for key, result in self.results.items():
             safe_key = key.replace("/", "_").replace(" ", "_")
             result_path = path / f"{safe_key}.pkl"
             result.save(result_path)
-        
+
         # Save summary metadata
         summary = self.summary_table()
         summary.to_csv(path / "summary.csv", index=False)
-        
+
         metadata = {
             "n_results": len(self.results),
             "scenarios": list(set(r.scenario for r in self.results.values())),
             "models": list(set(r.model.name for r in self.results.values())),
             "value_types": list(set(r.value_type for r in self.results.values())),
         }
-        
+
         with open(path / "metadata.json", "w") as f:
             json.dump(metadata, f, indent=2)
 
@@ -202,16 +202,16 @@ class AnalysisResults:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Results directory not found: {path}")
-        
+
         results = cls()
-        
+
         # Load all .pkl files
         for pkl_file in path.glob("*.pkl"):
             result = DepreciationResult.load(pkl_file)
             # Use filename as key (it should match the original key used in save)
             key = pkl_file.stem
             results.add(key, result)
-        
+
         return results
 
 
