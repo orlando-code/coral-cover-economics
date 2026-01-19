@@ -561,10 +561,18 @@
                             <div class="control-group">
                                 <span class="control-label">Scenario:</span>
                                 <select id="map-scenario">
-                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
-                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
-                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
-                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                    <optgroup label="Annual Loss">
+                                        <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
+                                        <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
+                                        <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
+                                        <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                    </optgroup>
+                                    <optgroup label="Cumulative Loss">
+                                        <option value="cumulative_rcp45_2050">Cumulative RCP 4.5 - 2050</option>
+                                        <option value="cumulative_rcp45_2100">Cumulative RCP 4.5 - 2100</option>
+                                        <option value="cumulative_rcp85_2050">Cumulative RCP 8.5 - 2050</option>
+                                        <option value="cumulative_rcp85_2100">Cumulative RCP 8.5 - 2100</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -679,10 +687,18 @@
                             <div class="control-group">
                                 <span class="control-label">Scenario:</span>
                                 <select id="country-scenario">
-                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
-                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
-                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
-                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                    <optgroup label="Annual Loss">
+                                        <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
+                                        <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
+                                        <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
+                                        <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
+                                    </optgroup>
+                                    <optgroup label="Cumulative Loss">
+                                        <option value="cumulative_rcp45_2050">Cumulative RCP 4.5 - 2050</option>
+                                        <option value="cumulative_rcp45_2100">Cumulative RCP 4.5 - 2100</option>
+                                        <option value="cumulative_rcp85_2050">Cumulative RCP 8.5 - 2050</option>
+                                        <option value="cumulative_rcp85_2100">Cumulative RCP 8.5 - 2100</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -847,6 +863,7 @@
         let summaryData = null;
         let trajectoryData = null;
         let countryData = null;
+        let cumulativeCountryData = null;
         let gdpImpactData = null;
         let modelCurves = null;
         let siteManifest = null;
@@ -860,10 +877,11 @@
         
         async function loadData() {
             try {
-                const [summary, trajectories, countries, curves, manifest, gdpImpacts] = await Promise.all([
+                const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts] = await Promise.all([
                     fetch(DATA_PATH + 'summary.json').then(r => r.json()),
                     fetch(DATA_PATH + 'trajectories.json').then(r => r.json()),
                     fetch(DATA_PATH + 'country_results.json').then(r => r.json()),
+                    fetch(DATA_PATH + 'cumulative_country_results.json').then(r => r.json()).catch(() => []),
                     fetch(DATA_PATH + 'model_curves.json').then(r => r.json()),
                     fetch(DATA_PATH + 'manifest.json').then(r => r.json()),
                     fetch(DATA_PATH + 'gdp_impacts.json').then(r => r.json()).catch(() => null),
@@ -872,11 +890,33 @@
                 summaryData = summary;
                 trajectoryData = trajectories;
                 countryData = countries;
+                cumulativeCountryData = cumulativeCountries;
                 gdpImpactData = gdpImpacts;
                 modelCurves = curves;
                 siteManifest = manifest;
                 
-                console.log('Data loaded successfully');
+                console.log('Data loaded successfully:', {
+                    summary: !!summary,
+                    trajectories: trajectories?.length || 0,
+                    countries: countries?.length || 0,
+                    cumulativeCountries: cumulativeCountries?.length || 0,
+                    gdpImpacts: !!gdpImpacts,
+                    curves: !!curves,
+                    manifest: !!manifest
+                });
+                
+                if (cumulativeCountries && cumulativeCountries.length > 0) {
+                    const uniqueScenarios = [...new Set(cumulativeCountries.map(c => c.scenario))];
+                    const uniqueModels = [...new Set(cumulativeCountries.map(c => c.model))];
+                    console.log('Cumulative data loaded:', {
+                        totalRecords: cumulativeCountries.length,
+                        uniqueScenarios,
+                        uniqueModels
+                    });
+                } else {
+                    console.warn('No cumulative country data loaded');
+                }
+                
                 initializeDashboard();
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -1262,23 +1302,35 @@
         }
         
         function renderCountryChart() {
-            if (!countryData) return;
-            
             const scenario = document.getElementById('country-scenario').value;
+            const isCumulative = scenario.startsWith('cumulative_');
+            const dataSource = isCumulative ? cumulativeCountryData : countryData;
+            
+            if (!dataSource) {
+                console.warn('Country data not loaded. isCumulative:', isCumulative, 'dataSource:', !!dataSource);
+                return;
+            }
+            
             const model = document.getElementById('country-model').value;
             const limitValue = document.getElementById('country-limit').value;
             const metric = document.getElementById('country-metric').value;
             
+            console.log('Rendering country chart:', { scenario, model, isCumulative, dataSourceLength: dataSource.length });
+            
             // Match scenario exactly
-            let filtered = countryData.filter(c => 
+            let filtered = dataSource.filter(c => 
                 c.scenario === scenario && c.model === model
             );
             
-            // Sort by selected metric
+            console.log('Filtered countries:', filtered.length, 'for scenario:', scenario, 'model:', model);
+            
+            // Sort by selected metric (use cumulative or annual loss)
             if (metric === 'value_loss') {
-                filtered = filtered.sort((a, b) => b.value_loss - a.value_loss);
+                const lossKey = isCumulative ? 'cumulative_loss' : 'value_loss';
+                filtered = filtered.sort((a, b) => (b[lossKey] || 0) - (a[lossKey] || 0));
             } else {
-                filtered = filtered.sort((a, b) => b.loss_fraction - a.loss_fraction);
+                const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+                filtered = filtered.sort((a, b) => (b[fractionKey] || 0) - (a[fractionKey] || 0));
             }
             
             // Apply limit
@@ -1291,15 +1343,19 @@
             document.getElementById('country-chart').style.height = chartHeight + 'px';
             
             // Configure based on metric
-            let xData, xTitle, textFn;
+            let xData, xTitle, textFn, colorKey;
             if (metric === 'value_loss') {
-                xData = filtered.map(c => c.value_loss / 1e6);
-                xTitle = 'Value Loss ($ Million)';
-                textFn = c => `$${(c.value_loss / 1e6).toFixed(1)}M`;
+                const lossKey = isCumulative ? 'cumulative_loss' : 'value_loss';
+                xData = filtered.map(c => (c[lossKey] || 0) / 1e6);
+                xTitle = isCumulative ? 'Cumulative Loss ($ Million)' : 'Value Loss ($ Million)';
+                textFn = c => `$${((c[lossKey] || 0) / 1e6).toFixed(1)}M`;
+                colorKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
             } else {
-                xData = filtered.map(c => c.loss_fraction * 100);
-                xTitle = 'Loss Fraction (%)';
-                textFn = c => `${(c.loss_fraction * 100).toFixed(1)}%`;
+                const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+                xData = filtered.map(c => (c[fractionKey] || 0) * 100);
+                xTitle = isCumulative ? 'Cumulative Loss Fraction (%)' : 'Loss Fraction (%)';
+                textFn = c => `${((c[fractionKey] || 0) * 100).toFixed(1)}%`;
+                colorKey = fractionKey;
             }
             
             const trace = {
@@ -1308,10 +1364,10 @@
                 type: 'bar',
                 orientation: 'h',
                 marker: {
-                    color: filtered.map(c => c.loss_fraction),
+                    color: filtered.map(c => c[colorKey] || 0),
                     colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#f97316'], [1, '#ef4444']],
                     colorbar: {
-                        title: 'Loss % (by original value)',   <!-- <br> as % of original value -->
+                        title: isCumulative ? 'Cumulative Loss %' : 'Loss %',
                         tickformat: '.0%'
                     }
                 },
@@ -1575,23 +1631,55 @@
             const scenario = document.getElementById('map-scenario').value;
             const model = document.getElementById('map-model').value;
             
-            const filename = `sites_${scenario}_${model}.json`;
+            // Check if this is a cumulative scenario
+            const isCumulative = scenario.startsWith('cumulative_');
+            
+            // For cumulative, scenario is like "cumulative_rcp45_2050", need to extract rcp and year
+            let scenarioKey = scenario;
+            if (isCumulative) {
+                // Extract rcp and year from "cumulative_rcp45_2050"
+                const parts = scenario.replace('cumulative_', '').split('_');
+                const rcp = parts[0]; // "rcp45"
+                const year = parts[1]; // "2050"
+                scenarioKey = `cumulative_${rcp}_${year}`;
+            }
+            
+            // Sanitize model name to match export format
+            // "Linear (3.81%/pp)" -> "Linear_3.81pct_pp"
+            // "Compound (3.81%/pp)" -> "Compound_3.81pct_pp"
+            // "Tipping Point (threshold=10%)" -> "Tipping_Point_threshold=10pct"
+            const sanitizeModelName = (name) => {
+                return name.replace(/\s+/g, '_')
+                    .replace(/\//g, '_')
+                    .replace(/%/g, 'pct')
+                    .replace(/[()]/g, '');
+            };
+            
+            const sanitizedModel = sanitizeModelName(model);
+            const filename = `sites_${scenarioKey}_${sanitizedModel}.json`;
+            
+            console.log('Loading site data:', { scenario, model, isCumulative, scenarioKey, sanitizedModel, filename });
             
             try {
                 const response = await fetch(DATA_PATH + filename);
                 if (!response.ok) {
-                    console.log('Site data not found:', filename);
+                    console.warn('Site data not found:', filename, 'Status:', response.status);
+                    // Try to list available files for debugging
+                    if (siteManifest && siteManifest.cumulative_scenarios) {
+                        console.log('Available cumulative scenarios:', siteManifest.cumulative_scenarios);
+                    }
                     return;
                 }
                 
                 const geojson = await response.json();
-                renderSites(geojson);
+                console.log('Loaded site data:', geojson.features.length, 'features');
+                renderSites(geojson, isCumulative);
             } catch (error) {
                 console.error('Error loading site data:', error);
             }
         }
         
-        function renderSites(geojson) {
+        function renderSites(geojson, isCumulative = false) {
             siteLayer.clearLayers();
             
             const getColor = (lossFraction) => {
@@ -1605,9 +1693,18 @@
                 const props = feature.properties;
                 const coords = feature.geometry.coordinates;
                 
+                // Use cumulative or annual loss data
+                const lossFraction = isCumulative ? 
+                    (props.cumulative_loss_fraction || 0) : 
+                    (props.loss_fraction || 0);
+                const lossValue = isCumulative ?
+                    (props.cumulative_loss || 0) :
+                    (props.value_loss || props.annual_loss || 0);
+                const lossType = isCumulative ? 'Cumulative Loss' : 'Annual Loss';
+                
                 const marker = L.circleMarker([coords[1], coords[0]], {
                     radius: 4,
-                    fillColor: getColor(props.loss_fraction),
+                    fillColor: getColor(lossFraction),
                     color: '#1a2332',
                     weight: 1,
                     opacity: 1,
@@ -1618,15 +1715,16 @@
                     <div class="popup-content">
                         <strong>${props.country || 'Unknown'}</strong><br>
                         Original: $${(props.original_value / 1000).toFixed(1)}k<br>
-                        <span class="popup-loss">Loss: ${(props.loss_fraction * 100).toFixed(1)}%</span><br>
-                        Coral change: ${(props.coral_change * 100).toFixed(1)}pp
+                        <span class="popup-loss">${lossType}: ${(lossFraction * 100).toFixed(1)}%</span><br>
+                        ${lossType} Value: $${(lossValue / 1000).toFixed(1)}k<br>
+                        ${isCumulative ? '' : `Coral change: ${(props.coral_change * 100).toFixed(1)}pp`}
                     </div>
                 `);
                 
                 siteLayer.addLayer(marker);
             });
             
-            console.log(`Rendered ${geojson.features.length} sites`);
+            console.log(`Rendered ${geojson.features.length} sites (${isCumulative ? 'cumulative' : 'annual'})`);
             
             // Update choropleth if it's enabled
             if (document.getElementById('map-choropleth-toggle').checked) {
@@ -1652,15 +1750,23 @@
         }
         
         function renderChoropleth() {
-            if (!countryData || !countryBoundaries) {
-                console.warn('Country data or boundaries not loaded. countryData:', !!countryData, 'countryBoundaries:', !!countryBoundaries);
+            const scenario = document.getElementById('map-scenario').value;
+            const isCumulative = scenario.startsWith('cumulative_');
+            const dataSource = isCumulative ? cumulativeCountryData : countryData;
+            
+            if (!dataSource || !countryBoundaries) {
+                console.warn('Country data or boundaries not loaded. dataSource:', !!dataSource, 'countryBoundaries:', !!countryBoundaries, 'isCumulative:', isCumulative);
+                if (isCumulative) {
+                    console.log('cumulativeCountryData:', cumulativeCountryData ? `loaded (${cumulativeCountryData.length} records)` : 'not loaded');
+                } else {
+                    console.log('countryData:', countryData ? `loaded (${countryData.length} records)` : 'not loaded');
+                }
                 return;
             }
             
-            const scenario = document.getElementById('map-scenario').value;
             const model = document.getElementById('map-model').value;
             
-            console.log('Rendering choropleth for scenario:', scenario, 'model:', model);
+            console.log('Rendering choropleth for scenario:', scenario, 'model:', model, 'isCumulative:', isCumulative, 'dataSource length:', dataSource.length);
             
             // Normalize model names for matching
             const normalizeModelName = (name) => {
@@ -1673,8 +1779,7 @@
             };
             
             // Filter country data for current scenario and model
-            // scenario is like "y_future_rcp45_2050", data scenarios are the same format
-            const filtered = countryData.filter(c => {
+            const filtered = dataSource.filter(c => {
                 const cScenario = c.scenario.toLowerCase();
                 const targetScenario = scenario.toLowerCase();
                 const cModel = normalizeModelName(c.model);
@@ -1692,8 +1797,8 @@
                 const countryName = c.country;
                 // Store by multiple possible keys for flexible matching
                 countryMetrics[countryName] = {
-                    value_loss: c.value_loss || 0,
-                    loss_fraction: c.loss_fraction || 0,
+                    value_loss: isCumulative ? (c.cumulative_loss || 0) : (c.value_loss || 0),
+                    loss_fraction: isCumulative ? (c.cumulative_loss_fraction || 0) : (c.loss_fraction || 0),
                     iso_a3: c.iso_a3 || ''
                 };
                 // Also try common name variations
@@ -1758,10 +1863,11 @@
                     }
                     
                     if (metric) {
+                        const lossType = isCumulative ? 'Cumulative Loss' : 'Value Loss';
                         const popupContent = `
                             <div class="popup-content">
                                 <strong>${countryName}</strong><br>
-                                Value Loss: $${(metric.value_loss / 1e6).toFixed(1)}M<br>
+                                ${lossType}: $${(metric.value_loss / 1e6).toFixed(1)}M<br>
                                 Loss: ${(metric.loss_fraction * 100).toFixed(1)}%
                             </div>
                         `;

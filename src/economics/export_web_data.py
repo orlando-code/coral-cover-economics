@@ -53,6 +53,230 @@ def export_country_results(
     print(f"Exported country results: {len(all_countries)} records")
 
 
+def export_cumulative_country_results(
+    results: AnalysisResults,
+    cumulative_results: Dict[str, CumulativeImpactResult],
+    output_dir: Path,
+) -> None:
+    """Export cumulative country-level results to JSON."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create lookup for cumulative results
+    # Key format: "tourism_rcp45_linear_Linear (3.81%/pp)"
+    cumulative_lookup = {}
+    for key, cum_result in cumulative_results.items():
+        parts = key.split("_")
+        if len(parts) >= 2:
+            scenario = parts[1].lower()  # e.g., "rcp45"
+            model_name = cum_result.model.name
+            years = cum_result.years
+
+            # Use linear interpolation for consistency (or could use both)
+            interpolation = parts[2] if len(parts) > 2 else "linear"
+            if interpolation != "linear":
+                continue  # Only use linear for now
+
+            for target_year in [2050, 2100]:
+                if target_year in years:
+                    idx = np.where(years == target_year)[0]
+                    if len(idx) > 0:
+                        lookup_key = f"{scenario}_{target_year}_{model_name}"
+                        cumulative_lookup[lookup_key] = cum_result.cumulative_losses[
+                            idx[0]
+                        ]
+
+    all_countries = []
+
+    for _, result in results.results.items():
+        by_country = result.by_country.copy()
+
+        # Get ISO codes
+        if "iso_a3" not in by_country.columns and "iso_a3" in result.gdf.columns:
+            country_col = result._get_country_column()
+            iso_map = result.gdf.groupby(country_col)["iso_a3"].first()
+            by_country["iso_a3"] = by_country[country_col].map(iso_map)
+
+        # Parse scenario
+        scenario = result.scenario.lower()
+        rcp = "rcp45" if "45" in scenario else "rcp85"
+        year = 2050 if "2050" in scenario else 2100
+        model_name = result.model.name
+
+        # Get cumulative loss for this scenario/model/year
+        lookup_key = f"{rcp}_{year}_{model_name}"
+        total_cumulative = cumulative_lookup.get(lookup_key, None)
+
+        for _, row in by_country.iterrows():
+            # Calculate cumulative loss proportionally
+            country_annual_loss = float(row.get("value_loss", 0))
+            total_annual_loss = result.total_loss
+
+            if total_cumulative is not None and total_annual_loss > 0:
+                country_cumulative_loss = (
+                    country_annual_loss / total_annual_loss
+                ) * total_cumulative
+                country_cumulative_fraction = country_cumulative_loss / float(
+                    row.get("original_value", 1)
+                )
+            else:
+                country_cumulative_loss = 0
+                country_cumulative_fraction = 0
+
+            all_countries.append(
+                {
+                    "scenario": f"cumulative_{rcp}_{year}",
+                    "model": result.model.name,
+                    "country": row.get("country", row.iloc[0]),
+                    "iso_a3": row.get("iso_a3", ""),
+                    "original_value": float(row.get("original_value", 0)),
+                    "cumulative_loss": float(country_cumulative_loss),
+                    "cumulative_loss_fraction": float(country_cumulative_fraction),
+                    "annual_loss": float(country_annual_loss),
+                    "loss_fraction": float(row.get("loss_fraction", 0)),
+                }
+            )
+
+    with open(output_dir / "cumulative_country_results.json", "w") as f:
+        json.dump(all_countries, f, indent=2)
+
+    print(f"Exported cumulative country results: {len(all_countries)} records")
+
+
+def export_cumulative_site_results(
+    results: AnalysisResults,
+    cumulative_results: Dict[str, CumulativeImpactResult],
+    output_dir: Path,
+    sample_fraction: float = 0.1,
+) -> None:
+    """Export site-level cumulative results for point visualization."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    features_by_scenario = {}
+
+    # Create lookup for cumulative results by scenario+model+year
+    # Key format: "tourism_rcp45_linear_Linear (3.81%/pp)"
+    cumulative_lookup = {}
+    for key, cum_result in cumulative_results.items():
+        parts = key.split("_")
+        if len(parts) >= 2:
+            scenario = parts[1].lower()  # e.g., "rcp45"
+            model_name = cum_result.model.name
+            interpolation = parts[2] if len(parts) > 2 else "linear"
+
+            # Only use linear interpolation for consistency
+            if interpolation != "linear":
+                continue
+
+            years = cum_result.years
+            for target_year in [2050, 2100]:
+                if target_year in years:
+                    idx = np.where(years == target_year)[0]
+                    if len(idx) > 0:
+                        lookup_key = f"{scenario}_{target_year}_{model_name}"
+                        cumulative_lookup[lookup_key] = cum_result.cumulative_losses[
+                            idx[0]
+                        ]
+
+    for key, result in results.results.items():
+        gdf = result.gdf.copy()
+
+        # Sample for performance
+        if sample_fraction < 1.0:
+            gdf = gdf.sample(frac=sample_fraction, random_state=42)
+
+        # Parse scenario to get RCP and year
+        scenario = result.scenario.lower()
+        rcp = "rcp45" if "45" in scenario else "rcp85"
+        year = 2050 if "2050" in scenario else 2100
+        model_name = result.model.name
+
+        # Get cumulative loss for this scenario/model/year
+        lookup_key = f"{rcp}_{year}_{model_name}"
+        total_cumulative = cumulative_lookup.get(lookup_key, None)
+
+        # Convert to WGS84 and get centroids
+        gdf = gdf.to_crs("EPSG:4326")
+        if gdf.geometry.geom_type.iloc[0] in ["Polygon", "MultiPolygon"]:
+            gdf_proj = gdf.to_crs("EPSG:3857")
+            centroids_proj = gdf_proj.geometry.centroid
+            centroids = centroids_proj.to_crs("EPSG:4326")
+        else:
+            centroids = gdf.geometry
+
+        features = []
+        for idx, (_, row) in enumerate(gdf.iterrows()):
+            geom = centroids.iloc[idx]
+            if geom.is_empty:
+                continue
+
+            # Calculate cumulative loss for this site
+            # Distribute proportionally based on annual loss contribution
+            site_annual_loss = float(row.get("value_loss", 0))
+            total_annual_loss = result.total_loss
+
+            if total_cumulative is not None and total_annual_loss > 0:
+                site_cumulative_loss = (
+                    site_annual_loss / total_annual_loss
+                ) * total_cumulative
+                site_cumulative_fraction = site_cumulative_loss / float(
+                    row.get("original_value", 1)
+                )
+            else:
+                site_cumulative_loss = 0
+                site_cumulative_fraction = 0
+
+            features.append(
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [geom.x, geom.y]},
+                    "properties": {
+                        "country": str(row.get("country", "")),
+                        "original_value": float(row.get("original_value", 0)),
+                        "cumulative_loss": float(site_cumulative_loss),
+                        "cumulative_loss_fraction": float(site_cumulative_fraction),
+                        "annual_loss": float(site_annual_loss),
+                        "loss_fraction": float(row.get("loss_fraction", 0)),
+                        "coral_change": float(row.get("coral_change", 0)),
+                    },
+                }
+            )
+
+        scenario_key = (
+            f"cumulative_{rcp}_{year}_{result.model.name}".replace(" ", "_")
+            .replace("/", "_")
+            .replace("%", "pct")
+            .replace("(", "")
+            .replace(")", "")
+        )
+
+        features_by_scenario[scenario_key] = {
+            "type": "FeatureCollection",
+            "scenario": f"cumulative_{rcp}_{year}",
+            "model": result.model.name,
+            "features": features,
+        }
+
+    # Save each scenario separately
+    for scenario_key, geojson in features_by_scenario.items():
+        with open(output_dir / f"sites_{scenario_key}.json", "w") as f:
+            json.dump(geojson, f)
+        print(
+            f"Exported cumulative sites for {scenario_key}: {len(geojson['features'])} points"
+        )
+
+    # Update manifest
+    manifest_path = output_dir / "manifest.json"
+    if manifest_path.exists():
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+    else:
+        manifest = {"scenarios": [], "generated": datetime.now().isoformat()}
+
+    manifest["cumulative_scenarios"] = list(features_by_scenario.keys())
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+
 def export_site_results(
     results: AnalysisResults,
     output_dir: Path,
