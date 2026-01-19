@@ -195,7 +195,7 @@ def step_load_data(verbose: bool = True):
 
     # Economic value data
     tourism_data = load_tourism_data(
-        apply_correction=True
+        apply_correction=True, validate=verbose
     )  # in progress, not matching with implementation
 
     # GDP data for computing tourism as % of GDP
@@ -210,6 +210,7 @@ def step_load_data(verbose: bool = True):
         tourism_data.gdf,
         value_column=tourism_data.value_column,
         gdp_data=gdp_data,
+        verbose=verbose,
     )
 
     # TODO: Add shoreline protection when value mapping is available

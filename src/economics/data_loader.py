@@ -757,6 +757,7 @@ def compute_country_aggregations(
     tourism_gdf: gpd.GeoDataFrame,
     value_column: str = "approx_price_corrected",
     gdp_data: pd.DataFrame = None,
+    verbose: bool = True,
 ) -> pd.DataFrame:
     """
     Compute country-level aggregations of tourism value.
@@ -777,6 +778,11 @@ def compute_country_aggregations(
     DataFrame
         Aggregated by country with optional GDP percentage.
     """
+    if verbose:
+        print(f"\n{'─' * 60}")
+        print("📊 COMPUTING COUNTRY AGGREGATIONS")
+        print(f"{'─' * 60}")
+
     # Aggregate by country
     by_country = (
         tourism_gdf.groupby(["country", "iso_a3"])
@@ -793,6 +799,11 @@ def compute_country_aggregations(
             100 * by_country[value_column] / by_country["national_gdp"]
         )
 
+    if verbose:
+        _report_country_aggregations(by_country)
+
+
+def _report_country_aggregations(by_country: pd.DataFrame, value_column: str) -> None:
     print(f"\n{'─' * 60}")
     print("📊 COUNTRY AGGREGATIONS")
     print(f"{'─' * 60}")
