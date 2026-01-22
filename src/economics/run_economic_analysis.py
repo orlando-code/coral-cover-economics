@@ -41,6 +41,7 @@ from src.economics.analysis import (
     validate_depreciation_formula,
 )
 from src.economics.cumulative_impact import (
+    add_spatial_cumulative_losses,
     calculate_cumulative_impacts_multi_scenario,
     print_cumulative_summary,
     summarize_cumulative_impacts,
@@ -318,6 +319,31 @@ def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
                     model=model,
                     value_type=value_type,
                 )
+
+                # Add spatial cumulative losses to the gdf
+                try:
+                    result = add_spatial_cumulative_losses(
+                        result=result,
+                        baseline_year=2017,
+                        discount_rate=0.0,
+                        interpolation_method="linear",
+                    )
+                    if verbose:
+                        # Check if cumulative columns were added
+                        cum_cols = [
+                            c
+                            for c in result.gdf.columns
+                            if c.startswith("cumulative_loss_")
+                        ]
+                        if cum_cols:
+                            print(
+                                f"    Added spatial cumulative loss columns: {len(cum_cols)}"
+                            )
+                except Exception as e:
+                    if verbose:
+                        warnings.warn(
+                            f"    Could not add spatial cumulative losses: {e}"
+                        )
 
                 key = f"{value_type}_{scenario}_{model.name}"
                 all_results.add(key, result)
@@ -736,7 +762,7 @@ def step_export_web_data(
     cumulative_results: dict,
     data: dict,
     output_dir: Path = None,
-    sample_fraction: float = 0.1,
+    sample_fraction: float = 1.0,
     verbose: bool = True,
 ):
     """Step 7: Export data for web visualization using pre-computed results."""

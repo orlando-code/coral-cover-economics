@@ -14,12 +14,16 @@ import json
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
 from .depreciation_models import DepreciationModel, get_model
+
+# Forward reference for type hints
+if TYPE_CHECKING:
+    pass
 
 # =============================================================================
 # TRAJECTORY INTERPOLATION
@@ -355,7 +359,7 @@ def calculate_cumulative_impact(
         # Loss compared to baseline
         annual_losses[i] = baseline_value - remaining
 
-    # Apply discounting if specified
+    # Apply discounting if specified (the extent to which future years are 'worth less' with time)
     if discount_rate > 0:
         years_from_start = trajectory.years - trajectory.years[0]
         discount_factors = (1 + discount_rate) ** (-years_from_start)
@@ -555,3 +559,200 @@ def print_cumulative_summary(
             print(f"      Years to 50% value loss: {result.years_to_50pct_loss}")
 
     print(f"\n{'=' * 70}\n")
+
+
+# =============================================================================
+# SPATIAL CUMULATIVE IMPACT CALCULATION
+# =============================================================================
+
+
+def add_spatial_cumulative_losses(
+    result,
+    baseline_year: int = 2017,
+    discount_rate: float = 0.0,
+    interpolation_method: str = "linear",
+):
+    """
+    Calculate and add spatial cumulative loss columns to a DepreciationResult's gdf.
+
+    This function computes cumulative losses for each polygon based on its own
+    baseline cover, baseline value, and coral cover trajectory. This provides
+    true spatial cumulative losses rather than proportionally distributed global totals.
+
+    Parameters
+    ----------
+    result : DepreciationResult
+        Result containing gdf with original_value, coral_change, and baseline cover.
+    baseline_year : int
+        Starting year for cumulative calculations (default: 2017).
+    discount_rate : float
+        Annual discount rate for NPV calculation (0.0 = no discounting).
+    interpolation_method : str
+        Interpolation method for trajectory ("linear" or "exponential").
+
+    Returns
+    -------
+    DepreciationResult
+        Result with added cumulative loss columns in gdf.
+        Columns added: cumulative_loss_{scenario}_{model_name}
+        e.g., "cumulative_loss_rcp45_2050_Linear (3.81%/pp)"
+    """
+    # Import here to avoid circular dependency
+    from .analysis import DepreciationResult
+
+    gdf = result.gdf.copy()
+
+    # Find baseline coral cover column
+    baseline_cover_col = None
+    for col in ["nearest_average_coral_cover", "average_coral_cover"]:
+        if col in gdf.columns:
+            baseline_cover_col = col
+            break
+
+    if baseline_cover_col is None:
+        raise ValueError(
+            "Baseline coral cover column not found. "
+            "Expected 'nearest_average_coral_cover' or 'average_coral_cover'"
+        )
+
+    # Parse scenario from result to determine RCP and target year
+    scenario_lower = result.scenario.lower()
+    if "rcp45" in scenario_lower:
+        rcp = "rcp45"
+    elif "rcp85" in scenario_lower:
+        rcp = "rcp85"
+    else:
+        raise ValueError(f"Could not determine RCP from scenario: {result.scenario}")
+
+    if "2050" in scenario_lower:
+        target_year = 2050
+    elif "2100" in scenario_lower:
+        target_year = 2100
+    else:
+        raise ValueError(
+            f"Could not determine target year from scenario: {result.scenario}"
+        )
+
+    # Find projected coral cover column (try multiple naming conventions)
+    proj_col = None
+    possible_names = [
+        f"nearest_Y_future_{rcp.upper()}_yr_{target_year}",
+        f"nearest_y_future_{rcp.lower()}_yr_{target_year}",
+        f"nearest_Y_future_{rcp.upper()}_{target_year}",
+        f"nearest_y_future_{rcp.lower()}_{target_year}",
+    ]
+
+    for name in possible_names:
+        if name in gdf.columns:
+            proj_col = name
+            break
+
+    if proj_col is None:
+        # Try to find any column that matches the pattern
+        matching_cols = [
+            c
+            for c in gdf.columns
+            if f"{rcp.lower()}" in c.lower()
+            and str(target_year) in c
+            and "future" in c.lower()
+        ]
+        if matching_cols:
+            proj_col = matching_cols[0]
+        else:
+            raise ValueError(
+                f"Projected coral cover column not found for {rcp} {target_year}. "
+                f"Tried: {possible_names}. "
+                f"Available columns containing '{rcp}': {[c for c in gdf.columns if rcp.lower() in c.lower()]}"
+            )
+
+    # Get model instance
+    model = result.model
+    model_name = model.name
+
+    # Column name for cumulative loss (sanitize model name for column)
+    # Replace special characters that might cause issues
+    safe_model_name = (
+        model_name.replace(" ", "_")
+        .replace("(", "")
+        .replace(")", "")
+        .replace("%", "pct")
+    )
+    cum_col = f"cumulative_loss_{rcp}_{target_year}_{safe_model_name}"
+
+    # Calculate cumulative loss for each polygon
+    baseline_covers = gdf[baseline_cover_col].fillna(0).values
+    projected_covers = gdf[proj_col].fillna(0).values
+    baseline_values = gdf["original_value"].fillna(0).values
+
+    cumulative_losses = np.zeros(len(gdf))
+
+    for i in range(len(gdf)):
+        baseline_cover = float(baseline_covers[i])
+        projected_cover = float(projected_covers[i])
+        baseline_value = float(baseline_values[i])
+
+        # Skip if missing data or zero value
+        if (
+            np.isnan(baseline_cover)
+            or np.isnan(projected_cover)
+            or baseline_value <= 0
+            or baseline_cover <= 0
+        ):
+            cumulative_losses[i] = 0.0
+            continue
+
+        # Create trajectory point
+        point = TrajectoryPoint(year=target_year, cover=projected_cover)
+
+        # Generate trajectory
+        if interpolation_method == "linear":
+            trajectory = interpolate_linear(
+                baseline_year=baseline_year,
+                baseline_cover=baseline_cover,
+                points=[point],
+                annual_resolution=True,
+            )
+        elif interpolation_method == "exponential":
+            trajectory = interpolate_exponential(
+                baseline_year=baseline_year,
+                baseline_cover=baseline_cover,
+                points=[point],
+                annual_resolution=True,
+            )
+        else:
+            raise ValueError(f"Unknown interpolation method: {interpolation_method}")
+
+        # Calculate cumulative impact for this polygon
+        cum_result = calculate_cumulative_impact(
+            baseline_cover=baseline_cover,
+            baseline_value=baseline_value,
+            trajectory=trajectory,
+            model=model,
+            discount_rate=discount_rate,
+            value_type=result.value_type,
+        )
+
+        # Store total cumulative loss
+        cumulative_losses[i] = cum_result.total_cumulative_loss
+
+    # Add column to gdf
+    gdf[cum_col] = cumulative_losses
+
+    # Also add cumulative loss fraction
+    cum_fraction_col = f"cumulative_loss_fraction_{rcp}_{target_year}_{safe_model_name}"
+    with np.errstate(divide="ignore", invalid="ignore"):
+        gdf[cum_fraction_col] = np.where(
+            baseline_values > 0,
+            cumulative_losses / baseline_values,
+            0.0,
+        )
+
+    # Create new result with updated gdf
+    updated_result = DepreciationResult(
+        gdf=gdf,
+        scenario=result.scenario,
+        model=result.model,
+        value_type=result.value_type,
+    )
+
+    return updated_result
