@@ -589,6 +589,13 @@
                                 </select>
                             </div>
                             <div class="control-group">
+                                <span class="control-label">Colour by:</span>
+                                <select id="map-metric">
+                                    <option value="loss_percent" selected>Loss %</option>
+                                    <option value="absolute_value">Absolute Value ($)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
                                 <label class="toggle-label">
                                     <input type="checkbox" id="map-choropleth-toggle" />
                                     <span>Show Country Choropleth</span>
@@ -599,27 +606,8 @@
                     <div id="map-container">
                         <div id="map"></div>
                     </div>
-                    <div class="legend">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #22c55e;"></div>
-                            <span>< 10% loss</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #eab308;"></div>
-                            <span>10-25% loss</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #E3B710;"></div>
-                            <span>25-50% loss</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #F11B00;"></div>
-                            <span>> 50% loss</span>
-                        </div>
-                        <div class="legend-separator" style="border-left: 1px solid var(--border); height: 24px; margin: 0 1rem;"></div>
-                        <div class="legend-item" id="choropleth-legend" style="display: none;">
-                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Choropleth: Country-level aggregates</span>
-                        </div>
+                    <div class="legend" id="map-legend">
+                        <!-- Legend will be dynamically populated -->
                     </div>
                 </div>
             </section>
@@ -728,6 +716,13 @@
                                 <select id="country-metric">
                                     <option value="value_loss" selected>Value Loss ($)</option>
                                     <!-- <option value="loss_fraction">Loss Fraction (%)</option> -->
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Colour by:</span>
+                                <select id="country-color-mode">
+                                    <option value="reef_loss_pct" selected>Loss % of reef tourism</option>
+                                    <option value="gdp_pct">% of national GDP</option>
                                 </select>
                             </div>
                         </div>
@@ -873,6 +868,7 @@
         let modelCurves = null;
         let siteManifest = null;
         let currentSiteData = null;
+        let currentSiteGeojson = null;
         let map = null;
         let siteLayer = null;
         let choroplethLayer = null;
@@ -897,6 +893,14 @@
                 countryData = countries;
                 cumulativeCountryData = cumulativeCountries;
                 gdpImpactData = gdpImpacts;
+                // Build lookup for GDP impact by (scenario, model, country)
+                window.gdpImpactLookup = {};
+                if (Array.isArray(gdpImpactData)) {
+                    gdpImpactData.forEach(d => {
+                        const key = `${d.scenario}||${d.model}||${d.country}`;
+                        window.gdpImpactLookup[key] = d;
+                    });
+                }
                 modelCurves = curves;
                 siteManifest = manifest;
                 
@@ -944,6 +948,14 @@
             // Set up event listeners
             setupNavigation();
             setupControls();
+            
+            // Load site data if map page is active
+            setTimeout(() => {
+                const mapPage = document.getElementById('page-map');
+                if (mapPage && mapPage.classList.contains('active')) {
+                    loadSiteData();
+                }
+            }, 500);
         }
         
         function setupNavigation() {
@@ -998,6 +1010,17 @@
             // Map controls
             document.getElementById('map-scenario').addEventListener('change', loadSiteData);
             document.getElementById('map-model').addEventListener('change', loadSiteData);
+            document.getElementById('map-metric').addEventListener('change', () => {
+                // Re-render sites and choropleth with new metric
+                if (currentSiteGeojson) {
+                    const scenario = document.getElementById('map-scenario').value;
+                    const isCumulative = scenario.startsWith('cumulative_');
+                    renderSites(currentSiteGeojson, isCumulative);
+                }
+                if (document.getElementById('map-choropleth-toggle').checked) {
+                    renderChoropleth();
+                }
+            });
             document.getElementById('map-choropleth-toggle').addEventListener('change', toggleChoropleth);
             
             // Trajectory controls
@@ -1009,6 +1032,7 @@
             document.getElementById('country-model').addEventListener('change', renderCountryChart);
             document.getElementById('country-limit').addEventListener('change', renderCountryChart);
             document.getElementById('country-metric').addEventListener('change', renderCountryChart);
+            document.getElementById('country-color-mode').addEventListener('change', renderCountryChart);
             
             // GDP controls
             document.getElementById('gdp-scenario').addEventListener('change', renderGdpChart);
@@ -1358,6 +1382,7 @@
             const model = document.getElementById('country-model').value;
             const limitValue = document.getElementById('country-limit').value;
             const metric = document.getElementById('country-metric').value;
+            const colorMode = document.getElementById('country-color-mode').value;
             
             console.log('Rendering country chart:', { scenario, model, isCumulative, dataSourceLength: dataSource.length });
             
@@ -1386,20 +1411,41 @@
             const chartHeight = Math.max(400, filtered.length * 25);
             document.getElementById('country-chart').style.height = chartHeight + 'px';
             
-            // Configure based on metric
-            let xData, xTitle, textFn, colorKey;
+            // Configure based on metric (x-axis)
+            let xData, xTitle, textFn;
             if (metric === 'value_loss') {
                 const lossKey = isCumulative ? 'cumulative_loss' : 'value_loss';
                 xData = filtered.map(c => (c[lossKey] || 0) / 1e6);
                 xTitle = isCumulative ? 'Cumulative Loss ($ Million)' : 'Value Loss ($ Million)';
                 textFn = c => `$${((c[lossKey] || 0) / 1e6).toFixed(1)}M`;
-                colorKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
             } else {
                 const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
                 xData = filtered.map(c => (c[fractionKey] || 0) * 100);
                 xTitle = isCumulative ? 'Cumulative Loss Fraction (%)' : 'Loss Fraction (%)';
                 textFn = c => `${((c[fractionKey] || 0) * 100).toFixed(1)}%`;
-                colorKey = fractionKey;
+            }
+
+            // Configure colouring (either reef loss % or GDP %)
+            let colorValues;
+            let colorbarTitle;
+            let colorbarFormat;
+
+            const reefFractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+
+            if (colorMode === 'gdp_pct' && !isCumulative && window.gdpImpactLookup) {
+                // Use loss_as_gdp_pct from gdpImpactData where available (annual scenarios only)
+                colorValues = filtered.map(c => {
+                    const key = `${scenario}||${model}||${c.country}`;
+                    const rec = window.gdpImpactLookup[key];
+                    return rec ? rec.loss_as_gdp_pct : 0;
+                });
+                colorbarTitle = '% GDP';
+                colorbarFormat = '.1f';
+            } else {
+                // Default: colour by reef tourism loss fraction
+                colorValues = filtered.map(c => c[reefFractionKey] || 0);
+                colorbarTitle = isCumulative ? 'Cumulative Loss %' : 'Loss %';
+                colorbarFormat = '.0%';
             }
             
             const trace = {
@@ -1408,11 +1454,11 @@
                 type: 'bar',
                 orientation: 'h',
                 marker: {
-                    color: filtered.map(c => c[colorKey] || 0),
+                    color: colorValues,
                     colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#E3B710'], [1, '#F11B00']],
                     colorbar: {
-                        title: isCumulative ? 'Cumulative Loss %' : 'Loss %',
-                        tickformat: '.0%'
+                        title: colorbarTitle,
+                        tickformat: colorbarFormat
                     }
                 },
                 text: filtered.map(textFn),
@@ -1651,6 +1697,10 @@
             siteLayer = L.layerGroup().addTo(map);
             choroplethLayer = L.layerGroup();
             
+            // Initialize legend with default settings (annual loss %, non-cumulative)
+            const defaultScale = getColorScale(false, 'loss_percent');
+            updateMapLegend(defaultScale, false);
+            
             // Load country boundaries (using Natural Earth via CDN)
             loadCountryBoundaries();
         }
@@ -1670,10 +1720,26 @@
         }
         
         async function loadSiteData() {
-            if (!siteManifest) return;
+            // Wait for siteManifest to be loaded
+            if (!siteManifest) {
+                console.warn('siteManifest not loaded yet, waiting...');
+                // Try again after a short delay
+                setTimeout(loadSiteData, 500);
+                return;
+            }
+            
+            if (!map || !siteLayer) {
+                console.warn('Map not initialized yet');
+                return;
+            }
             
             const scenario = document.getElementById('map-scenario').value;
             const model = document.getElementById('map-model').value;
+            
+            if (!scenario || !model) {
+                console.warn('Scenario or model not selected');
+                return;
+            }
             
             // Check if this is a cumulative scenario
             const isCumulative = scenario.startsWith('cumulative_');
@@ -1689,9 +1755,6 @@
             }
             
             // Sanitize model name to match export format
-            // "Linear (3.81%/pp)" -> "Linear_3.81pct_pp"
-            // "Compound (3.81%/pp)" -> "Compound_3.81pct_pp"
-            // "Tipping Point (threshold=10%)" -> "Tipping_Point_threshold=10pct"
             const sanitizeModelName = (name) => {
                 return name.replace(/\s+/g, '_')
                     .replace(/\//g, '_')
@@ -1707,88 +1770,257 @@
             try {
                 const response = await fetch(DATA_PATH + filename);
                 if (!response.ok) {
-                    console.warn('Site data not found:', filename, 'Status:', response.status);
-                    // Try to list available files for debugging
+                    console.error(`Site data not found: ${filename} (Status: ${response.status})`);
+                    console.log('Expected file path:', DATA_PATH + filename);
                     if (siteManifest && siteManifest.cumulative_scenarios) {
-                        console.log('Available cumulative scenarios:', siteManifest.cumulative_scenarios);
+                        console.log('Available cumulative scenarios:', siteManifest.cumulative_scenarios.slice(0, 5));
                     }
+                    if (siteManifest && siteManifest.scenarios) {
+                        console.log('Available annual scenarios:', siteManifest.scenarios.slice(0, 5));
+                    }
+                    // Clear the map if no data found
+                    siteLayer.clearLayers();
+                    currentSiteGeojson = null;
                     return;
                 }
                 
                 const geojson = await response.json();
-                console.log('Loaded site data:', geojson.features.length, 'features');
+                
+                if (!geojson || !geojson.features || geojson.features.length === 0) {
+                    console.warn('GeoJSON has no features');
+                    siteLayer.clearLayers();
+                    currentSiteGeojson = null;
+                    return;
+                }
+                
+                console.log(`✓ Loaded ${geojson.features.length} features from ${filename}`);
                 renderSites(geojson, isCumulative);
             } catch (error) {
                 console.error('Error loading site data:', error);
+                console.error('Error details:', error.message, error.stack);
+                siteLayer.clearLayers();
+                currentSiteGeojson = null;
             }
         }
         
-        function renderSites(geojson, isCumulative = false) {
-            siteLayer.clearLayers();
+        // Color scales for different metrics
+        const COLOR_SCALES = {
+            // Green to yellow to red scale
+            loss_percent_annual: {
+                breaks: [0.1, 0.25, 0.5],
+                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
+                labels: ['< 10%', '10–25%', '25–50%', '> 50%'],
+                title: 'Annual Loss %'
+            },
+            loss_percent_cumulative: {
+                // For cumulative: use annual loss % which is in loss_fraction
+                breaks: [0.1, 0.25, 0.5],
+                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
+                labels: ['< 10%', '10–25%', '25–50%', '> 50%'],
+                title: 'Annual Loss % (at endpoint)'
+            },
+            absolute_annual: {
+                breaks: [10000, 50000, 200000],
+                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
+                labels: ['< $10k', '$10k–$50k', '$50k–$200k', '> $200k'],
+                title: 'Annual Loss ($)'
+            },
+            absolute_cumulative: {
+                breaks: [100000, 500000, 2000000],
+                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
+                labels: ['< $100k', '$100k–$500k', '$500k–$2M', '> $2M'],
+                title: 'Cumulative Loss ($)'
+            }
+        };
+        
+        function getColorScale(isCumulative, metric) {
+            if (metric === 'loss_percent') {
+                return isCumulative ? COLOR_SCALES.loss_percent_cumulative : COLOR_SCALES.loss_percent_annual;
+            } else {
+                return isCumulative ? COLOR_SCALES.absolute_cumulative : COLOR_SCALES.absolute_annual;
+            }
+        }
+        
+        function getColorFromScale(value, scale) {
+            if (value < scale.breaks[0]) return scale.colors[0];
+            if (value < scale.breaks[1]) return scale.colors[1];
+            if (value < scale.breaks[2]) return scale.colors[2];
+            return scale.colors[3];
+        }
+        
+        function updateMapLegend(scale, showChoropleth = false) {
+            const legendEl = document.getElementById('map-legend');
+            if (!legendEl) return;
             
-            const getColor = (lossFraction) => {
-                if (lossFraction < 0.1) return '#22c55e';
-                if (lossFraction < 0.25) return '#eab308';
-                if (lossFraction < 0.5) return '#E3B710';
-                return '#F11B00';
+            let html = `<div class="legend-title" style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 1rem;">${scale.title}</div>`;
+            
+            for (let i = 0; i < scale.colors.length; i++) {
+                html += `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${scale.colors[i]};"></div>
+                        <span>${scale.labels[i]}</span>
+                    </div>`;
+            }
+            
+            if (showChoropleth) {
+                html += `
+                    <div class="legend-separator" style="border-left: 1px solid var(--border); height: 24px; margin: 0 1rem;"></div>
+                    <div class="legend-item" id="choropleth-legend">
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Choropleth: Country-level aggregates</span>
+                    </div>`;
+            }
+            
+            legendEl.innerHTML = html;
+        }
+        
+        function renderSites(geojson, isCumulative = false) {
+            if (!geojson || !geojson.features || geojson.features.length === 0) {
+                console.warn('No features to render');
+                siteLayer.clearLayers();
+                return;
+            }
+            
+            if (!map || !siteLayer) {
+                console.error('Map or siteLayer not initialized');
+                return;
+            }
+            
+            siteLayer.clearLayers();
+            currentSiteGeojson = geojson;
+            
+            const metric = document.getElementById('map-metric').value;
+            const scale = getColorScale(isCumulative, metric);
+            const showChoropleth = document.getElementById('map-choropleth-toggle').checked;
+            
+            // Update legend
+            updateMapLegend(scale, showChoropleth);
+            
+            // Format values for popup
+            const formatMoney = (val) => {
+                if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
+                if (val >= 1e3) return `$${(val / 1e3).toFixed(1)}k`;
+                return `$${val.toFixed(0)}`;
             };
             
-            geojson.features.forEach(feature => {
+            const lossType = isCumulative ? 'Cumulative' : 'Annual';
+            
+            // Create style function that will be applied to each feature
+            const styleFunction = (feature) => {
                 const props = feature.properties;
-                const coords = feature.geometry.coordinates;
                 
-                // Use cumulative or annual loss data
-                const lossFraction = isCumulative ? 
-                    (props.cumulative_loss_fraction || 0) : 
-                    (props.loss_fraction || 0);
+                // Get loss data based on cumulative vs annual
+                const lossFraction = props.loss_fraction || 0;
                 const lossValue = isCumulative ?
                     (props.cumulative_loss || 0) :
                     (props.value_loss || props.annual_loss || 0);
-                const lossType = isCumulative ? 'Cumulative Loss' : 'Annual Loss';
                 
-                const marker = L.circleMarker([coords[1], coords[0]], {
-                    radius: 4,
-                    fillColor: getColor(lossFraction),
+                // Determine color value based on metric
+                let colorValue;
+                if (metric === 'loss_percent') {
+                    colorValue = lossFraction;
+                } else {
+                    colorValue = lossValue;
+                }
+                
+                const fillColor = getColorFromScale(colorValue, scale);
+                
+                return {
+                    fillColor: fillColor,
                     color: '#1a2332',
                     weight: 1,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                });
+                    opacity: 0.9,
+                    fillOpacity: 0.7
+                };
+            };
+            
+            // Create popup function
+            const onEachFeature = (feature, layer) => {
+                const props = feature.properties;
+                const lossFraction = props.loss_fraction || 0;
+                const lossValue = isCumulative ?
+                    (props.cumulative_loss || 0) :
+                    (props.value_loss || props.annual_loss || 0);
                 
-                marker.bindPopup(`
+                const popupContent = `
                     <div class="popup-content">
                         <strong>${props.country || 'Unknown'}</strong><br>
-                        Original: $${(props.original_value / 1000).toFixed(1)}k<br>
-                        <span class="popup-loss">${lossType}: ${(lossFraction * 100).toFixed(1)}%</span><br>
-                        ${lossType} Value: $${(lossValue / 1000).toFixed(1)}k<br>
-                        ${isCumulative ? '' : `Coral change: ${(props.coral_change * 100).toFixed(1)}pp`}
+                        Original Value (annual): ${formatMoney(props.original_value || 0)}<br>
+                        ${lossType} Loss: ${formatMoney(lossValue)} (${(lossFraction * 100).toFixed(1)}%)<br>
+                        Coral change: ${((props.coral_change || 0) * 100).toFixed(1)}pp
                     </div>
-                `);
-                
-                siteLayer.addLayer(marker);
-            });
+                `;
+                layer.bindPopup(popupContent);
+            };
             
-            console.log(`Rendered ${geojson.features.length} sites (${isCumulative ? 'cumulative' : 'annual'})`);
+            // Render all features using a single L.geoJSON call (more efficient)
+            try {
+                const geoJsonLayer = L.geoJSON(geojson, {
+                    style: styleFunction,
+                    onEachFeature: onEachFeature
+                });
+                
+                // Count layers added
+                let layerCount = 0;
+                geoJsonLayer.eachLayer(function(layer) {
+                    siteLayer.addLayer(layer);
+                    layerCount++;
+                });
+                
+                console.log(`✓ Added ${layerCount} layers to map`);
+                
+                // Fit map bounds to show all polygons
+                if (layerCount > 0) {
+                    try {
+                        const bounds = geoJsonLayer.getBounds();
+                        if (bounds && bounds.isValid()) {
+                            map.fitBounds(bounds, { 
+                                padding: [50, 50],
+                                maxZoom: 10  // Don't zoom in too much
+                            });
+                            console.log(`✓ Map bounds set to show all polygons`);
+                        } else {
+                            console.warn('Invalid bounds, using default view');
+                            map.setView([0, 0], 2);
+                        }
+                    } catch (boundsError) {
+                        console.warn('Error setting map bounds:', boundsError);
+                        map.setView([0, 0], 2);
+                    }
+                }
+                
+                console.log(`✓ Rendered ${geojson.features.length} sites (${isCumulative ? 'cumulative' : 'annual'}, metric: ${metric})`);
+            } catch (error) {
+                console.error('Error rendering sites:', error);
+                console.error('Error stack:', error.stack);
+                console.error('GeoJSON structure:', {
+                    type: geojson.type,
+                    featuresCount: geojson.features?.length,
+                    firstFeature: geojson.features?.[0]
+                });
+            }
             
             // Update choropleth if it's enabled
-            if (document.getElementById('map-choropleth-toggle').checked) {
+            if (showChoropleth) {
                 renderChoropleth();
             }
         }
 
         function toggleChoropleth() {
             const enabled = document.getElementById('map-choropleth-toggle').checked;
-            const legendEl = document.getElementById('choropleth-legend');
+            const scenario = document.getElementById('map-scenario').value;
+            const isCumulative = scenario.startsWith('cumulative_');
+            const metric = document.getElementById('map-metric').value;
+            const scale = getColorScale(isCumulative, metric);
             
             if (enabled) {
                 renderChoropleth();
-                if (legendEl) legendEl.style.display = 'flex';
             } else {
                 if (choroplethLayer) {
                     map.removeLayer(choroplethLayer);
                     choroplethLayer = L.layerGroup();
                 }
-                if (legendEl) legendEl.style.display = 'none';
+                // Update legend without choropleth indicator
+                updateMapLegend(scale, false);
                 removeChoroplethLegend();
             }
         }
@@ -1796,6 +2028,7 @@
         function renderChoropleth() {
             const scenario = document.getElementById('map-scenario').value;
             const isCumulative = scenario.startsWith('cumulative_');
+            const metric = document.getElementById('map-metric').value;
             const dataSource = isCumulative ? cumulativeCountryData : countryData;
             
             if (!dataSource || !countryBoundaries) {
@@ -1809,8 +2042,12 @@
             }
             
             const model = document.getElementById('map-model').value;
+            const scale = getColorScale(isCumulative, metric);
             
-            console.log('Rendering choropleth for scenario:', scenario, 'model:', model, 'isCumulative:', isCumulative, 'dataSource length:', dataSource.length);
+            console.log('Rendering choropleth for scenario:', scenario, 'model:', model, 'isCumulative:', isCumulative, 'metric:', metric);
+            
+            // Update legend with choropleth indicator
+            updateMapLegend(scale, true);
             
             // Normalize model names for matching
             const normalizeModelName = (name) => {
@@ -1835,14 +2072,14 @@
             
             console.log('Filtered countries:', filtered.length);
             
-            // Create lookup map by country name (try multiple name variations)
+            // Create lookup map by country name
             const countryMetrics = {};
             filtered.forEach(c => {
                 const countryName = c.country;
                 // Store by multiple possible keys for flexible matching
                 countryMetrics[countryName] = {
                     value_loss: isCumulative ? (c.cumulative_loss || 0) : (c.value_loss || 0),
-                    loss_fraction: isCumulative ? (c.cumulative_loss_fraction || 0) : (c.loss_fraction || 0),
+                    loss_fraction: c.loss_fraction || 0, // Always use annual loss fraction
                     iso_a3: c.iso_a3 || ''
                 };
                 // Also try common name variations
@@ -1857,62 +2094,70 @@
             }
             choroplethLayer = L.layerGroup();
             
-            // Style function for choropleth
-            const getColor = (lossFraction) => {
-                if (lossFraction === undefined || lossFraction === null) return '#64748b';
-                if (lossFraction < 0.1) return '#22c55e';
-                if (lossFraction < 0.25) return '#eab308';
-                if (lossFraction < 0.5) return '#E3B710';
-                return '#F11B00';
-            };
-            
             // Create styled GeoJSON layer
             const styledGeoJson = L.geoJSON(countryBoundaries, {
                 style: (feature) => {
                     const countryName = feature.properties.name;
                     // Try exact match first, then try partial matches
-                    let metric = countryMetrics[countryName];
-                    if (!metric) {
+                    let countryMetric = countryMetrics[countryName];
+                    if (!countryMetric) {
                         // Try matching by partial name
                         for (const [key, value] of Object.entries(countryMetrics)) {
                             if (countryName.includes(key) || key.includes(countryName)) {
-                                metric = value;
+                                countryMetric = value;
                                 break;
                             }
                         }
                     }
-                    const lossFraction = metric ? metric.loss_fraction : null;
+                    
+                    // Determine color value based on metric
+                    let colorValue = null;
+                    if (countryMetric) {
+                        if (metric === 'loss_percent') {
+                            colorValue = countryMetric.loss_fraction;
+                        } else {
+                            colorValue = countryMetric.value_loss;
+                        }
+                    }
+                    
+                    const fillColor = colorValue !== null ? getColorFromScale(colorValue, scale) : '#64748b';
                     
                     return {
-                        fillColor: getColor(lossFraction),
+                        fillColor: fillColor,
                         weight: 1,
                         opacity: 0.8,
                         color: '#1a2332',
-                        fillOpacity: metric ? 0.6 : 0,
-                        dashArray: metric ? null : '5, 5'
+                        fillOpacity: countryMetric ? 0.6 : 0,
+                        dashArray: countryMetric ? null : '5, 5'
                     };
                 },
                 onEachFeature: (feature, layer) => {
                     const countryName = feature.properties.name;
                     // Try exact match first, then try partial matches
-                    let metric = countryMetrics[countryName];
-                    if (!metric) {
-                        // Try matching by partial name (e.g., "United States" vs "United States of America")
+                    let countryMetric = countryMetrics[countryName];
+                    if (!countryMetric) {
                         for (const [key, value] of Object.entries(countryMetrics)) {
                             if (countryName.includes(key) || key.includes(countryName)) {
-                                metric = value;
+                                countryMetric = value;
                                 break;
                             }
                         }
                     }
                     
-                    if (metric) {
-                        const lossType = isCumulative ? 'Cumulative Loss' : 'Value Loss';
+                    if (countryMetric) {
+                        const lossType = isCumulative ? 'Cumulative' : 'Annual';
+                        const formatMoney = (val) => {
+                            if (val >= 1e9) return `$${(val / 1e9).toFixed(2)}B`;
+                            if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+                            if (val >= 1e3) return `$${(val / 1e3).toFixed(1)}k`;
+                            return `$${val.toFixed(0)}`;
+                        };
+                        
                         const popupContent = `
                             <div class="popup-content">
                                 <strong>${countryName}</strong><br>
-                                ${lossType}: $${(metric.value_loss / 1e6).toFixed(1)}M<br>
-                                Loss: ${(metric.loss_fraction * 100).toFixed(1)}%
+                                ${lossType} Loss: ${formatMoney(countryMetric.value_loss)}<br>
+                                Loss: ${(countryMetric.loss_fraction * 100).toFixed(1)}%
                             </div>
                         `;
                         layer.bindPopup(popupContent);

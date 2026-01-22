@@ -115,9 +115,13 @@ def export_cumulative_country_results(
                 country_cumulative_loss = (
                     country_annual_loss / total_annual_loss
                 ) * total_cumulative
-                country_cumulative_fraction = country_cumulative_loss / float(
-                    row.get("original_value", 1)
-                )
+                original_value = float(row.get("original_value", 1))
+                if not np.isnan(original_value) and original_value > 0:
+                    country_cumulative_fraction = (
+                        country_cumulative_loss / original_value
+                    )
+                else:
+                    country_cumulative_fraction = 0
             else:
                 country_cumulative_loss = 0
                 country_cumulative_fraction = 0
@@ -128,11 +132,13 @@ def export_cumulative_country_results(
                     "model": result.model.name,
                     "country": row.get("country", row.iloc[0]),
                     "iso_a3": row.get("iso_a3", ""),
-                    "original_value": float(row.get("original_value", 0)),
-                    "cumulative_loss": float(country_cumulative_loss),
-                    "cumulative_loss_fraction": float(country_cumulative_fraction),
-                    "annual_loss": float(country_annual_loss),
-                    "loss_fraction": float(row.get("loss_fraction", 0)),
+                    "original_value": make_json_safe(row.get("original_value", 0)),
+                    "cumulative_loss": make_json_safe(country_cumulative_loss),
+                    "cumulative_loss_fraction": make_json_safe(
+                        country_cumulative_fraction
+                    ),
+                    "annual_loss": make_json_safe(country_annual_loss),
+                    "loss_fraction": make_json_safe(row.get("loss_fraction", 0)),
                 }
             )
 
@@ -142,11 +148,18 @@ def export_cumulative_country_results(
     print(f"Exported cumulative country results: {len(all_countries)} records")
 
 
+def make_json_safe(value: float) -> float:
+    """Make a value JSON safe."""
+    if np.isnan(value):
+        return None
+    return float(value)
+
+
 def export_cumulative_site_results(
     results: AnalysisResults,
     cumulative_results: Dict[str, CumulativeImpactResult],
     output_dir: Path,
-    sample_fraction: float = 0.1,
+    sample_fraction: float = 1,
 ) -> None:
     """Export site-level cumulative results for point visualization."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -180,6 +193,9 @@ def export_cumulative_site_results(
     for key, result in results.results.items():
         gdf = result.gdf.copy()
 
+        print(
+            f"Dataframe is large {gdf.shape[0]} rows. Subsampling is suggested for performance."
+        )
         # Sample for performance
         if sample_fraction < 1.0:
             gdf = gdf.sample(frac=sample_fraction, random_state=42)
@@ -194,18 +210,12 @@ def export_cumulative_site_results(
         lookup_key = f"{rcp}_{year}_{model_name}"
         total_cumulative = cumulative_lookup.get(lookup_key, None)
 
-        # Convert to WGS84 and get centroids
+        # Convert to WGS84 (keep original polygon geometries)
         gdf = gdf.to_crs("EPSG:4326")
-        if gdf.geometry.geom_type.iloc[0] in ["Polygon", "MultiPolygon"]:
-            gdf_proj = gdf.to_crs("EPSG:3857")
-            centroids_proj = gdf_proj.geometry.centroid
-            centroids = centroids_proj.to_crs("EPSG:4326")
-        else:
-            centroids = gdf.geometry
 
         features = []
         for idx, (_, row) in enumerate(gdf.iterrows()):
-            geom = centroids.iloc[idx]
+            geom = gdf.geometry.iloc[idx]
             if geom.is_empty:
                 continue
 
@@ -218,17 +228,22 @@ def export_cumulative_site_results(
                 site_cumulative_loss = (
                     site_annual_loss / total_annual_loss
                 ) * total_cumulative
-                site_cumulative_fraction = site_cumulative_loss / float(
-                    row.get("original_value", 1)
-                )
+                original_value = float(row.get("original_value", 1))
+                if not np.isnan(original_value) and original_value > 0:
+                    site_cumulative_fraction = site_cumulative_loss / original_value
+                else:
+                    site_cumulative_fraction = 0
             else:
                 site_cumulative_loss = 0
                 site_cumulative_fraction = 0
 
+            # Use __geo_interface__ to get proper GeoJSON geometry
+            geom_dict = geom.__geo_interface__
+
             features.append(
                 {
                     "type": "Feature",
-                    "geometry": {"type": "Point", "coordinates": [geom.x, geom.y]},
+                    "geometry": geom_dict,
                     "properties": {
                         "country": str(row.get("country", "")),
                         "original_value": float(row.get("original_value", 0)),
@@ -282,7 +297,7 @@ def export_site_results(
     output_dir: Path,
     sample_fraction: float = 0.1,
 ) -> None:
-    """Export site-level results to GeoJSON for point visualization."""
+    """Export site-level results to GeoJSON for polygon visualization."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     features_by_scenario = {}
@@ -294,27 +309,22 @@ def export_site_results(
         if sample_fraction < 1.0:
             gdf = gdf.sample(frac=sample_fraction, random_state=42)
 
-        # Convert to WGS84 and get centroids in a projected CRS for accuracy
+        # Convert to WGS84 (keep original polygon geometries)
         gdf = gdf.to_crs("EPSG:4326")
-        if gdf.geometry.geom_type.iloc[0] in ["Polygon", "MultiPolygon"]:
-            # Reproject to a projected CRS (Web Mercator) to calculate centroids
-            gdf_proj = gdf.to_crs("EPSG:3857")
-            centroids_proj = gdf_proj.geometry.centroid
-            # Transform centroids back to WGS84 for output
-            centroids = centroids_proj.to_crs("EPSG:4326")
-        else:
-            centroids = gdf.geometry
 
         features = []
         for idx, (_, row) in enumerate(gdf.iterrows()):
-            geom = centroids.iloc[idx]
+            geom = gdf.geometry.iloc[idx]
             if geom.is_empty:
                 continue
+
+            # Use __geo_interface__ to get proper GeoJSON geometry
+            geom_dict = geom.__geo_interface__
 
             features.append(
                 {
                     "type": "Feature",
-                    "geometry": {"type": "Point", "coordinates": [geom.x, geom.y]},
+                    "geometry": geom_dict,
                     "properties": {
                         "country": str(row.get("country", "")),
                         "original_value": float(row.get("original_value", 0)),

@@ -800,7 +800,9 @@ def compute_country_aggregations(
         )
 
     if verbose:
-        _report_country_aggregations(by_country)
+        _report_country_aggregations(by_country, value_column)
+
+    return by_country
 
 
 def _report_country_aggregations(by_country: pd.DataFrame, value_column: str) -> None:
