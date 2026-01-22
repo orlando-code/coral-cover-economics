@@ -1,5 +1,5 @@
 {
-  "generated": "2026-01-19T13:29:31.343651",
+  "generated": "2026-01-21T16:05:23.551166",
   "snapshot_results": [
     {
       "scenario": "y_future_rcp45_2050",
@@ -21,9 +21,9 @@
       "scenario": "y_future_rcp45_2050",
       "model": "Tipping Point (threshold=10%)",
       "original_value_billions": 35.626255,
-      "remaining_value_billions": 33.377297656037086,
-      "total_loss_billions": 2.2489573439629136,
-      "loss_fraction_pct": 6.312640337759087
+      "remaining_value_billions": 31.341991259750646,
+      "total_loss_billions": 4.284263740249355,
+      "loss_fraction_pct": 12.025579843431073
     },
     {
       "scenario": "y_future_rcp45_2100",
@@ -45,9 +45,9 @@
       "scenario": "y_future_rcp45_2100",
       "model": "Tipping Point (threshold=10%)",
       "original_value_billions": 35.626255,
-      "remaining_value_billions": 32.09546933219669,
-      "total_loss_billions": 3.5307856678033067,
-      "loss_fraction_pct": 9.910628180827052
+      "remaining_value_billions": 28.900108302834695,
+      "total_loss_billions": 6.726146697165306,
+      "loss_fraction_pct": 18.879746684475553
     },
     {
       "scenario": "y_future_rcp85_2050",
@@ -69,9 +69,9 @@
       "scenario": "y_future_rcp85_2050",
       "model": "Tipping Point (threshold=10%)",
       "original_value_billions": 35.626255,
-      "remaining_value_billions": 32.496862827347314,
-      "total_loss_billions": 3.1293921726526834,
-      "loss_fraction_pct": 8.783949288671188
+      "remaining_value_billions": 29.664762911096645,
+      "total_loss_billions": 5.961492088903355,
+      "loss_fraction_pct": 16.733423394918592
     },
     {
       "scenario": "y_future_rcp85_2100",
@@ -93,9 +93,9 @@
       "scenario": "y_future_rcp85_2100",
       "model": "Tipping Point (threshold=10%)",
       "original_value_billions": 35.626255,
-      "remaining_value_billions": 28.085910463352135,
-      "total_loss_billions": 7.540344536647865,
-      "loss_fraction_pct": 21.16513379429824
+      "remaining_value_billions": 21.261898657685826,
+      "total_loss_billions": 14.364356342314174,
+      "loss_fraction_pct": 40.319579878138114
     }
   ],
   "cumulative_results": [
@@ -221,9 +221,9 @@
       "final_cover_pct": 30.111534472026126,
       "cover_change_pp": -5.048746393592501,
       "baseline_value_billions": 35.626255,
-      "final_value_billions": 32.02889647103086,
-      "annual_loss_at_end_billions": 3.5973585289691354,
-      "total_cumulative_loss_trillions": 0.18951728853191616
+      "final_value_billions": 28.773287002313793,
+      "annual_loss_at_end_billions": 6.852967997686207,
+      "total_cumulative_loss_trillions": 0.3610304346533004
     },
     {
       "key": "tourism_rcp45_exponential_Tipping Point (threshold=10%)",
@@ -235,9 +235,9 @@
       "final_cover_pct": 30.111534472026126,
       "cover_change_pp": -5.048746393592501,
       "baseline_value_billions": 35.626255,
-      "final_value_billions": 32.02889647103086,
-      "annual_loss_at_end_billions": 3.5973585289691354,
-      "total_cumulative_loss_trillions": 0.19044729581507902
+      "final_value_billions": 28.773287002313793,
+      "annual_loss_at_end_billions": 6.852967997686207,
+      "total_cumulative_loss_trillions": 0.3628020985277253
     },
     {
       "key": "tourism_rcp85_linear_Tipping Point (threshold=10%)",
@@ -249,9 +249,9 @@
       "final_cover_pct": 23.98167589224998,
       "cover_change_pp": -11.178604973368644,
       "baseline_value_billions": 35.626255,
-      "final_value_billions": 27.66121837349001,
-      "annual_loss_at_end_billions": 7.965036626509991,
-      "total_cumulative_loss_trillions": 0.3394463857638012
+      "final_value_billions": 20.452860226498466,
+      "annual_loss_at_end_billions": 15.173394773501533,
+      "total_cumulative_loss_trillions": 0.6466453648800411
     },
     {
       "key": "tourism_rcp85_exponential_Tipping Point (threshold=10%)",
@@ -263,9 +263,9 @@
       "final_cover_pct": 23.98167589224998,
       "cover_change_pp": -11.178604973368644,
       "baseline_value_billions": 35.626255,
-      "final_value_billions": 27.66121837349001,
-      "annual_loss_at_end_billions": 7.965036626509991,
-      "total_cumulative_loss_trillions": 0.34542821220161657
+      "final_value_billions": 20.452860226498466,
+      "annual_loss_at_end_billions": 15.173394773501533,
+      "total_cumulative_loss_trillions": 0.6580407442440795
     }
   ]
 }

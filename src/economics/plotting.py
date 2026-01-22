@@ -8,6 +8,7 @@ import warnings
 from pathlib import Path
 from typing import Dict, List
 
+import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
@@ -1267,7 +1268,7 @@ def plot_tourism_value_bins_map(
         ax=ax,
         label="Tourism value bin",
         orientation="horizontal",
-        pad=0.05,
+        pad=0.1,
         aspect=50,
         ticks=np.linspace(0.5, 9.5, len(prices_key)),
     )
@@ -1285,6 +1286,349 @@ def plot_tourism_value_bins_map(
         print(f"Saved: {save_path}")
 
     return fig
+
+
+def plot_spatial_distribution(
+    gdf,
+    plot_column: str = "bin_global",
+    bbox: tuple = None,
+    title: str = None,
+    save_path: Path = None,
+    fig: plt.Figure = None,
+    ax: plt.Axes = None,
+    transform: ccrs.CRS = None,
+    explode_factor: float = 1.0,
+    vmin: float = None,
+    vmax: float = None,
+    logarithmic_cbar: bool = False,
+    config: "SpatialPlotConfig" = None,
+    central_longitude: float = None,
+    extent: tuple = None,
+    show_scalebar: bool = False,
+) -> tuple[plt.Figure, plt.Axes]:
+    """
+    Plot a spatial distribution of a column in a GeoDataFrame.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+        Data with values to plot.
+    plot_column : str
+        Column containing values to plot.
+    bbox : tuple, optional
+        Bounding box (minx, miny, maxx, maxy) to zoom to. Deprecated: use extent in config.
+    title : str, optional
+        Plot title. Overrides config.title if provided.
+    save_path : Path, optional
+        Save path.
+    fig : Figure, optional
+        Matplotlib figure to plot on.
+    ax : Axes, optional
+        Matplotlib axes to plot on.
+    transform : ccrs.CRS, optional
+        Cartopy coordinate reference system for the plot. Deprecated: use config.
+    explode_factor : float, optional
+        Factor to scale polygons from their centroids. Deprecated: use config.explode_factor.
+    vmin : float, optional
+        Minimum value for colorbar. Deprecated: use config.vmin.
+    vmax : float, optional
+        Maximum value for colorbar. Deprecated: use config.vmax.
+    logarithmic_cbar : bool, optional
+        Use logarithmic colorbar. Deprecated: use config.logarithmic_cbar.
+    config : SpatialPlotConfig, optional
+        Configuration object for plot formatting. If provided, overrides individual parameters.
+    central_longitude : float, optional
+        Central longitude for map projection. Overrides config if provided.
+    extent : tuple, optional
+        Map extent (x0, x1, y0, y1). Overrides config if provided.
+
+    Returns
+    -------
+    tuple[Figure, Axes]
+        Figure and axes objects.
+    """
+    import matplotlib.cm as cm
+    from matplotlib.colors import LogNorm, Normalize
+    from shapely.affinity import scale, translate
+
+    from src.plots import plot_utils
+    from src.plots.plot_config import PAPER_SPATIAL_CONFIG
+    from src.plots.plot_utils import transform_coordinates_for_central_longitude
+
+    # Create or merge config
+    if config is None:
+        config = PAPER_SPATIAL_CONFIG.copy()
+
+    # print(f"config: {config}")
+    config = plot_utils.override_config_with_kwargs(
+        config,
+        central_longitude=central_longitude,
+        extent=extent,
+        title=title,
+        explode_factor=explode_factor,
+        vmin=vmin,
+        vmax=vmax,
+        logarithmic_cbar=logarithmic_cbar,
+        map_proj=transform,
+        show_scalebar=show_scalebar,
+    )
+    # print(f"config: {config}")
+
+    # Create figure/axes if not provided
+    if fig is None or ax is None:
+        fig, ax = plot_utils.generate_geo_axis(
+            figsize=config.figsize,
+            dpi=config.dpi,
+            central_longitude=config.central_longitude,
+            central_latitude=config.central_latitude,
+            map_proj=config.map_proj,
+            config=config,
+        )
+
+    # Format axes
+    plot_utils.format_geo_axes(ax, config=config)
+
+    # # This works and sorts out the colourmap issue (at least, it shows the variety of colours and adjusts the colourbar)
+    # if bbox:
+    #     from shapely.geometry import box
+
+    #     bbox_geom = box(*bbox)
+    #     gdf_plot = gdf[gdf.geometry.intersects(bbox_geom)].copy()
+    # else:
+    #     gdf_plot = gdf.copy()
+    gdf_plot = gdf.copy()
+
+    # Transform coordinates if central_longitude is set
+    if config.central_longitude is not None and config.transform_coords:
+        gdf_plot = transform_coordinates_for_central_longitude(
+            gdf_plot, config.central_longitude
+        )
+
+    # Apply explode factor if specified
+    if config.explode_factor != 1.0:
+
+        def scale_from_centroid(geom):
+            """Scale geometry from its centroid by explode_factor"""
+            if geom.is_empty:
+                return geom
+
+            # Get centroid
+            centroid = geom.centroid
+            cx, cy = centroid.x, centroid.y
+
+            # Translate to origin, scale, then translate back
+            geom_translated = translate(geom, xoff=-cx, yoff=-cy)
+            geom_scaled = scale(
+                geom_translated,
+                xfact=config.explode_factor,
+                yfact=config.explode_factor,
+                origin=(0, 0),
+            )
+            geom_final = translate(geom_scaled, xoff=cx, yoff=cy)
+
+            return geom_final
+
+        gdf_plot["geometry"] = gdf_plot.geometry.apply(scale_from_centroid)
+
+    # Get colormap
+    cmap = plt.get_cmap(config.cmap)
+
+    # Get transform for plotting
+    plot_transform = config.get_projection()
+
+    # Colorbar normalization
+    vmin_val = gdf_plot[plot_column].min() if config.vmin is None else config.vmin
+    vmax_val = gdf_plot[plot_column].max() if config.vmax is None else config.vmax
+
+    if config.logarithmic_cbar:
+        if vmin_val <= 0:
+            print("Warning: vmin is less than or equal to 0, setting vmin to 1e-10")
+            vmin_val = 1e-10
+            # snap values less than vmin_val to vmin_val
+            gdf_plot[plot_column] = gdf_plot[plot_column].clip(lower=vmin_val)
+        print("Using logarithmic colorbar")
+        norm = LogNorm(vmin=vmin_val, vmax=vmax_val)
+    else:
+        print(f"vmin_val: {vmin_val:.3e}, vmax_val: {vmax_val:.3e}")
+        norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+
+    # Plot
+    gdf_plot.plot(
+        ax=ax,
+        column=plot_column,
+        cmap=cmap,
+        legend=False,
+        linewidth=config.edgewidth,
+        edgecolor=config.edgecolor,
+        transform=plot_transform,
+        norm=norm,
+    )
+
+    # Colorbar
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    fig.colorbar(
+        sm,
+        ax=ax,
+        label=plot_column,
+        orientation=config.cbar_orientation,
+        pad=config.cbar_pad,
+        aspect=config.cbar_aspect,
+    )
+
+    # Labels and title
+    title_text = (
+        config.title
+        if config.title is not None
+        else f"Spatial Distribution of '{plot_column}'"
+    )
+    ax.set_title(title_text, fontsize=config.title_fontsize)
+
+    xlabel = config.xlabel if config.xlabel is not None else "Longitude"
+    ylabel = config.ylabel if config.ylabel is not None else "Latitude"
+    ax.set_xlabel(xlabel, fontsize=config.label_fontsize)
+    ax.set_ylabel(ylabel, fontsize=config.label_fontsize)
+
+    # Add scalebar if enabled
+    if config.show_scalebar:
+        plot_utils.add_scalebar(
+            ax=ax,
+            length=config.scalebar_length,
+            location=config.scalebar_location,
+            units=config.scalebar_units,
+            segments=config.scalebar_segments,
+            linewidth=config.scalebar_linewidth,
+            fontsize=config.scalebar_fontsize,
+            color=config.scalebar_color,
+            tick_rotation=config.scalebar_tick_rotation,
+            frame=config.scalebar_frame,
+        )
+
+    if config.tight_layout:
+        plt.tight_layout()
+
+    if save_path:
+        fig.savefig(
+            save_path,
+            dpi=config.save_dpi,
+            bbox_inches="tight",
+            format=config.save_format,
+        )
+        print(f"Saved: {save_path}")
+
+    return fig, ax
+
+
+def plot_spatial_distribution_interactive(
+    gdf,
+    plot_column: str = "bin_global",
+    bbox: tuple = None,
+    save_path: Path = None,
+) -> "folium.Map":
+    """
+    Create an interactive map showing the spatial distribution of a column in a GeoDataFrame,
+    using folium for high-resolution, interactive mapping.
+
+    Parameters
+    ----------
+    gdf : GeoDataFrame
+        Data with values to plot.
+    plot_column : str
+        Column containing values to plot.
+    bbox : tuple, optional
+        Bounding box (minx, miny, maxx, maxy) to zoom to.
+    save_path : Path, optional
+        Path to save the HTML map.
+
+    Returns
+    -------
+    folium.Map
+        The interactive folium map.
+    """
+    import branca
+    import folium
+    import matplotlib
+    import numpy as np
+
+    # Filter by bounding box if provided
+    if bbox:
+        from shapely.geometry import box
+
+        bbox_geom = box(*bbox)
+        gdf_plot = gdf[gdf.geometry.intersects(bbox_geom)].copy()
+        gdf_plot = gdf_plot[gdf_plot[plot_column].notnull()]
+    else:
+        gdf_plot = gdf.copy()
+        gdf_plot = gdf_plot[gdf_plot[plot_column].notnull()]
+
+    # Calculate bounds
+    if bbox:
+        minx, miny, maxx, maxy = bbox
+    else:
+        minx, miny, maxx, maxy = gdf_plot.total_bounds
+
+    # Center of the map
+    center = [(miny + maxy) / 2, (minx + maxx) / 2]
+
+    # Choose colormap to match appearance with matplotlib's "turbo"
+    cmap = matplotlib.cm.get_cmap("turbo")
+    values = gdf_plot[plot_column].values.astype(float)
+    vmin, vmax = np.nanmin(values), np.nanmax(values)
+
+    # Create a branca colormap (for folium coloring)
+    colormap = branca.colormap.LinearColormap(
+        [matplotlib.colors.rgb2hex(cmap(i)) for i in np.linspace(0, 1, 256)],
+        vmin=vmin,
+        vmax=vmax,
+    )
+    colormap.caption = plot_column
+
+    # Reproject to WGS84 if not already
+    if gdf_plot.crs is not None and gdf_plot.crs.to_epsg() != 4326:
+        gdf_plot = gdf_plot.to_crs(epsg=4326)
+
+    # Create the folium map
+    m = folium.Map(location=center, zoom_start=7, tiles="cartodbpositron")
+
+    # Add features at reasonable geojson resolution (for high-res display)
+    # If there are lots of polygons, simplify to a small tolerance for performance,
+    # but we'll use a small value so detail is high.
+    gdf_plot = gdf_plot.copy()
+    gdf_plot["geometry"] = gdf_plot["geometry"].simplify(
+        tolerance=0.0003, preserve_topology=True
+    )
+
+    def style_function(feature):
+        val = feature["properties"][plot_column]
+        if val is not None:
+            color = colormap(val)
+        else:
+            color = "#999999"
+        return {
+            "fillOpacity": 0.7,
+            "weight": 0.2,
+            "color": color,
+            "fillColor": color,
+        }
+
+    folium.GeoJson(
+        gdf_plot,
+        name="spatial",
+        style_function=style_function,
+        highlight_function=lambda x: {"weight": 2, "color": "yellow"},
+        tooltip=folium.GeoJsonTooltip(fields=[plot_column]),
+    ).add_to(m)
+
+    colormap.add_to(m)
+
+    m.fit_bounds([[miny, minx], [maxy, maxx]])
+
+    if save_path:
+        save_path = str(save_path)
+        m.save(save_path)
+        print(f"Interactive map saved: {save_path}")
+
+    return m
 
 
 def generate_verification_plots(

@@ -2265,9 +2265,9 @@
     "country": "Egypt",
     "iso_a3": "EGY",
     "original_value": 5467295000.0,
-    "remaining_value": 5112302022.672654,
-    "value_loss": 354992977.327345,
-    "loss_fraction": 0.06493027673234113
+    "remaining_value": 4791033378.191407,
+    "value_loss": 676261621.8085927,
+    "loss_fraction": 0.12369217717510994
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2275,9 +2275,9 @@
     "country": "Thailand",
     "iso_a3": "THA",
     "original_value": 2410154000.0,
-    "remaining_value": 2180948402.5334334,
-    "value_loss": 229205597.4665664,
-    "loss_fraction": 0.09509998011187933
+    "remaining_value": 1973517336.826191,
+    "value_loss": 436636663.17380905,
+    "loss_fraction": 0.18116546211313014
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2285,9 +2285,9 @@
     "country": "Indonesia",
     "iso_a3": "IDN",
     "original_value": 3097453000.0,
-    "remaining_value": 2886230031.758396,
-    "value_loss": 211222968.2416042,
-    "loss_fraction": 0.06819246918084124
+    "remaining_value": 2695073245.499744,
+    "value_loss": 402379754.500256,
+    "loss_fraction": 0.12990665378950253
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2295,9 +2295,9 @@
     "country": "China",
     "iso_a3": "CHN",
     "original_value": 1871813999.9999998,
-    "remaining_value": 1704214867.7371285,
-    "value_loss": 167599132.26287133,
-    "loss_fraction": 0.08953834743349037
+    "remaining_value": 1552537653.03923,
+    "value_loss": 319276346.96076983,
+    "loss_fraction": 0.17057055186079914
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2305,9 +2305,9 @@
     "country": "Australia",
     "iso_a3": "AUS",
     "original_value": 2176084000.0,
-    "remaining_value": 2036017697.8521078,
-    "value_loss": 140066302.14789218,
-    "loss_fraction": 0.06436622030578423
+    "remaining_value": 1909257694.4082654,
+    "value_loss": 266826305.5917346,
+    "loss_fraction": 0.12261764968251895
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2315,9 +2315,9 @@
     "country": "United States of America",
     "iso_a3": "USA",
     "original_value": 2387729000.0,
-    "remaining_value": 2253428891.86757,
-    "value_loss": 134300108.13243026,
-    "loss_fraction": 0.056245959291205266
+    "remaining_value": 2131887294.0077202,
+    "value_loss": 255841705.99227977,
+    "loss_fraction": 0.10714855244974608
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2325,9 +2325,9 @@
     "country": "Mexico",
     "iso_a3": "MEX",
     "original_value": 2999883000.0,
-    "remaining_value": 2895796539.660029,
-    "value_loss": 104086460.33997096,
-    "loss_fraction": 0.03469683995674863
+    "remaining_value": 2801598293.0523553,
+    "value_loss": 198284706.9476446,
+    "loss_fraction": 0.06609748011760612
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2335,9 +2335,9 @@
     "country": "Philippines",
     "iso_a3": "PHL",
     "original_value": 1385144000.0,
-    "remaining_value": 1290688259.3365507,
-    "value_loss": 94455740.66344921,
-    "loss_fraction": 0.06819200073310011
+    "remaining_value": 1205205814.0361292,
+    "value_loss": 179938185.96387076,
+    "loss_fraction": 0.1299057613965557
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2345,9 +2345,9 @@
     "country": "Japan",
     "iso_a3": "JPN",
     "original_value": 1177549000.0,
-    "remaining_value": 1093162581.6257217,
-    "value_loss": 84386418.37427822,
-    "loss_fraction": 0.07166276594373416
+    "remaining_value": 1016792872.997,
+    "value_loss": 160756127.00299996,
+    "loss_fraction": 0.13651756912281354
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2355,9 +2355,9 @@
     "country": "Malaysia",
     "iso_a3": "MYS",
     "original_value": 1148955000.0,
-    "remaining_value": 1067929640.114407,
-    "value_loss": 81025359.8855931,
-    "loss_fraction": 0.07052091673354753
+    "remaining_value": 994601689.4179453,
+    "value_loss": 154353310.58205482,
+    "loss_fraction": 0.13434234637740802
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2365,9 +2365,9 @@
     "country": "Maldives",
     "iso_a3": "MDV",
     "original_value": 1085273000.0,
-    "remaining_value": 1008989556.2483972,
-    "value_loss": 76283443.75160274,
-    "loss_fraction": 0.07028963565075584
+    "remaining_value": 939953039.6531968,
+    "value_loss": 145319960.34680325,
+    "loss_fraction": 0.1339017559146899
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2375,9 +2375,9 @@
     "country": "India",
     "iso_a3": "IND",
     "original_value": 464082000.0,
-    "remaining_value": 426127460.1397844,
-    "value_loss": 37954539.86021561,
-    "loss_fraction": 0.08178412405612717
+    "remaining_value": 391778601.56628925,
+    "value_loss": 72303398.43371074,
+    "loss_fraction": 0.15579875632692228
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2385,9 +2385,9 @@
     "country": "United Arab Emirates",
     "iso_a3": "ARE",
     "original_value": 445654000.00000006,
-    "remaining_value": 408025143.034288,
-    "value_loss": 37628856.96571204,
-    "loss_fraction": 0.08443513794493494
+    "remaining_value": 373971027.4803186,
+    "value_loss": 71682972.51968145,
+    "loss_fraction": 0.1608489377851011
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2395,9 +2395,9 @@
     "country": "Brazil",
     "iso_a3": "BRA",
     "original_value": 612864000.0,
-    "remaining_value": 578686520.2979645,
-    "value_loss": 34177479.70203558,
-    "loss_fraction": 0.05576682543278049
+    "remaining_value": 547755901.1676222,
+    "value_loss": 65108098.83237777,
+    "loss_fraction": 0.1062358024494468
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2405,9 +2405,9 @@
     "country": "Bahamas",
     "iso_a3": "BHS",
     "original_value": 526057999.99999994,
-    "remaining_value": 501249251.9193967,
-    "value_loss": 24808748.08060325,
-    "loss_fraction": 0.04715972018409235
+    "remaining_value": 478797334.90645075,
+    "value_loss": 47260665.0935492,
+    "loss_fraction": 0.08983926695069594
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2415,9 +2415,9 @@
     "country": "Honduras",
     "iso_a3": "HND",
     "original_value": 446628000.0,
-    "remaining_value": 422140375.71728474,
-    "value_loss": 24487624.28271524,
-    "loss_fraction": 0.054827785724843134
+    "remaining_value": 399979075.7414274,
+    "value_loss": 46648924.258572556,
+    "loss_fraction": 0.10444693180582623
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2425,9 +2425,9 @@
     "country": "Mauritius",
     "iso_a3": "MUS",
     "original_value": 312389000.0,
-    "remaining_value": 288636694.5519803,
-    "value_loss": 23752305.44801969,
-    "loss_fraction": 0.07603438484716073
+    "remaining_value": 267140858.1215225,
+    "value_loss": 45248141.87847752,
+    "loss_fraction": 0.1448455031338412
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2435,9 +2435,9 @@
     "country": "Oman",
     "iso_a3": "OMN",
     "original_value": 221164000.0,
-    "remaining_value": 197839385.88372502,
-    "value_loss": 23324614.116274968,
-    "loss_fraction": 0.10546297822554741
+    "remaining_value": 176730610.10849616,
+    "value_loss": 44433389.89150384,
+    "loss_fraction": 0.20090697351966794
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2445,9 +2445,9 @@
     "country": "Guam",
     "iso_a3": "GUM",
     "original_value": 323244000.0,
-    "remaining_value": 300745481.6392039,
-    "value_loss": 22498518.360796098,
-    "loss_fraction": 0.06960227679646365
+    "remaining_value": 280384322.52268344,
+    "value_loss": 42859677.477316566,
+    "loss_fraction": 0.13259233729726327
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2455,9 +2455,9 @@
     "country": "Saudi Arabia",
     "iso_a3": "SAU",
     "original_value": 268681000.00000006,
-    "remaining_value": 246438435.56283456,
-    "value_loss": 22242564.437165465,
-    "loss_fraction": 0.08278428484770214
+    "remaining_value": 226308914.74719983,
+    "value_loss": 42372085.2528002,
+    "loss_fraction": 0.15770406263487252
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2465,9 +2465,9 @@
     "country": "Taiwan",
     "iso_a3": "TWN",
     "original_value": 323440000.0,
-    "remaining_value": 305614054.31113154,
-    "value_loss": 17825945.688868433,
-    "loss_fraction": 0.055113608981166316
+    "remaining_value": 289481573.4627056,
+    "value_loss": 33958426.53729439,
+    "loss_fraction": 0.1049914251091219
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2475,9 +2475,9 @@
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
     "original_value": 511669000.0,
-    "remaining_value": 494468611.2034309,
-    "value_loss": 17200388.79656909,
-    "loss_fraction": 0.03361624174333229
+    "remaining_value": 478902259.34253585,
+    "value_loss": 32766740.657464117,
+    "loss_fraction": 0.06403894052104801
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2485,9 +2485,9 @@
     "country": "Puerto Rico",
     "iso_a3": "PRI",
     "original_value": 648867000.0,
-    "remaining_value": 631814186.4834388,
-    "value_loss": 17052813.516561106,
-    "loss_fraction": 0.026280907360924668
+    "remaining_value": 616381390.250951,
+    "value_loss": 32485609.749048907,
+    "loss_fraction": 0.050065128522561494
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2495,9 +2495,9 @@
     "country": "Cayman Is.",
     "iso_a3": "CYM",
     "original_value": 292794000.0,
-    "remaining_value": 278468764.6418976,
-    "value_loss": 14325235.358102396,
-    "loss_fraction": 0.04892598672821983
+    "remaining_value": 265504426.64281496,
+    "value_loss": 27289573.357185047,
+    "loss_fraction": 0.09320400471725872
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2505,9 +2505,9 @@
     "country": "Tanzania",
     "iso_a3": "TZA",
     "original_value": 131076000.0,
-    "remaining_value": 118979518.8308718,
-    "value_loss": 12096481.16912819,
-    "loss_fraction": 0.09228601093356671
+    "remaining_value": 108032203.3728108,
+    "value_loss": 23043796.627189204,
+    "loss_fraction": 0.1758048508284446
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2515,9 +2515,9 @@
     "country": "Aruba",
     "iso_a3": "ABW",
     "original_value": 218226000.0,
-    "remaining_value": 206580047.30530167,
-    "value_loss": 11645952.694698319,
-    "loss_fraction": 0.05336647647254827
+    "remaining_value": 196040460.11659974,
+    "value_loss": 22185539.88340026,
+    "loss_fraction": 0.1016631376802043
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2525,9 +2525,9 @@
     "country": "Fiji",
     "iso_a3": "FJI",
     "original_value": 234676000.0,
-    "remaining_value": 223192967.79340327,
-    "value_loss": 11483032.20659673,
-    "loss_fraction": 0.04893142974397352
+    "remaining_value": 212800823.64643323,
+    "value_loss": 21875176.353566777,
+    "loss_fraction": 0.09321437366226959
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2535,9 +2535,9 @@
     "country": "Barbados",
     "iso_a3": "BRB",
     "original_value": 180082000.0,
-    "remaining_value": 168941082.85688582,
-    "value_loss": 11140917.143114168,
-    "loss_fraction": 0.06186580081914999
+    "remaining_value": 158858552.8423675,
+    "value_loss": 21223447.157632485,
+    "loss_fraction": 0.1178543505604807
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2545,9 +2545,9 @@
     "country": "Costa Rica",
     "iso_a3": "CRI",
     "original_value": 169518000.0,
-    "remaining_value": 158419309.20344114,
-    "value_loss": 11098690.796558863,
-    "loss_fraction": 0.06547204896564886
+    "remaining_value": 148374994.03255537,
+    "value_loss": 21143005.967444632,
+    "loss_fraction": 0.12472425327956106
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2555,9 +2555,9 @@
     "country": "Venezuela",
     "iso_a3": "VEN",
     "original_value": 281865000.0,
-    "remaining_value": 271015684.27714795,
-    "value_loss": 10849315.722852075,
-    "loss_fraction": 0.03849117741774281
+    "remaining_value": 261197053.5479668,
+    "value_loss": 20667946.45203319,
+    "loss_fraction": 0.07332569298079998
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2565,9 +2565,9 @@
     "country": "Panama",
     "iso_a3": "PAN",
     "original_value": 154178000.0,
-    "remaining_value": 143374191.2527216,
-    "value_loss": 10803808.747278376,
-    "loss_fraction": 0.07007360808467081
+    "remaining_value": 133596744.33643469,
+    "value_loss": 20581255.6635653,
+    "loss_fraction": 0.13349022340129785
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2575,9 +2575,9 @@
     "country": "British Virgin Is.",
     "iso_a3": "VGB",
     "original_value": 195550000.00000003,
-    "remaining_value": 184794179.4697328,
-    "value_loss": 10755820.530267224,
-    "loss_fraction": 0.055002917567206454
+    "remaining_value": 175060161.88984096,
+    "value_loss": 20489838.11015906,
+    "loss_fraction": 0.10478055796552829
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2585,9 +2585,9 @@
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
     "original_value": 276056000.0,
-    "remaining_value": 265468463.4165546,
-    "value_loss": 10587536.583445372,
-    "loss_fraction": 0.03835285805577626
+    "remaining_value": 255886742.80853656,
+    "value_loss": 20169257.191463422,
+    "loss_fraction": 0.07306219459625374
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2595,9 +2595,9 @@
     "country": "Cuba",
     "iso_a3": "CUB",
     "original_value": 283290000.0,
-    "remaining_value": 273240666.73291284,
-    "value_loss": 10049333.267087163,
-    "loss_fraction": 0.035473660443669605
+    "remaining_value": 264146020.12619895,
+    "value_loss": 19143979.873801053,
+    "loss_fraction": 0.06757732314519063
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2605,9 +2605,9 @@
     "country": "Qatar",
     "iso_a3": "QAT",
     "original_value": 108066000.00000001,
-    "remaining_value": 98311545.51191221,
-    "value_loss": 9754454.488087792,
-    "loss_fraction": 0.09026386178897887
+    "remaining_value": 89483764.20019275,
+    "value_loss": 18582235.799807254,
+    "loss_fraction": 0.17195265670800486
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2615,9 +2615,9 @@
     "country": "Sri Lanka",
     "iso_a3": "LKA",
     "original_value": 82371000.0,
-    "remaining_value": 72805638.50283043,
-    "value_loss": 9565361.497169578,
-    "loss_fraction": 0.11612535354881667
+    "remaining_value": 64148986.347891964,
+    "value_loss": 18222013.652108043,
+    "loss_fraction": 0.22121879851049572
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2625,9 +2625,9 @@
     "country": "Kenya",
     "iso_a3": "KEN",
     "original_value": 84152000.0,
-    "remaining_value": 75036593.22563246,
-    "value_loss": 9115406.774367534,
-    "loss_fraction": 0.10832073835877382
+    "remaining_value": 66787150.09482986,
+    "value_loss": 17364849.90517014,
+    "loss_fraction": 0.20635100657346395
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2635,9 +2635,9 @@
     "country": "Palau",
     "iso_a3": "PLW",
     "original_value": 92503000.0,
-    "remaining_value": 83904670.8290637,
-    "value_loss": 8598329.170936301,
-    "loss_fraction": 0.09295189530000433
+    "remaining_value": 76123182.92936634,
+    "value_loss": 16379817.07063366,
+    "loss_fraction": 0.17707336054650832
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2645,9 +2645,9 @@
     "country": "Vietnam",
     "iso_a3": "VNM",
     "original_value": 137445000.0,
-    "remaining_value": 128972562.44619818,
-    "value_loss": 8472437.553801827,
-    "loss_fraction": 0.06164238461786043
+    "remaining_value": 121305006.46000752,
+    "value_loss": 16139993.539992483,
+    "loss_fraction": 0.11742874269702415
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2655,9 +2655,9 @@
     "country": "Jamaica",
     "iso_a3": "JAM",
     "original_value": 333386000.0,
-    "remaining_value": 325057012.71651787,
-    "value_loss": 8328987.283482135,
-    "loss_fraction": 0.02498301453415001
+    "remaining_value": 317519279.2249665,
+    "value_loss": 15866720.775033472,
+    "loss_fraction": 0.04759264268755578
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2665,9 +2665,9 @@
     "country": "Bahrain",
     "iso_a3": "BHR",
     "original_value": 115837000.0,
-    "remaining_value": 107675458.97213043,
-    "value_loss": 8161541.027869566,
-    "loss_fraction": 0.07045711670597103
+    "remaining_value": 100289264.34190847,
+    "value_loss": 15547735.65809152,
+    "loss_fraction": 0.1342208073248748
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2675,9 +2675,9 @@
     "country": "Seychelles",
     "iso_a3": "SYC",
     "original_value": 73141000.0,
-    "remaining_value": 66450195.71640606,
-    "value_loss": 6690804.283593937,
-    "loss_fraction": 0.09147816250248064
+    "remaining_value": 60395017.83975354,
+    "value_loss": 12745982.160246456,
+    "loss_fraction": 0.1742658995672257
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2685,9 +2685,9 @@
     "country": "Colombia",
     "iso_a3": "COL",
     "original_value": 147202000.0,
-    "remaining_value": 140851073.3853436,
-    "value_loss": 6350926.614656379,
-    "loss_fraction": 0.04314429569337631
+    "remaining_value": 135103484.7990796,
+    "value_loss": 12098515.200920409,
+    "loss_fraction": 0.08218988329588191
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2695,9 +2695,9 @@
     "country": "N. Mariana Is.",
     "iso_a3": "MNP",
     "original_value": 61302000.00000001,
-    "remaining_value": 55182786.99742238,
-    "value_loss": 6119213.0025776215,
-    "loss_fraction": 0.09982077261064273
+    "remaining_value": 49644899.230089635,
+    "value_loss": 11657100.76991037,
+    "loss_fraction": 0.19015857182327445
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2705,9 +2705,9 @@
     "country": "Kuwait",
     "iso_a3": "KWT",
     "original_value": 117235999.99999999,
-    "remaining_value": 111417035.38791455,
-    "value_loss": 5818964.612085438,
-    "loss_fraction": 0.04963462257399979
+    "remaining_value": 106150872.41397722,
+    "value_loss": 11085127.586022764,
+    "loss_fraction": 0.09455395600346964
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2715,9 +2715,9 @@
     "country": "Mozambique",
     "iso_a3": "MOZ",
     "original_value": 68356000.0,
-    "remaining_value": 63546695.93340958,
-    "value_loss": 4809304.0665904265,
-    "loss_fraction": 0.07035672167169563
+    "remaining_value": 59194275.75314524,
+    "value_loss": 9161724.246854767,
+    "loss_fraction": 0.13402955478458026
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2725,9 +2725,9 @@
     "country": "Turks and Caicos Is.",
     "iso_a3": "TCA",
     "original_value": 97587000.0,
-    "remaining_value": 93538787.48774092,
-    "value_loss": 4048212.512259081,
-    "loss_fraction": 0.04148311263036143
+    "remaining_value": 89875155.16414645,
+    "value_loss": 7711844.83585355,
+    "loss_fraction": 0.07902532956083853
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2735,9 +2735,9 @@
     "country": "Belize",
     "iso_a3": "BLZ",
     "original_value": 80611000.0,
-    "remaining_value": 76662319.24347539,
-    "value_loss": 3948680.7565246047,
-    "loss_fraction": 0.04898439116900429
+    "remaining_value": 73088763.15882063,
+    "value_loss": 7522236.841179371,
+    "loss_fraction": 0.09331526517695315
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2745,9 +2745,9 @@
     "country": "Sint Maarten",
     "iso_a3": "SXM",
     "original_value": 116736000.0,
-    "remaining_value": 113627911.28112555,
-    "value_loss": 3108088.7188744545,
-    "loss_fraction": 0.0266249376274196
+    "remaining_value": 110815090.99054416,
+    "value_loss": 5920909.009455841,
+    "loss_fraction": 0.05072050618023438
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2755,9 +2755,9 @@
     "country": "St-Martin",
     "iso_a3": "MAF",
     "original_value": 89337000.0,
-    "remaining_value": 86267462.02538098,
-    "value_loss": 3069537.9746190086,
-    "loss_fraction": 0.03435908945475009
+    "remaining_value": 83489530.15835078,
+    "value_loss": 5847469.8416492175,
+    "loss_fraction": 0.06545406541129899
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2765,9 +2765,9 @@
     "country": "Vanuatu",
     "iso_a3": "VUT",
     "original_value": 49991000.0,
-    "remaining_value": 47132616.318184815,
-    "value_loss": 2858383.681815178,
-    "loss_fraction": 0.05717796567012418
+    "remaining_value": 44545779.08614208,
+    "value_loss": 5445220.913857919,
+    "loss_fraction": 0.10892402460158666
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2775,9 +2775,9 @@
     "country": "Antigua and Barb.",
     "iso_a3": "ATG",
     "original_value": 66043000.0,
-    "remaining_value": 63205734.292441845,
-    "value_loss": 2837265.707558156,
-    "loss_fraction": 0.04296088468964396
+    "remaining_value": 60638008.82710171,
+    "value_loss": 5404991.172898293,
+    "loss_fraction": 0.08184048533377182
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2785,9 +2785,9 @@
     "country": "Saint Lucia",
     "iso_a3": "LCA",
     "original_value": 56573999.99999999,
-    "remaining_value": 54123969.76785555,
-    "value_loss": 2450030.2321444503,
-    "loss_fraction": 0.043306646730732326
+    "remaining_value": 51906692.40776482,
+    "value_loss": 4667307.592235172,
+    "loss_fraction": 0.08249916202204498
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2795,9 +2795,9 @@
     "country": "Papua New Guinea",
     "iso_a3": "PNG",
     "original_value": 32024000.0,
-    "remaining_value": 29633836.310983803,
-    "value_loss": 2390163.689016197,
-    "loss_fraction": 0.0746366378034036
+    "remaining_value": 27470738.17242414,
+    "value_loss": 4553261.827575856,
+    "loss_fraction": 0.1421827950154839
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2805,9 +2805,9 @@
     "country": "Fr. Polynesia",
     "iso_a3": "PYF",
     "original_value": 35516000.0,
-    "remaining_value": 33394778.586894184,
-    "value_loss": 2121221.4131058175,
-    "loss_fraction": 0.059725797192978304
+    "remaining_value": 31475073.208033416,
+    "value_loss": 4040926.791966583,
+    "loss_fraction": 0.11377764365262369
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2815,9 +2815,9 @@
     "country": "New Caledonia",
     "iso_a3": "NCL",
     "original_value": 28465000.0,
-    "remaining_value": 26467015.419361375,
-    "value_loss": 1997984.580638625,
-    "loss_fraction": 0.07019092150495784
+    "remaining_value": 24658839.37388342,
+    "value_loss": 3806160.6261165813,
+    "loss_fraction": 0.13371370546694472
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2825,9 +2825,9 @@
     "country": "Trinidad and Tobago",
     "iso_a3": "TTO",
     "original_value": 44958000.0,
-    "remaining_value": 43336036.97616106,
-    "value_loss": 1621963.0238389394,
-    "loss_fraction": 0.036077294893877385
+    "remaining_value": 41868160.43958682,
+    "value_loss": 3089839.560413181,
+    "loss_fraction": 0.06872724677283644
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2835,9 +2835,9 @@
     "country": "France",
     "iso_a3": "-99",
     "original_value": 44416000.0,
-    "remaining_value": 42958330.72838781,
-    "value_loss": 1457669.2716121874,
-    "loss_fraction": 0.032818562491268626
+    "remaining_value": 41639140.037578784,
+    "value_loss": 2776859.9624212184,
+    "loss_fraction": 0.06251936154586676
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2845,9 +2845,9 @@
     "country": "Myanmar",
     "iso_a3": "MMR",
     "original_value": 11580999.999999998,
-    "remaining_value": 10229602.32081797,
-    "value_loss": 1351397.6791820289,
-    "loss_fraction": 0.11669093162784121
+    "remaining_value": 9006587.421158234,
+    "value_loss": 2574412.5788417654,
+    "loss_fraction": 0.22229622475103755
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2855,9 +2855,9 @@
     "country": "Brunei",
     "iso_a3": "BRN",
     "original_value": 28259000.0,
-    "remaining_value": 26924432.9675098,
-    "value_loss": 1334567.0324902025,
-    "loss_fraction": 0.04722626534874562
+    "remaining_value": 25716649.803106166,
+    "value_loss": 2542350.1968938345,
+    "loss_fraction": 0.08996603548936036
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2865,9 +2865,9 @@
     "country": "Cook Is.",
     "iso_a3": "COK",
     "original_value": 19106000.0,
-    "remaining_value": 17821014.835411746,
-    "value_loss": 1284985.1645882525,
-    "loss_fraction": 0.06725558277966359
+    "remaining_value": 16658103.261459375,
+    "value_loss": 2447896.738540623,
+    "loss_fraction": 0.12812188519525924
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2875,9 +2875,9 @@
     "country": "Cambodia",
     "iso_a3": "KHM",
     "original_value": 18285000.0,
-    "remaining_value": 17030653.362954766,
-    "value_loss": 1254346.637045232,
-    "loss_fraction": 0.06859976139159049
+    "remaining_value": 15895469.656428833,
+    "value_loss": 2389530.343571167,
+    "loss_fraction": 0.13068254545097988
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2885,9 +2885,9 @@
     "country": "Micronesia",
     "iso_a3": "FSM",
     "original_value": 18108000.0,
-    "remaining_value": 16926457.197689034,
-    "value_loss": 1181542.802310967,
-    "loss_fraction": 0.06524976818593808
+    "remaining_value": 15857160.961597607,
+    "value_loss": 2250839.038402393,
+    "loss_fraction": 0.12430080839421212
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2895,9 +2895,9 @@
     "country": "Netherlands",
     "iso_a3": "NLD",
     "original_value": 24388000.0,
-    "remaining_value": 23224331.547134098,
-    "value_loss": 1163668.4528659026,
-    "loss_fraction": 0.04771479632876425
+    "remaining_value": 22171211.597290456,
+    "value_loss": 2216788.4027095437,
+    "loss_fraction": 0.09089668700629587
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2905,9 +2905,9 @@
     "country": "Madagascar",
     "iso_a3": "MDG",
     "original_value": 50495999.99999999,
-    "remaining_value": 49354559.10946563,
-    "value_loss": 1141440.8905343695,
-    "loss_fraction": 0.02260458037338343
+    "remaining_value": 48321555.103532024,
+    "value_loss": 2174444.8964679735,
+    "loss_fraction": 0.043061725611295426
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2915,9 +2915,9 @@
     "country": "Anguilla",
     "iso_a3": "AIA",
     "original_value": 19685000.0,
-    "remaining_value": 18561029.830629967,
-    "value_loss": 1123970.1693700342,
-    "loss_fraction": 0.05709779879959534
+    "remaining_value": 17543836.827350084,
+    "value_loss": 2141163.1726499177,
+    "loss_fraction": 0.10877130671322924
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2925,9 +2925,9 @@
     "country": "Sudan",
     "iso_a3": "SDN",
     "original_value": 28480000.0,
-    "remaining_value": 27398731.460165523,
-    "value_loss": 1081268.5398344796,
-    "loss_fraction": 0.0379658897413792
+    "remaining_value": 26420183.43161532,
+    "value_loss": 2059816.5683846816,
+    "loss_fraction": 0.0723250199573273
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2935,9 +2935,9 @@
     "country": "Cura\u00e7ao",
     "iso_a3": "CUW",
     "original_value": 19676000.0,
-    "remaining_value": 18627470.707152408,
-    "value_loss": 1048529.2928475908,
-    "loss_fraction": 0.0532897587338682
+    "remaining_value": 17678551.697125338,
+    "value_loss": 1997448.3028746615,
+    "loss_fraction": 0.10151699038801898
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2945,9 +2945,9 @@
     "country": "Singapore",
     "iso_a3": "SGP",
     "original_value": 12590000.0,
-    "remaining_value": 11559176.341092553,
-    "value_loss": 1030823.6589074477,
-    "loss_fraction": 0.08187638275674723
+    "remaining_value": 10626280.929781314,
+    "value_loss": 1963719.0702186862,
+    "loss_fraction": 0.15597450915160335
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2955,9 +2955,9 @@
     "country": "St. Vin. and Gren.",
     "iso_a3": "VCT",
     "original_value": 24639000.0,
-    "remaining_value": 23723331.391657718,
-    "value_loss": 915668.6083422798,
-    "loss_fraction": 0.0371633835927708
+    "remaining_value": 22894651.301107958,
+    "value_loss": 1744348.6988920418,
+    "loss_fraction": 0.07079624574422833
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2965,9 +2965,9 @@
     "country": "Iran",
     "iso_a3": "IRN",
     "original_value": 13345000.0,
-    "remaining_value": 12558505.080604665,
-    "value_loss": 786494.9193953342,
-    "loss_fraction": 0.05893555034809548
+    "remaining_value": 11846727.178551888,
+    "value_loss": 1498272.8214481112,
+    "loss_fraction": 0.11227222341312186
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2975,9 +2975,9 @@
     "country": "Nicaragua",
     "iso_a3": "NIC",
     "original_value": 10975000.0,
-    "remaining_value": 10305949.849723663,
-    "value_loss": 669050.1502763357,
-    "loss_fraction": 0.060961289319028306
+    "remaining_value": 9700459.46372358,
+    "value_loss": 1274540.53627642,
+    "loss_fraction": 0.11613125615274898
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2985,9 +2985,9 @@
     "country": "Solomon Is.",
     "iso_a3": "SLB",
     "original_value": 21984000.0,
-    "remaining_value": 21402647.3546025,
-    "value_loss": 581352.6453975022,
-    "loss_fraction": 0.026444352501705886
+    "remaining_value": 20876523.210517757,
+    "value_loss": 1107476.789482244,
+    "loss_fraction": 0.05037649151574982
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2995,9 +2995,9 @@
     "country": "Grenada",
     "iso_a3": "GRD",
     "original_value": 23150000.0,
-    "remaining_value": 22646610.165544145,
-    "value_loss": 503389.83445585164,
-    "loss_fraction": 0.021744701272391
+    "remaining_value": 22191042.3653616,
+    "value_loss": 958957.6346383974,
+    "loss_fraction": 0.04142365592390485
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3005,9 +3005,9 @@
     "country": "Jordan",
     "iso_a3": "JOR",
     "original_value": 7264000.0,
-    "remaining_value": 6779025.304595291,
-    "value_loss": 484974.6954047093,
-    "loss_fraction": 0.06676413758324742
+    "remaining_value": 6340123.2052540295,
+    "value_loss": 923876.7947459705,
+    "loss_fraction": 0.12718568209608624
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3015,9 +3015,9 @@
     "country": "Tonga",
     "iso_a3": "TON",
     "original_value": 13291000.0,
-    "remaining_value": 12854212.747621924,
-    "value_loss": 436787.2523780765,
-    "loss_fraction": 0.032863385176290456
+    "remaining_value": 12458920.284219762,
+    "value_loss": 832079.7157802368,
+    "loss_fraction": 0.0626047487608334
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3025,9 +3025,9 @@
     "country": "St. Kitts and Nevis",
     "iso_a3": "KNA",
     "original_value": 16240000.0,
-    "remaining_value": 15830625.51767625,
-    "value_loss": 409374.48232375085,
-    "loss_fraction": 0.02520778832042801
+    "remaining_value": 15460141.611173255,
+    "value_loss": 779858.3888267447,
+    "loss_fraction": 0.04802083675041532
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3035,9 +3035,9 @@
     "country": "Haiti",
     "iso_a3": "HTI",
     "original_value": 15206000.0,
-    "remaining_value": 14844406.898074271,
-    "value_loss": 361593.10192572896,
-    "loss_fraction": 0.02377963316623234
+    "remaining_value": 14517165.140831485,
+    "value_loss": 688834.8591685145,
+    "loss_fraction": 0.04530020118167266
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3045,9 +3045,9 @@
     "country": "Timor-Leste",
     "iso_a3": "TLS",
     "original_value": 4190000.0,
-    "remaining_value": 3894791.7862772783,
-    "value_loss": 295208.2137227218,
-    "loss_fraction": 0.07045542093621045
+    "remaining_value": 3627628.3528582146,
+    "value_loss": 562371.6471417852,
+    "loss_fraction": 0.13421757688348096
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3055,9 +3055,9 @@
     "country": "Yemen",
     "iso_a3": "YEM",
     "original_value": 2876000.0,
-    "remaining_value": 2593133.030587403,
-    "value_loss": 282866.9694125968,
-    "loss_fraction": 0.09835430090841335
+    "remaining_value": 2337138.423269003,
+    "value_loss": 538861.576730997,
+    "loss_fraction": 0.18736494323052746
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3065,9 +3065,9 @@
     "country": "Dominica",
     "iso_a3": "DMA",
     "original_value": 14598000.0,
-    "remaining_value": 14319388.430390375,
-    "value_loss": 278611.5696096255,
-    "loss_fraction": 0.019085598685410706
+    "remaining_value": 14067244.959893664,
+    "value_loss": 530755.0401063365,
+    "loss_fraction": 0.03635806549570739
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3075,9 +3075,9 @@
     "country": "St-Barth\u00e9lemy",
     "iso_a3": "BLM",
     "original_value": 9474000.0,
-    "remaining_value": 9201017.22956304,
-    "value_loss": 272982.770436959,
-    "loss_fraction": 0.028813887527650305
+    "remaining_value": 8953967.822317591,
+    "value_loss": 520032.1776824094,
+    "loss_fraction": 0.0548904557401741
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3085,9 +3085,9 @@
     "country": "South Africa",
     "iso_a3": "ZAF",
     "original_value": 2676000.0,
-    "remaining_value": 2547873.242631293,
-    "value_loss": 128126.75736870724,
-    "loss_fraction": 0.04787995417365742
+    "remaining_value": 2431918.5272126123,
+    "value_loss": 244081.47278738747,
+    "loss_fraction": 0.09121131270081743
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3095,9 +3095,9 @@
     "country": "Israel",
     "iso_a3": "ISR",
     "original_value": 1816000.0,
-    "remaining_value": 1694756.3261488227,
-    "value_loss": 121243.67385117733,
-    "loss_fraction": 0.06676413758324742
+    "remaining_value": 1585030.8013135074,
+    "value_loss": 230969.19868649263,
+    "loss_fraction": 0.12718568209608624
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3105,9 +3105,9 @@
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
     "original_value": 792000.0,
-    "remaining_value": 705601.2694528718,
-    "value_loss": 86398.73054712827,
-    "loss_fraction": 0.10908930624637408
+    "remaining_value": 627410.4183077207,
+    "value_loss": 164589.58169227926,
+    "loss_fraction": 0.2078151283993425
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3115,9 +3115,9 @@
     "country": "Kiribati",
     "iso_a3": "KIR",
     "original_value": 700000.0,
-    "remaining_value": 619962.3679109698,
-    "value_loss": 80037.63208903023,
-    "loss_fraction": 0.11433947441290034
+    "remaining_value": 547528.3108703974,
+    "value_loss": 152471.6891296026,
+    "loss_fraction": 0.21781669875657514
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3125,9 +3125,9 @@
     "country": "Comoros",
     "iso_a3": "COM",
     "original_value": 1814000.0,
-    "remaining_value": 1749300.6459412293,
-    "value_loss": 64699.35405877063,
-    "loss_fraction": 0.0356666780919353
+    "remaining_value": 1690747.7305180414,
+    "value_loss": 123252.26948195852,
+    "loss_fraction": 0.067945021765137
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3135,9 +3135,9 @@
     "country": "Montserrat",
     "iso_a3": "MSR",
     "original_value": 1782000.0,
-    "remaining_value": 1735615.1317317917,
-    "value_loss": 46384.8682682083,
-    "loss_fraction": 0.026029667939510833
+    "remaining_value": 1693636.825949063,
+    "value_loss": 88363.17405093687,
+    "loss_fraction": 0.04958651742476816
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3145,9 +3145,9 @@
     "country": "Eritrea",
     "iso_a3": "ERI",
     "original_value": 168000.0,
-    "remaining_value": 146698.26576427434,
-    "value_loss": 21301.73423572566,
-    "loss_fraction": 0.12679603711741463
+    "remaining_value": 127420.19628094262,
+    "value_loss": 40579.80371905738,
+    "loss_fraction": 0.2415464507086749
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3155,9 +3155,9 @@
     "country": "Marshall Is.",
     "iso_a3": "MHL",
     "original_value": 94000.0,
-    "remaining_value": 85096.2179845279,
-    "value_loss": 8903.782015472098,
-    "loss_fraction": 0.09472108527097976
+    "remaining_value": 77038.29526052566,
+    "value_loss": 16961.70473947435,
+    "loss_fraction": 0.18044366744121648
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3165,9 +3165,9 @@
     "country": "Niue",
     "iso_a3": "NIU",
     "original_value": 286000.0,
-    "remaining_value": 277468.4244656305,
-    "value_loss": 8531.575534369482,
-    "loss_fraction": 0.02983068368660658
+    "remaining_value": 269747.3486070261,
+    "value_loss": 16252.651392973876,
+    "loss_fraction": 0.05682745242298558
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -3175,9 +3175,9 @@
     "country": "Djibouti",
     "iso_a3": "DJI",
     "original_value": 96000.0,
-    "remaining_value": 89143.6836065644,
-    "value_loss": 6856.316393435603,
-    "loss_fraction": 0.07141996243162085
+    "remaining_value": 82938.71727050518,
+    "value_loss": 13061.282729494818,
+    "loss_fraction": 0.13605502843223768
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -5655,9 +5655,9 @@
     "country": "Egypt",
     "iso_a3": "EGY",
     "original_value": 5467295000.0,
-    "remaining_value": 4691916218.125292,
-    "value_loss": 775378781.8747082,
-    "loss_fraction": 0.14182128125054677
+    "remaining_value": 3990198420.5286803,
+    "value_loss": 1477096579.4713194,
+    "loss_fraction": 0.27016954078229166
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5665,9 +5665,9 @@
     "country": "Thailand",
     "iso_a3": "THA",
     "original_value": 2410154000.0,
-    "remaining_value": 2079279343.145145,
-    "value_loss": 330874656.85485506,
-    "loss_fraction": 0.13728361625641144
+    "remaining_value": 1779837778.6915011,
+    "value_loss": 630316221.3084989,
+    "loss_fraction": 0.2615252889684638
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5675,9 +5675,9 @@
     "country": "Indonesia",
     "iso_a3": "IDN",
     "original_value": 3097453000.0,
-    "remaining_value": 2783076356.5666146,
-    "value_loss": 314376643.4333856,
-    "loss_fraction": 0.10149521023672857
+    "remaining_value": 2498565494.2594004,
+    "value_loss": 598887505.7405995,
+    "loss_fraction": 0.1933483755009679
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5685,9 +5685,9 @@
     "country": "China",
     "iso_a3": "CHN",
     "original_value": 1871813999.9999998,
-    "remaining_value": 1656431246.6370318,
-    "value_loss": 215382753.36296797,
-    "loss_fraction": 0.11506632248875583
+    "remaining_value": 1461509854.843546,
+    "value_loss": 410304145.156454,
+    "loss_fraction": 0.21920134434107988
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5695,9 +5695,9 @@
     "country": "Australia",
     "iso_a3": "AUS",
     "original_value": 2176084000.0,
-    "remaining_value": 1970430346.9440198,
-    "value_loss": 205653653.05598012,
-    "loss_fraction": 0.09450630263169074
+    "remaining_value": 1784313790.9283578,
+    "value_loss": 391770209.0716421,
+    "loss_fraction": 0.18003450651337086
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5705,9 +5705,9 @@
     "country": "United States of America",
     "iso_a3": "USA",
     "original_value": 2387729000.0,
-    "remaining_value": 2186541888.7953253,
-    "value_loss": 201187111.20467484,
-    "loss_fraction": 0.08425877107689979
+    "remaining_value": 2004467553.1550944,
+    "value_loss": 383261446.8449056,
+    "loss_fraction": 0.1605129589014941
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5715,9 +5715,9 @@
     "country": "Philippines",
     "iso_a3": "PHL",
     "original_value": 1385144000.0,
-    "remaining_value": 1236318171.0235603,
-    "value_loss": 148825828.97643965,
-    "loss_fraction": 0.10744430108092708
+    "remaining_value": 1101630795.7998824,
+    "value_loss": 283513204.2001176,
+    "loss_fraction": 0.20468139355916612
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5725,9 +5725,9 @@
     "country": "Malaysia",
     "iso_a3": "MYS",
     "original_value": 1148955000.0,
-    "remaining_value": 1025468846.3931377,
-    "value_loss": 123486153.60686246,
-    "loss_fraction": 0.10747692782298911
+    "remaining_value": 913713877.3789271,
+    "value_loss": 235241122.62107298,
+    "loss_fraction": 0.20474354750279425
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5735,9 +5735,9 @@
     "country": "Japan",
     "iso_a3": "JPN",
     "original_value": 1177549000.0,
-    "remaining_value": 1057665681.8177632,
-    "value_loss": 119883318.18223675,
-    "loss_fraction": 0.10180749861129919
+    "remaining_value": 949171278.862839,
+    "value_loss": 228377721.13716093,
+    "loss_fraction": 0.1939432848545249
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5745,9 +5745,9 @@
     "country": "Maldives",
     "iso_a3": "MDV",
     "original_value": 1085273000.0,
-    "remaining_value": 971506294.9342324,
-    "value_loss": 113766705.06576763,
-    "loss_fraction": 0.10482773004190432
+    "remaining_value": 868547426.8497127,
+    "value_loss": 216725573.15028733,
+    "loss_fraction": 0.19969682572982772
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5755,9 +5755,9 @@
     "country": "Mexico",
     "iso_a3": "MEX",
     "original_value": 2999883000.0,
-    "remaining_value": 2889137606.968676,
-    "value_loss": 110745393.03132382,
-    "loss_fraction": 0.03691657075670079
+    "remaining_value": 2788913026.2753286,
+    "value_loss": 210969973.7246717,
+    "loss_fraction": 0.07032606729151493
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5765,9 +5765,9 @@
     "country": "India",
     "iso_a3": "IND",
     "original_value": 464082000.0,
-    "remaining_value": 403875014.6395886,
-    "value_loss": 60206985.360411376,
-    "loss_fraction": 0.12973350692423188
+    "remaining_value": 349387692.8884163,
+    "value_loss": 114694307.11158368,
+    "loss_fraction": 0.24714233069066174
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5775,9 +5775,9 @@
     "country": "United Arab Emirates",
     "iso_a3": "ARE",
     "original_value": 445654000.00000006,
-    "remaining_value": 388397950.19634175,
-    "value_loss": 57256049.80365828,
-    "loss_fraction": 0.1284764633631882
+    "remaining_value": 336581225.124031,
+    "value_loss": 109072774.87596902,
+    "loss_fraction": 0.2447476627068735
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5785,9 +5785,9 @@
     "country": "Brazil",
     "iso_a3": "BRA",
     "original_value": 612864000.0,
-    "remaining_value": 565245430.4559901,
-    "value_loss": 47618569.54400991,
-    "loss_fraction": 0.077698428271215
+    "remaining_value": 522150625.01866114,
+    "value_loss": 90713374.98133887,
+    "loss_fraction": 0.14801550585666456
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5795,9 +5795,9 @@
     "country": "Honduras",
     "iso_a3": "HND",
     "original_value": 446628000.0,
-    "remaining_value": 408492057.3262526,
-    "value_loss": 38135942.67374739,
-    "loss_fraction": 0.08538636779097457
+    "remaining_value": 373979029.2065112,
+    "value_loss": 72648970.79348877,
+    "loss_fraction": 0.16266103064180654
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5805,9 +5805,9 @@
     "country": "Mauritius",
     "iso_a3": "MUS",
     "original_value": 312389000.0,
-    "remaining_value": 274654862.5450202,
-    "value_loss": 37734137.454979815,
-    "loss_fraction": 0.12079214522591965
+    "remaining_value": 240505468.14826348,
+    "value_loss": 71883531.85173653,
+    "loss_fraction": 0.23010903665537688
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5815,9 +5815,9 @@
     "country": "Saudi Arabia",
     "iso_a3": "SAU",
     "original_value": 268681000.00000006,
-    "remaining_value": 232365642.09316927,
-    "value_loss": 36315357.90683075,
-    "loss_fraction": 0.1351616151005495
+    "remaining_value": 199500243.18748742,
+    "value_loss": 69180756.81251259,
+    "loss_fraction": 0.25748287676654685
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5825,9 +5825,9 @@
     "country": "Oman",
     "iso_a3": "OMN",
     "original_value": 221164000.0,
-    "remaining_value": 185633781.41735864,
-    "value_loss": 35530218.582641356,
-    "loss_fraction": 0.1606510037015127
+    "remaining_value": 153478933.6000682,
+    "value_loss": 67685066.39993179,
+    "loss_fraction": 0.30604016205138174
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5835,9 +5835,9 @@
     "country": "Puerto Rico",
     "iso_a3": "PRI",
     "original_value": 648867000.0,
-    "remaining_value": 615599936.613422,
-    "value_loss": 33267063.386577927,
-    "loss_fraction": 0.05126946413760898
+    "remaining_value": 585493244.248569,
+    "value_loss": 63373755.75143096,
+    "loss_fraction": 0.09766832918214512
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5845,9 +5845,9 @@
     "country": "Bahamas",
     "iso_a3": "BHS",
     "original_value": 526057999.99999994,
-    "remaining_value": 494415169.46925664,
-    "value_loss": 31642830.530743297,
-    "loss_fraction": 0.06015083988979029
+    "remaining_value": 465778407.83893394,
+    "value_loss": 60279592.16106599,
+    "loss_fraction": 0.11458734999005052
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5855,9 +5855,9 @@
     "country": "Guam",
     "iso_a3": "GUM",
     "original_value": 323244000.0,
-    "remaining_value": 294240722.22751695,
-    "value_loss": 29003277.77248303,
-    "loss_fraction": 0.0897256492695395
+    "remaining_value": 267992755.84341982,
+    "value_loss": 55251244.15658017,
+    "loss_fraction": 0.17092736185847276
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5865,9 +5865,9 @@
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
     "original_value": 511669000.0,
-    "remaining_value": 484064307.00974053,
-    "value_loss": 27604692.990259454,
-    "loss_fraction": 0.053950294018710244
+    "remaining_value": 459082059.85355574,
+    "value_loss": 52586940.14644427,
+    "loss_fraction": 0.10277531010564304
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5875,9 +5875,9 @@
     "country": "Taiwan",
     "iso_a3": "TWN",
     "original_value": 323440000.0,
-    "remaining_value": 296216917.26076204,
-    "value_loss": 27223082.739237946,
-    "loss_fraction": 0.08416733471196496
+    "remaining_value": 271580027.3817517,
+    "value_loss": 51859972.61824829,
+    "loss_fraction": 0.16033877262629326
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5885,9 +5885,9 @@
     "country": "Cayman Is.",
     "iso_a3": "CYM",
     "original_value": 292794000.0,
-    "remaining_value": 269328017.19297415,
-    "value_loss": 23465982.807025872,
-    "loss_fraction": 0.08014502621988795
+    "remaining_value": 248091302.75261572,
+    "value_loss": 44702697.2473843,
+    "loss_fraction": 0.1526762749488866
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5895,9 +5895,9 @@
     "country": "Aruba",
     "iso_a3": "ABW",
     "original_value": 218226000.0,
-    "remaining_value": 196654957.18652838,
-    "value_loss": 21571042.813471615,
-    "loss_fraction": 0.09884726299098923
+    "remaining_value": 177133163.44033659,
+    "value_loss": 41092836.559663415,
+    "loss_fraction": 0.18830403599783443
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5905,9 +5905,9 @@
     "country": "Fiji",
     "iso_a3": "FJI",
     "original_value": 234676000.0,
-    "remaining_value": 216120357.2385715,
-    "value_loss": 18555642.761428505,
-    "loss_fraction": 0.07906919651531688
+    "remaining_value": 199327500.53947872,
+    "value_loss": 35348499.460521296,
+    "loss_fraction": 0.15062681936167863
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5915,9 +5915,9 @@
     "country": "Tanzania",
     "iso_a3": "TZA",
     "original_value": 131076000.0,
-    "remaining_value": 112939158.27433886,
-    "value_loss": 18136841.725661136,
-    "loss_fraction": 0.13836889839223912
+    "remaining_value": 96525316.51261555,
+    "value_loss": 34550683.48738445,
+    "loss_fraction": 0.26359275143721544
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5925,9 +5925,9 @@
     "country": "Panama",
     "iso_a3": "PAN",
     "original_value": 154178000.0,
-    "remaining_value": 136184307.57140213,
-    "value_loss": 17993692.42859786,
-    "loss_fraction": 0.11670726321912245
+    "remaining_value": 119900015.92352107,
+    "value_loss": 34277984.07647892,
+    "loss_fraction": 0.22232733643242825
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5935,9 +5935,9 @@
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
     "original_value": 276056000.0,
-    "remaining_value": 258310886.62215486,
-    "value_loss": 17745113.37784513,
-    "loss_fraction": 0.06428084655955724
+    "remaining_value": 242251559.015205,
+    "value_loss": 33804440.98479499,
+    "loss_fraction": 0.12245501269595657
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5945,9 +5945,9 @@
     "country": "British Virgin Is.",
     "iso_a3": "VGB",
     "original_value": 195550000.00000003,
-    "remaining_value": 179333428.5844141,
-    "value_loss": 16216571.415585935,
-    "loss_fraction": 0.0829280051934847
+    "remaining_value": 164657431.45330882,
+    "value_loss": 30892568.546691205,
+    "loss_fraction": 0.15797784989358835
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5955,9 +5955,9 @@
     "country": "Costa Rica",
     "iso_a3": "CRI",
     "original_value": 169518000.0,
-    "remaining_value": 153444157.83210236,
-    "value_loss": 16073842.167897636,
-    "loss_fraction": 0.09482085777261197
+    "remaining_value": 138897330.67015502,
+    "value_loss": 30620669.32984499,
+    "loss_fraction": 0.18063373405682576
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5965,9 +5965,9 @@
     "country": "Cuba",
     "iso_a3": "CUB",
     "original_value": 283290000.0,
-    "remaining_value": 267443826.78446513,
-    "value_loss": 15846173.215534873,
-    "loss_fraction": 0.055936225124553894
+    "remaining_value": 253103040.02440608,
+    "value_loss": 30186959.975593917,
+    "loss_fraction": 0.10655850886227511
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5975,9 +5975,9 @@
     "country": "Jamaica",
     "iso_a3": "JAM",
     "original_value": 333386000.0,
-    "remaining_value": 318059829.45078033,
-    "value_loss": 15326170.549219666,
-    "loss_fraction": 0.04597124819044491
+    "remaining_value": 304189645.1037365,
+    "value_loss": 29196354.896263476,
+    "loss_fraction": 0.08757522780279758
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5985,9 +5985,9 @@
     "country": "Barbados",
     "iso_a3": "BRB",
     "original_value": 180082000.0,
-    "remaining_value": 164841516.37637788,
-    "value_loss": 15240483.623622105,
-    "loss_fraction": 0.08463079943371411
+    "remaining_value": 151048878.69699988,
+    "value_loss": 29033121.303000104,
+    "loss_fraction": 0.16122167292122536
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -5995,9 +5995,9 @@
     "country": "Qatar",
     "iso_a3": "QAT",
     "original_value": 108066000.00000001,
-    "remaining_value": 94472521.88938451,
-    "value_loss": 13593478.110615496,
-    "loss_fraction": 0.12578866720907125
+    "remaining_value": 82170424.19927749,
+    "value_loss": 25895575.80072252,
+    "loss_fraction": 0.23962741103328075
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6005,9 +6005,9 @@
     "country": "Bahrain",
     "iso_a3": "BHR",
     "original_value": 115837000.0,
-    "remaining_value": 103203017.91187155,
-    "value_loss": 12633982.088128446,
-    "loss_fraction": 0.10906689648496116
+    "remaining_value": 91769264.12211531,
+    "value_loss": 24067735.87788468,
+    "loss_fraction": 0.2077724378038509
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6015,9 +6015,9 @@
     "country": "Vietnam",
     "iso_a3": "VNM",
     "original_value": 137445000.0,
-    "remaining_value": 124831926.39846708,
-    "value_loss": 12613073.601532932,
-    "loss_fraction": 0.09176815163543914
+    "remaining_value": 113417094.78907977,
+    "value_loss": 24027905.21092024,
+    "loss_fraction": 0.1748183288655116
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6025,9 +6025,9 @@
     "country": "Venezuela",
     "iso_a3": "VEN",
     "original_value": 281865000.0,
-    "remaining_value": 269304842.8780607,
-    "value_loss": 12560157.121939339,
-    "loss_fraction": 0.044560896606316285
+    "remaining_value": 257937900.68270558,
+    "value_loss": 23927099.317294434,
+    "loss_fraction": 0.08488850803503249
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6035,9 +6035,9 @@
     "country": "Sri Lanka",
     "iso_a3": "LKA",
     "original_value": 82371000.0,
-    "remaining_value": 70355721.82734959,
-    "value_loss": 12015278.172650415,
-    "loss_fraction": 0.14586781965315967
+    "remaining_value": 59481895.08110097,
+    "value_loss": 22889104.918899037,
+    "loss_fraction": 0.27787819643926914
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6045,9 +6045,9 @@
     "country": "Kenya",
     "iso_a3": "KEN",
     "original_value": 84152000.0,
-    "remaining_value": 72625648.66467068,
-    "value_loss": 11526351.335329315,
-    "loss_fraction": 0.13697061668563212
+    "remaining_value": 62194300.70619766,
+    "value_loss": 21957699.293802343,
+    "loss_fraction": 0.26092902478612917
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6055,9 +6055,9 @@
     "country": "Palau",
     "iso_a3": "PLW",
     "original_value": 92503000.0,
-    "remaining_value": 81484049.45903113,
-    "value_loss": 11018950.540968873,
-    "loss_fraction": 0.11911992628313539
+    "remaining_value": 71511899.2194543,
+    "value_loss": 20991100.7805457,
+    "loss_fraction": 0.22692345956937288
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6065,9 +6065,9 @@
     "country": "Colombia",
     "iso_a3": "COL",
     "original_value": 147202000.0,
-    "remaining_value": 137218554.33696324,
-    "value_loss": 9983445.663036779,
-    "loss_fraction": 0.06782139959400538
+    "remaining_value": 128183536.01191494,
+    "value_loss": 19018463.988085065,
+    "loss_fraction": 0.12919976622658025
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6075,9 +6075,9 @@
     "country": "Kuwait",
     "iso_a3": "KWT",
     "original_value": 117235999.99999999,
-    "remaining_value": 107353411.24062394,
-    "value_loss": 9882588.759376056,
-    "loss_fraction": 0.08429653655341413
+    "remaining_value": 98409668.4133886,
+    "value_loss": 18826331.586611394,
+    "loss_fraction": 0.16058490213425394
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6085,9 +6085,9 @@
     "country": "Seychelles",
     "iso_a3": "SYC",
     "original_value": 73141000.0,
-    "remaining_value": 63671466.225981385,
-    "value_loss": 9469533.774018612,
-    "loss_fraction": 0.12946956937994575
+    "remaining_value": 55101538.160494536,
+    "value_loss": 18039461.839505464,
+    "loss_fraction": 0.24663952966879676
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6095,9 +6095,9 @@
     "country": "N. Mariana Is.",
     "iso_a3": "MNP",
     "original_value": 61302000.00000001,
-    "remaining_value": 52701946.79735144,
-    "value_loss": 8600053.202648565,
-    "loss_fraction": 0.1402899285936603
+    "remaining_value": 44918898.64895449,
+    "value_loss": 16383101.351045521,
+    "loss_fraction": 0.267252313970923
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6105,9 +6105,9 @@
     "country": "Mozambique",
     "iso_a3": "MOZ",
     "original_value": 68356000.0,
-    "remaining_value": 60248877.5969415,
-    "value_loss": 8107122.403058505,
-    "loss_fraction": 0.11860147467754849
+    "remaining_value": 52911931.82217355,
+    "value_loss": 15444068.177826455,
+    "loss_fraction": 0.22593580926072993
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6115,9 +6115,9 @@
     "country": "Turks and Caicos Is.",
     "iso_a3": "TCA",
     "original_value": 97587000.0,
-    "remaining_value": 91389513.3245926,
-    "value_loss": 6197486.675407393,
-    "loss_fraction": 0.06350729785122396
+    "remaining_value": 85780787.88334891,
+    "value_loss": 11806212.116651082,
+    "loss_fraction": 0.12098140240658165
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6125,9 +6125,9 @@
     "country": "Belize",
     "iso_a3": "BLZ",
     "original_value": 80611000.0,
-    "remaining_value": 74470758.31858681,
-    "value_loss": 6140241.681413194,
-    "loss_fraction": 0.07617126299652893
+    "remaining_value": 68913839.59690787,
+    "value_loss": 11697160.403092138,
+    "loss_fraction": 0.14510625600838767
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6135,9 +6135,9 @@
     "country": "Sint Maarten",
     "iso_a3": "SXM",
     "original_value": 116736000.0,
-    "remaining_value": 111935593.95134886,
-    "value_loss": 4800406.048651148,
-    "loss_fraction": 0.041121899402507774
+    "remaining_value": 107591226.47731955,
+    "value_loss": 9144773.52268045,
+    "loss_fraction": 0.07833721836177743
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6145,9 +6145,9 @@
     "country": "Vanuatu",
     "iso_a3": "VUT",
     "original_value": 49991000.0,
-    "remaining_value": 45595805.05510205,
-    "value_loss": 4395194.944897945,
-    "loss_fraction": 0.0879197244483596
+    "remaining_value": 41618153.62996941,
+    "value_loss": 8372846.370030586,
+    "loss_fraction": 0.16748707507412505
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6155,9 +6155,9 @@
     "country": "Antigua and Barb.",
     "iso_a3": "ATG",
     "original_value": 66043000.0,
-    "remaining_value": 61686795.47439479,
-    "value_loss": 4356204.525605211,
-    "loss_fraction": 0.06596012485206927
+    "remaining_value": 57744430.37872208,
+    "value_loss": 8298569.621277924,
+    "loss_fraction": 0.12565403784319193
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6165,9 +6165,9 @@
     "country": "St-Martin",
     "iso_a3": "MAF",
     "original_value": 89337000.0,
-    "remaining_value": 85544682.1579603,
-    "value_loss": 3792317.8420397025,
-    "loss_fraction": 0.042449576793934234
+    "remaining_value": 82112634.51091437,
+    "value_loss": 7224365.489085631,
+    "loss_fraction": 0.08086644379244469
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6175,9 +6175,9 @@
     "country": "Papua New Guinea",
     "iso_a3": "PNG",
     "original_value": 32024000.0,
-    "remaining_value": 28337362.87186741,
-    "value_loss": 3686637.1281325873,
-    "loss_fraction": 0.11512106945205432
+    "remaining_value": 25000956.270907417,
+    "value_loss": 7023043.729092581,
+    "loss_fraction": 0.21930563730616354
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6185,9 +6185,9 @@
     "country": "Saint Lucia",
     "iso_a3": "LCA",
     "original_value": 56573999.99999999,
-    "remaining_value": 53285877.24649759,
-    "value_loss": 3288122.753502412,
-    "loss_fraction": 0.058120740154530566
+    "remaining_value": 50310126.154577896,
+    "value_loss": 6263873.845422099,
+    "loss_fraction": 0.11072000999438081
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6195,9 +6195,9 @@
     "country": "Fr. Polynesia",
     "iso_a3": "PYF",
     "original_value": 35516000.0,
-    "remaining_value": 32375152.989386033,
-    "value_loss": 3140847.0106139667,
-    "loss_fraction": 0.08843470578370219
+    "remaining_value": 29532686.444780394,
+    "value_loss": 5983313.5552196065,
+    "loss_fraction": 0.16846811451795266
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6205,9 +6205,9 @@
     "country": "New Caledonia",
     "iso_a3": "NCL",
     "original_value": 28465000.0,
-    "remaining_value": 25490992.13419598,
-    "value_loss": 2974007.865804021,
-    "loss_fraction": 0.10447946129647008
+    "remaining_value": 22799515.015643343,
+    "value_loss": 5665484.984356659,
+    "loss_fraction": 0.1990333737697755
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6215,9 +6215,9 @@
     "country": "France",
     "iso_a3": "-99",
     "original_value": 44416000.0,
-    "remaining_value": 41506015.87514729,
-    "value_loss": 2909984.1248527113,
-    "loss_fraction": 0.06551657341617236
+    "remaining_value": 38872480.24215558,
+    "value_loss": 5543519.757844416,
+    "loss_fraction": 0.12480907235780837
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6225,9 +6225,9 @@
     "country": "Trinidad and Tobago",
     "iso_a3": "TTO",
     "original_value": 44958000.0,
-    "remaining_value": 42247221.51655327,
-    "value_loss": 2710778.4834467326,
-    "loss_fraction": 0.060295797932442115
+    "remaining_value": 39793966.989033975,
+    "value_loss": 5164033.010966023,
+    "loss_fraction": 0.11486349506130218
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6235,9 +6235,9 @@
     "country": "Madagascar",
     "iso_a3": "MDG",
     "original_value": 50495999.99999999,
-    "remaining_value": 48114305.92876402,
-    "value_loss": 2381694.071235973,
-    "loss_fraction": 0.04716599475673268
+    "remaining_value": 45958872.79429547,
+    "value_loss": 4537127.205704528,
+    "loss_fraction": 0.08985122001157574
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6245,9 +6245,9 @@
     "country": "Brunei",
     "iso_a3": "BRN",
     "original_value": 28259000.0,
-    "remaining_value": 25891016.986591816,
-    "value_loss": 2367983.013408187,
-    "loss_fraction": 0.08379571157536314
+    "remaining_value": 23747992.359457403,
+    "value_loss": 4511007.640542597,
+    "loss_fraction": 0.1596308305510668
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6255,9 +6255,9 @@
     "country": "Cook Is.",
     "iso_a3": "COK",
     "original_value": 19106000.0,
-    "remaining_value": 17080065.66390633,
-    "value_loss": 2025934.3360936698,
-    "loss_fraction": 0.10603655061727571
+    "remaining_value": 15246595.089741558,
+    "value_loss": 3859404.9102584394,
+    "loss_fraction": 0.20199962892591014
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6265,9 +6265,9 @@
     "country": "Myanmar",
     "iso_a3": "MMR",
     "original_value": 11580999.999999998,
-    "remaining_value": 9562991.884046443,
-    "value_loss": 2018008.115953555,
-    "loss_fraction": 0.17425162904356753
+    "remaining_value": 7736694.539108477,
+    "value_loss": 3844305.4608915225,
+    "loss_fraction": 0.33194935332799613
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6275,9 +6275,9 @@
     "country": "Cura\u00e7ao",
     "iso_a3": "CUW",
     "original_value": 19676000.0,
-    "remaining_value": 17726211.521846548,
-    "value_loss": 1949788.478153451,
-    "loss_fraction": 0.09909475900352974
+    "remaining_value": 15961652.949117675,
+    "value_loss": 3714347.050882324,
+    "loss_fraction": 0.18877551590172414
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6285,9 +6285,9 @@
     "country": "St. Vin. and Gren.",
     "iso_a3": "VCT",
     "original_value": 24639000.0,
-    "remaining_value": 22793333.910973787,
-    "value_loss": 1845666.0890262113,
-    "loss_fraction": 0.07490831969748006
+    "remaining_value": 21123006.100405067,
+    "value_loss": 3515993.8995949314,
+    "loss_fraction": 0.14270034902369946
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6295,9 +6295,9 @@
     "country": "Cambodia",
     "iso_a3": "KHM",
     "original_value": 18285000.0,
-    "remaining_value": 16448189.743980967,
-    "value_loss": 1836810.2560190326,
-    "loss_fraction": 0.10045448487935645
+    "remaining_value": 14785876.462283742,
+    "value_loss": 3499123.5377162574,
+    "loss_fraction": 0.19136579369517404
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6305,9 +6305,9 @@
     "country": "Micronesia",
     "iso_a3": "FSM",
     "original_value": 18108000.0,
-    "remaining_value": 16377897.03273037,
-    "value_loss": 1730102.9672696285,
-    "loss_fraction": 0.09554357009441289
+    "remaining_value": 14812153.847351357,
+    "value_loss": 3295846.1526486417,
+    "loss_fraction": 0.18201050102985653
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6315,9 +6315,9 @@
     "country": "Singapore",
     "iso_a3": "SGP",
     "original_value": 12590000.0,
-    "remaining_value": 10916700.581007987,
-    "value_loss": 1673299.418992013,
-    "loss_fraction": 0.13290702295409157
+    "remaining_value": 9402364.606820215,
+    "value_loss": 3187635.393179786,
+    "loss_fraction": 0.25318787872754456
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6325,9 +6325,9 @@
     "country": "Sudan",
     "iso_a3": "SDN",
     "original_value": 28480000.0,
-    "remaining_value": 26965923.016772855,
-    "value_loss": 1514076.983227145,
-    "loss_fraction": 0.05316281542230144
+    "remaining_value": 25595683.34695229,
+    "value_loss": 2884316.6530477125,
+    "loss_fraction": 0.10127516337948429
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6335,9 +6335,9 @@
     "country": "Anguilla",
     "iso_a3": "AIA",
     "original_value": 19685000.0,
-    "remaining_value": 18239785.529048193,
-    "value_loss": 1445214.470951807,
-    "loss_fraction": 0.07341704195843571
+    "remaining_value": 16931866.43283681,
+    "value_loss": 2753133.5671631927,
+    "loss_fraction": 0.13985946493082005
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6345,9 +6345,9 @@
     "country": "Netherlands",
     "iso_a3": "NLD",
     "original_value": 24388000.0,
-    "remaining_value": 23051016.937623587,
-    "value_loss": 1336983.062376415,
-    "loss_fraction": 0.05482134912155219
+    "remaining_value": 21841047.266172934,
+    "value_loss": 2546952.7338270675,
+    "loss_fraction": 0.10443467007655681
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6355,9 +6355,9 @@
     "country": "Iran",
     "iso_a3": "IRN",
     "original_value": 13345000.0,
-    "remaining_value": 12095528.064096278,
-    "value_loss": 1249471.9359037224,
-    "loss_fraction": 0.09362847028128306
+    "remaining_value": 10964755.962103408,
+    "value_loss": 2380244.037896591,
+    "loss_fraction": 0.17836223588584418
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6365,9 +6365,9 @@
     "country": "Solomon Is.",
     "iso_a3": "SLB",
     "original_value": 21984000.0,
-    "remaining_value": 20763766.529026452,
-    "value_loss": 1220233.470973548,
-    "loss_fraction": 0.05550552542638046
+    "remaining_value": 19659455.237795394,
+    "value_loss": 2324544.762204609,
+    "loss_fraction": 0.10573802593725477
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6375,9 +6375,9 @@
     "country": "Jordan",
     "iso_a3": "JOR",
     "original_value": 7264000.0,
-    "remaining_value": 6104569.610303147,
-    "value_loss": 1159430.3896968532,
-    "loss_fraction": 0.1596132144406461
+    "remaining_value": 5055285.107627493,
+    "value_loss": 2208714.8923725067,
+    "loss_fraction": 0.30406317350943096
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6385,9 +6385,9 @@
     "country": "Grenada",
     "iso_a3": "GRD",
     "original_value": 23150000.0,
-    "remaining_value": 21999114.9481105,
-    "value_loss": 1150885.0518894999,
-    "loss_fraction": 0.04971425710105831
+    "remaining_value": 20957563.976150498,
+    "value_loss": 2192436.0238494985,
+    "loss_fraction": 0.09470565977751613
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6395,9 +6395,9 @@
     "country": "Tonga",
     "iso_a3": "TON",
     "original_value": 13291000.0,
-    "remaining_value": 12246587.317734355,
-    "value_loss": 1044412.6822656437,
-    "loss_fraction": 0.07858044407987688
+    "remaining_value": 11301393.840283947,
+    "value_loss": 1989606.1597160527,
+    "loss_fraction": 0.1496957459721656
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6405,9 +6405,9 @@
     "country": "Nicaragua",
     "iso_a3": "NIC",
     "original_value": 10975000.0,
-    "remaining_value": 10069350.568372963,
-    "value_loss": 905649.4316270372,
-    "loss_fraction": 0.08251931039881888
+    "remaining_value": 9249737.832750496,
+    "value_loss": 1725262.167249505,
+    "loss_fraction": 0.15719928630974989
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6415,9 +6415,9 @@
     "country": "St. Kitts and Nevis",
     "iso_a3": "KNA",
     "original_value": 16240000.0,
-    "remaining_value": 15405005.680753037,
-    "value_loss": 834994.3192469614,
-    "loss_fraction": 0.05141590635757151
+    "remaining_value": 14649335.821834536,
+    "value_loss": 1590664.1781654633,
+    "loss_fraction": 0.09794730161117385
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6425,9 +6425,9 @@
     "country": "Haiti",
     "iso_a3": "HTI",
     "original_value": 15206000.0,
-    "remaining_value": 14566584.199581748,
-    "value_loss": 639415.8004182518,
-    "loss_fraction": 0.04205023019980612
+    "remaining_value": 13987912.90020323,
+    "value_loss": 1218087.0997967701,
+    "loss_fraction": 0.08010568853063069
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6435,9 +6435,9 @@
     "country": "Dominica",
     "iso_a3": "DMA",
     "original_value": 14598000.0,
-    "remaining_value": 14042250.499136433,
-    "value_loss": 555749.5008635675,
-    "loss_fraction": 0.03807024940838248
+    "remaining_value": 13539297.200854905,
+    "value_loss": 1058702.7991450957,
+    "loss_fraction": 0.07252382512296861
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6445,9 +6445,9 @@
     "country": "St-Barth\u00e9lemy",
     "iso_a3": "BLM",
     "original_value": 9474000.0,
-    "remaining_value": 9053663.00017445,
-    "value_loss": 420336.99982555007,
-    "loss_fraction": 0.04436742662292063
+    "remaining_value": 8673258.015332328,
+    "value_loss": 800741.9846676722,
+    "loss_fraction": 0.08451994771666373
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6455,9 +6455,9 @@
     "country": "Yemen",
     "iso_a3": "YEM",
     "original_value": 2876000.0,
-    "remaining_value": 2475684.72167684,
-    "value_loss": 400315.2783231599,
-    "loss_fraction": 0.13919168230986087
+    "remaining_value": 2113399.3947943803,
+    "value_loss": 762600.6052056199,
+    "loss_fraction": 0.2651601548002851
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6465,9 +6465,9 @@
     "country": "Timor-Leste",
     "iso_a3": "TLS",
     "original_value": 4190000.0,
-    "remaining_value": 3789997.980088887,
-    "value_loss": 400002.0199111131,
-    "loss_fraction": 0.095465875873774
+    "remaining_value": 3427996.15206933,
+    "value_loss": 762003.8479306698,
+    "loss_fraction": 0.18186249353953932
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6475,9 +6475,9 @@
     "country": "Israel",
     "iso_a3": "ISR",
     "original_value": 1816000.0,
-    "remaining_value": 1526142.4025757867,
-    "value_loss": 289857.5974242133,
-    "loss_fraction": 0.1596132144406461
+    "remaining_value": 1263821.2769068733,
+    "value_loss": 552178.7230931267,
+    "loss_fraction": 0.30406317350943096
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6485,9 +6485,9 @@
     "country": "Comoros",
     "iso_a3": "COM",
     "original_value": 1814000.0,
-    "remaining_value": 1604173.191216357,
-    "value_loss": 209826.8087836429,
-    "loss_fraction": 0.11567078764258153
+    "remaining_value": 1414279.9292671601,
+    "value_loss": 399720.0707328399,
+    "loss_fraction": 0.2203528504591179
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6495,9 +6495,9 @@
     "country": "South Africa",
     "iso_a3": "ZAF",
     "original_value": 2676000.0,
-    "remaining_value": 2524792.7209213017,
-    "value_loss": 151207.27907869822,
-    "loss_fraction": 0.05650496228650905
+    "remaining_value": 2387950.13335508,
+    "value_loss": 288049.8666449201,
+    "loss_fraction": 0.10764195315579973
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6505,9 +6505,9 @@
     "country": "Kiribati",
     "iso_a3": "KIR",
     "original_value": 700000.0,
-    "remaining_value": 598054.3662720778,
-    "value_loss": 101945.63372792219,
-    "loss_fraction": 0.1456366196113174
+    "remaining_value": 505793.5677483083,
+    "value_loss": 194206.4322516917,
+    "loss_fraction": 0.2774377603595596
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6515,9 +6515,9 @@
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
     "original_value": 792000.0,
-    "remaining_value": 692867.2655757517,
-    "value_loss": 99132.73442424828,
-    "loss_fraction": 0.12516759397001045
+    "remaining_value": 603152.1409218071,
+    "value_loss": 188847.8590781929,
+    "loss_fraction": 0.23844426651286985
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6525,9 +6525,9 @@
     "country": "Montserrat",
     "iso_a3": "MSR",
     "original_value": 1782000.0,
-    "remaining_value": 1693943.362351859,
-    "value_loss": 88056.6376481409,
-    "loss_fraction": 0.04941449924138097
+    "remaining_value": 1614252.1052802918,
+    "value_loss": 167747.89471970833,
+    "loss_fraction": 0.09413462105483071
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6535,9 +6535,9 @@
     "country": "Eritrea",
     "iso_a3": "ERI",
     "original_value": 168000.0,
-    "remaining_value": 141782.17632292007,
-    "value_loss": 26217.823677079934,
-    "loss_fraction": 0.15605847426833294
+    "remaining_value": 118055.0458951627,
+    "value_loss": 49944.95410483731,
+    "loss_fraction": 0.29729139348117445
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6545,9 +6545,9 @@
     "country": "Niue",
     "iso_a3": "NIU",
     "original_value": 286000.0,
-    "remaining_value": 263397.97125241446,
-    "value_loss": 22602.028747585537,
-    "loss_fraction": 0.07902807254400537
+    "remaining_value": 242943.13523584954,
+    "value_loss": 43056.86476415047,
+    "loss_fraction": 0.15054847819633033
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6555,9 +6555,9 @@
     "country": "Marshall Is.",
     "iso_a3": "MHL",
     "original_value": 94000.0,
-    "remaining_value": 81302.79637185122,
-    "value_loss": 12697.20362814878,
-    "loss_fraction": 0.13507663434200828
+    "remaining_value": 69811.82708837658,
+    "value_loss": 24188.17291162342,
+    "loss_fraction": 0.25732098842152573
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6565,9 +6565,9 @@
     "country": "Djibouti",
     "iso_a3": "DJI",
     "original_value": 96000.0,
-    "remaining_value": 85342.22582524842,
-    "value_loss": 10657.774174751583,
-    "loss_fraction": 0.11101848098699565
+    "remaining_value": 75696.94019709821,
+    "value_loss": 20303.05980290178,
+    "loss_fraction": 0.21149020628022686
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -9045,9 +9045,9 @@
     "country": "Egypt",
     "iso_a3": "EGY",
     "original_value": 5467295000.0,
-    "remaining_value": 4845449405.295355,
-    "value_loss": 621845594.7046449,
-    "loss_fraction": 0.11373916986455732
+    "remaining_value": 4282679142.0876513,
+    "value_loss": 1184615857.9123483,
+    "loss_fraction": 0.21667311859198163
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9055,9 +9055,9 @@
     "country": "Thailand",
     "iso_a3": "THA",
     "original_value": 2410154000.0,
-    "remaining_value": 2113779166.735658,
-    "value_loss": 296374833.2643421,
-    "loss_fraction": 0.12296925145212385
+    "remaining_value": 1845559942.6314282,
+    "value_loss": 564594057.3685719,
+    "loss_fraction": 0.234256424016296
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9065,9 +9065,9 @@
     "country": "Indonesia",
     "iso_a3": "IDN",
     "original_value": 3097453000.0,
-    "remaining_value": 2809059334.213122,
-    "value_loss": 288393665.78687835,
-    "loss_fraction": 0.09310671244628356
+    "remaining_value": 2548063066.675997,
+    "value_loss": 549389933.3240032,
+    "loss_fraction": 0.17736828721017017
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9075,9 +9075,9 @@
     "country": "China",
     "iso_a3": "CHN",
     "original_value": 1871813999.9999998,
-    "remaining_value": 1672313975.2174003,
-    "value_loss": 199500024.78259966,
-    "loss_fraction": 0.10658111584943786
+    "remaining_value": 1491766452.7891474,
+    "value_loss": 380047547.21085244,
+    "loss_fraction": 0.2030370256931792
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9085,9 +9085,9 @@
     "country": "United States of America",
     "iso_a3": "USA",
     "original_value": 2387729000.0,
-    "remaining_value": 2197196310.9777627,
-    "value_loss": 190532689.02223724,
-    "loss_fraction": 0.07979661386289534
+    "remaining_value": 2024764227.412638,
+    "value_loss": 362964772.587362,
+    "loss_fraction": 0.15201254940881564
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9095,9 +9095,9 @@
     "country": "Australia",
     "iso_a3": "AUS",
     "original_value": 2176084000.0,
-    "remaining_value": 1986967628.6970341,
-    "value_loss": 189116371.30296588,
-    "loss_fraction": 0.08690674225028348
+    "remaining_value": 1815817312.66785,
+    "value_loss": 360266687.33215004,
+    "loss_fraction": 0.16555734398679006
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9105,9 +9105,9 @@
     "country": "Philippines",
     "iso_a3": "PHL",
     "original_value": 1385144000.0,
-    "remaining_value": 1253959261.126559,
-    "value_loss": 131184738.87344097,
-    "loss_fraction": 0.09470837607746269
+    "remaining_value": 1135237072.446095,
+    "value_loss": 249906927.55390507,
+    "loss_fraction": 0.18041945642756643
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9115,9 +9115,9 @@
     "country": "Mexico",
     "iso_a3": "MEX",
     "original_value": 2999883000.0,
-    "remaining_value": 2879073199.1721663,
-    "value_loss": 120809800.82783367,
-    "loss_fraction": 0.04027150419794161
+    "remaining_value": 2769740329.422977,
+    "value_loss": 230142670.5770232,
+    "loss_fraction": 0.07671721549707879
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9125,9 +9125,9 @@
     "country": "Malaysia",
     "iso_a3": "MYS",
     "original_value": 1148955000.0,
-    "remaining_value": 1035447791.9086144,
-    "value_loss": 113507208.09138572,
-    "loss_fraction": 0.09879169166014833
+    "remaining_value": 932723768.5859103,
+    "value_loss": 216231231.41408983,
+    "loss_fraction": 0.1881981726125826
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9135,9 +9135,9 @@
     "country": "Japan",
     "iso_a3": "JPN",
     "original_value": 1177549000.0,
-    "remaining_value": 1069025574.58538,
-    "value_loss": 108523425.41461995,
-    "loss_fraction": 0.09216043274175423
+    "remaining_value": 970811874.5851489,
+    "value_loss": 206737125.414851,
+    "loss_fraction": 0.17556562437304182
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9145,9 +9145,9 @@
     "country": "Maldives",
     "iso_a3": "MDV",
     "original_value": 1085273000.0,
-    "remaining_value": 984240761.2222295,
-    "value_loss": 101032238.77777056,
-    "loss_fraction": 0.09309384714976837
+    "remaining_value": 892806585.1283472,
+    "value_loss": 192466414.8716529,
+    "loss_fraction": 0.17734377882030872
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9155,9 +9155,9 @@
     "country": "India",
     "iso_a3": "IND",
     "original_value": 464082000.0,
-    "remaining_value": 413113883.27110493,
-    "value_loss": 50968116.72889505,
-    "loss_fraction": 0.10982567031019314
+    "remaining_value": 366987737.6314549,
+    "value_loss": 97094262.36854509,
+    "loss_fraction": 0.20921790194091794
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9165,9 +9165,9 @@
     "country": "United Arab Emirates",
     "iso_a3": "ARE",
     "original_value": 445654000.00000006,
-    "remaining_value": 395455340.16424793,
-    "value_loss": 50198659.83575213,
-    "loss_fraction": 0.11264043369015452
+    "remaining_value": 350025553.01289225,
+    "value_loss": 95628446.9871078,
+    "loss_fraction": 0.21458002617974434
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9175,9 +9175,9 @@
     "country": "Brazil",
     "iso_a3": "BRA",
     "original_value": 612864000.0,
-    "remaining_value": 568812631.1610478,
-    "value_loss": 44051368.83895223,
-    "loss_fraction": 0.0718778861851116
+    "remaining_value": 528946142.361796,
+    "value_loss": 83917857.638204,
+    "loss_fraction": 0.13692737318263756
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9185,9 +9185,9 @@
     "country": "Honduras",
     "iso_a3": "HND",
     "original_value": 446628000.0,
-    "remaining_value": 413285782.0565259,
-    "value_loss": 33342217.943474077,
-    "loss_fraction": 0.0746532191073423
+    "remaining_value": 383111074.81768185,
+    "value_loss": 63516925.18231813,
+    "loss_fraction": 0.1422143823994871
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9195,9 +9195,9 @@
     "country": "Bahamas",
     "iso_a3": "BHS",
     "original_value": 526057999.99999994,
-    "remaining_value": 493469153.27905893,
-    "value_loss": 32588846.72094103,
-    "loss_fraction": 0.061949151464175116
+    "remaining_value": 463976246.99660724,
+    "value_loss": 62081753.00339269,
+    "loss_fraction": 0.11801313353925365
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9205,9 +9205,9 @@
     "country": "Saudi Arabia",
     "iso_a3": "SAU",
     "original_value": 268681000.00000006,
-    "remaining_value": 236940280.55518708,
-    "value_loss": 31740719.44481295,
-    "loss_fraction": 0.11813533314530221
+    "remaining_value": 208214929.45763135,
+    "value_loss": 60466070.54236869,
+    "loss_fraction": 0.22504780964180077
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9215,9 +9215,9 @@
     "country": "Mauritius",
     "iso_a3": "MUS",
     "original_value": 312389000.0,
-    "remaining_value": 282310271.9559945,
-    "value_loss": 30078728.044005502,
-    "loss_fraction": 0.09628613057439764
+    "remaining_value": 255089023.07616952,
+    "value_loss": 57299976.923830494,
+    "loss_fraction": 0.18342507874422753
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9225,9 +9225,9 @@
     "country": "Oman",
     "iso_a3": "OMN",
     "original_value": 221164000.0,
-    "remaining_value": 192342099.55811495,
-    "value_loss": 28821900.441885047,
-    "loss_fraction": 0.13031913169360768
+    "remaining_value": 166258279.65820897,
+    "value_loss": 54905720.34179102,
+    "loss_fraction": 0.24825794587632263
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9235,9 +9235,9 @@
     "country": "Guam",
     "iso_a3": "GUM",
     "original_value": 323244000.0,
-    "remaining_value": 295680419.4909385,
-    "value_loss": 27563580.50906153,
-    "loss_fraction": 0.08527174675805747
+    "remaining_value": 270735379.1302378,
+    "value_loss": 52508620.869762175,
+    "loss_fraction": 0.16244267757409936
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9245,9 +9245,9 @@
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
     "original_value": 511669000.0,
-    "remaining_value": 484517396.9695323,
-    "value_loss": 27151603.03046769,
-    "loss_fraction": 0.05306478022015734
+    "remaining_value": 459945196.22695905,
+    "value_loss": 51723803.77304095,
+    "loss_fraction": 0.10108840631939975
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9255,9 +9255,9 @@
     "country": "Taiwan",
     "iso_a3": "TWN",
     "original_value": 323440000.0,
-    "remaining_value": 299004081.1855899,
-    "value_loss": 24435918.814410046,
-    "loss_fraction": 0.07555008290381537
+    "remaining_value": 276889574.65854883,
+    "value_loss": 46550425.34145114,
+    "loss_fraction": 0.1439229079317683
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9265,9 +9265,9 @@
     "country": "Puerto Rico",
     "iso_a3": "PRI",
     "original_value": 648867000.0,
-    "remaining_value": 625032699.9978293,
-    "value_loss": 23834300.002170667,
-    "loss_fraction": 0.03673218086629566
+    "remaining_value": 603462658.4958649,
+    "value_loss": 45404341.504135154,
+    "loss_fraction": 0.06997480455029328
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9275,9 +9275,9 @@
     "country": "Cayman Is.",
     "iso_a3": "CYM",
     "original_value": 292794000.0,
-    "remaining_value": 271255498.36261904,
-    "value_loss": 21538501.637380965,
-    "loss_fraction": 0.07356196382911181
+    "remaining_value": 251763154.3807893,
+    "value_loss": 41030845.6192107,
+    "loss_fraction": 0.14013554109445786
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9285,9 +9285,9 @@
     "country": "Fiji",
     "iso_a3": "FJI",
     "original_value": 234676000.0,
-    "remaining_value": 216611046.74569997,
-    "value_loss": 18064953.254300028,
-    "loss_fraction": 0.076978273254615
+    "remaining_value": 200262264.05055845,
+    "value_loss": 34413735.94944156,
+    "loss_fraction": 0.14664361055004158
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9295,9 +9295,9 @@
     "country": "Panama",
     "iso_a3": "PAN",
     "original_value": 154178000.0,
-    "remaining_value": 138254865.04761446,
-    "value_loss": 15923134.952385528,
-    "loss_fraction": 0.10327760739136277
+    "remaining_value": 123844427.91570556,
+    "value_loss": 30333572.084294427,
+    "loss_fraction": 0.19674384208054604
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9305,9 +9305,9 @@
     "country": "Barbados",
     "iso_a3": "BRB",
     "original_value": 180082000.0,
-    "remaining_value": 164259287.2127164,
-    "value_loss": 15822712.787283588,
-    "loss_fraction": 0.08786393302653007
+    "remaining_value": 149939732.14022475,
+    "value_loss": 30142267.85977524,
+    "loss_fraction": 0.16738079241553983
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9315,9 +9315,9 @@
     "country": "Cuba",
     "iso_a3": "CUB",
     "original_value": 283290000.0,
-    "remaining_value": 268109119.68126112,
-    "value_loss": 15180880.318738867,
-    "loss_fraction": 0.053587773372653
+    "remaining_value": 254370422.99280244,
+    "value_loss": 28919577.007197544,
+    "loss_fraction": 0.10208470827490397
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9325,9 +9325,9 @@
     "country": "Costa Rica",
     "iso_a3": "CRI",
     "original_value": 169518000.0,
-    "remaining_value": 154339752.24433896,
-    "value_loss": 15178247.755661039,
-    "loss_fraction": 0.08953767597341308
+    "remaining_value": 140603438.02546573,
+    "value_loss": 28914561.974534288,
+    "loss_fraction": 0.17056927272935196
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9335,9 +9335,9 @@
     "country": "Jamaica",
     "iso_a3": "JAM",
     "original_value": 333386000.0,
-    "remaining_value": 318555793.48051715,
-    "value_loss": 14830206.51948283,
-    "loss_fraction": 0.04448359115104663
+    "remaining_value": 305134456.58038515,
+    "value_loss": 28251543.419614803,
+    "loss_fraction": 0.08474124114274385
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9345,9 +9345,9 @@
     "country": "Tanzania",
     "iso_a3": "TZA",
     "original_value": 131076000.0,
-    "remaining_value": 116533688.43107226,
-    "value_loss": 14542311.56892773,
-    "loss_fraction": 0.1109456465632742
+    "remaining_value": 103372896.46119267,
+    "value_loss": 27703103.538807336,
+    "loss_fraction": 0.21135145670303745
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9355,9 +9355,9 @@
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
     "original_value": 276056000.0,
-    "remaining_value": 261549257.8726063,
-    "value_loss": 14506742.127393663,
-    "loss_fraction": 0.052549997563514875
+    "remaining_value": 248420656.24731505,
+    "value_loss": 27635343.752684925,
+    "loss_fraction": 0.10010774535849583
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9365,9 +9365,9 @@
     "country": "Aruba",
     "iso_a3": "ABW",
     "original_value": 218226000.0,
-    "remaining_value": 203756101.94948262,
-    "value_loss": 14469898.050517365,
-    "loss_fraction": 0.06630693890974204
+    "remaining_value": 190660844.21376443,
+    "value_loss": 27565155.786235586,
+    "loss_fraction": 0.1263147186230586
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9375,9 +9375,9 @@
     "country": "British Virgin Is.",
     "iso_a3": "VGB",
     "original_value": 195550000.00000003,
-    "remaining_value": 181388448.20820284,
-    "value_loss": 14161551.791797193,
-    "loss_fraction": 0.07241908356838246
+    "remaining_value": 168572243.83662635,
+    "value_loss": 26977756.163373657,
+    "loss_fraction": 0.1379583541977686
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9385,9 +9385,9 @@
     "country": "Venezuela",
     "iso_a3": "VEN",
     "original_value": 281865000.0,
-    "remaining_value": 269220785.4642748,
-    "value_loss": 12644214.535725167,
-    "loss_fraction": 0.04485911530599814
+    "remaining_value": 257777771.30944356,
+    "value_loss": 24087228.690556455,
+    "loss_fraction": 0.0854566146579265
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9395,9 +9395,9 @@
     "country": "Vietnam",
     "iso_a3": "VNM",
     "original_value": 137445000.0,
-    "remaining_value": 125886889.03021698,
-    "value_loss": 11558110.969783032,
-    "loss_fraction": 0.08409262592151794
+    "remaining_value": 115426798.60256334,
+    "value_loss": 22018201.39743667,
+    "loss_fraction": 0.16019645238049163
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9405,9 +9405,9 @@
     "country": "Sri Lanka",
     "iso_a3": "LKA",
     "original_value": 82371000.0,
-    "remaining_value": 71180798.70341596,
-    "value_loss": 11190201.29658404,
-    "loss_fraction": 0.13585122551121195
+    "remaining_value": 61053666.5300074,
+    "value_loss": 21317333.469992608,
+    "loss_fraction": 0.2587965845988589
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9415,9 +9415,9 @@
     "country": "Kenya",
     "iso_a3": "KEN",
     "original_value": 84152000.0,
-    "remaining_value": 73186534.8374603,
-    "value_loss": 10965465.162539698,
-    "loss_fraction": 0.13030546110062385
+    "remaining_value": 63262788.86536188,
+    "value_loss": 20889211.134638123,
+    "loss_fraction": 0.2482319033966884
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9425,9 +9425,9 @@
     "country": "Qatar",
     "iso_a3": "QAT",
     "original_value": 108066000.00000001,
-    "remaining_value": 97376974.6866819,
-    "value_loss": 10689025.31331811,
-    "loss_fraction": 0.09891201037623404
+    "remaining_value": 87703406.77812901,
+    "value_loss": 20362593.221870996,
+    "loss_fraction": 0.18842737976672583
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9435,9 +9435,9 @@
     "country": "Bahrain",
     "iso_a3": "BHR",
     "original_value": 115837000.0,
-    "remaining_value": 105530428.62904973,
-    "value_loss": 10306571.370950269,
-    "loss_fraction": 0.08897477810155882
+    "remaining_value": 96202981.53833975,
+    "value_loss": 19634018.461660255,
+    "loss_fraction": 0.16949695228346948
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9445,9 +9445,9 @@
     "country": "Palau",
     "iso_a3": "PLW",
     "original_value": 92503000.0,
-    "remaining_value": 82749434.66402003,
-    "value_loss": 9753565.335979974,
-    "loss_fraction": 0.10544052988530074
+    "remaining_value": 73922458.03495815,
+    "value_loss": 18580541.965041853,
+    "loss_fraction": 0.20086420943149794
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9455,9 +9455,9 @@
     "country": "Colombia",
     "iso_a3": "COL",
     "original_value": 147202000.0,
-    "remaining_value": 138342445.6886567,
-    "value_loss": 8859554.311343325,
-    "loss_fraction": 0.06018637186548637
+    "remaining_value": 130324549.03689097,
+    "value_loss": 16877450.96310903,
+    "loss_fraction": 0.11465503840375152
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9465,9 +9465,9 @@
     "country": "Seychelles",
     "iso_a3": "SYC",
     "original_value": 73141000.0,
-    "remaining_value": 65239301.635557465,
-    "value_loss": 7901698.364442528,
-    "loss_fraction": 0.10803377537144047
+    "remaining_value": 58088264.615736976,
+    "value_loss": 15052735.384263016,
+    "loss_fraction": 0.20580434208259413
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9475,9 +9475,9 @@
     "country": "Kuwait",
     "iso_a3": "KWT",
     "original_value": 117235999.99999999,
-    "remaining_value": 109478961.55908382,
-    "value_loss": 7757038.440916166,
-    "loss_fraction": 0.06616601078948588
+    "remaining_value": 102458841.7700547,
+    "value_loss": 14777158.229945295,
+    "loss_fraction": 0.1260462505539706
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9485,9 +9485,9 @@
     "country": "N. Mariana Is.",
     "iso_a3": "MNP",
     "original_value": 61302000.00000001,
-    "remaining_value": 53838500.783899315,
-    "value_loss": 7463499.216100694,
-    "loss_fraction": 0.12174968542789294
+    "remaining_value": 47084033.99332819,
+    "value_loss": 14217966.006671814,
+    "loss_fraction": 0.23193315074013593
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9495,9 +9495,9 @@
     "country": "Mozambique",
     "iso_a3": "MOZ",
     "original_value": 68356000.0,
-    "remaining_value": 62096548.21094453,
-    "value_loss": 6259451.78905547,
-    "loss_fraction": 0.0915713586086879
+    "remaining_value": 56431744.341849335,
+    "value_loss": 11924255.65815067,
+    "loss_fraction": 0.17444343814955043
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9505,9 +9505,9 @@
     "country": "Turks and Caicos Is.",
     "iso_a3": "TCA",
     "original_value": 97587000.0,
-    "remaining_value": 91653930.60745074,
-    "value_loss": 5933069.39254927,
-    "loss_fraction": 0.060797743475557914
+    "remaining_value": 86284502.80719364,
+    "value_loss": 11302497.19280636,
+    "loss_fraction": 0.11581970132093783
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9515,9 +9515,9 @@
     "country": "Belize",
     "iso_a3": "BLZ",
     "original_value": 80611000.0,
-    "remaining_value": 75079274.62397018,
-    "value_loss": 5531725.376029821,
-    "loss_fraction": 0.06862246313815511
+    "remaining_value": 70073063.1586632,
+    "value_loss": 10537936.841336805,
+    "loss_fraction": 0.13072579227818543
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9525,9 +9525,9 @@
     "country": "Vanuatu",
     "iso_a3": "VUT",
     "original_value": 49991000.0,
-    "remaining_value": 45391414.649155766,
-    "value_loss": 4599585.350844232,
-    "loss_fraction": 0.09200826850521558
+    "remaining_value": 41228789.90664174,
+    "value_loss": 8762210.093358262,
+    "loss_fraction": 0.17527575150243566
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9535,9 +9535,9 @@
     "country": "Antigua and Barb.",
     "iso_a3": "ATG",
     "original_value": 66043000.0,
-    "remaining_value": 61981776.6525773,
-    "value_loss": 4061223.3474226957,
-    "loss_fraction": 0.06149362305502015
+    "remaining_value": 58306369.523159765,
+    "value_loss": 7736630.476840239,
+    "loss_fraction": 0.11714535191981344
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9545,9 +9545,9 @@
     "country": "St-Martin",
     "iso_a3": "MAF",
     "original_value": 89337000.0,
-    "remaining_value": 85630468.47694114,
-    "value_loss": 3706531.5230588596,
-    "loss_fraction": 0.04148932159193682
+    "remaining_value": 82276057.44857286,
+    "value_loss": 7060942.551427133,
+    "loss_fraction": 0.0790371576326397
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9555,9 +9555,9 @@
     "country": "Papua New Guinea",
     "iso_a3": "PNG",
     "original_value": 32024000.0,
-    "remaining_value": 28616061.23631393,
-    "value_loss": 3407938.763686068,
-    "loss_fraction": 0.1064182726606941
+    "remaining_value": 25531876.655178037,
+    "value_loss": 6492123.344821962,
+    "loss_fraction": 0.20272680941862234
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9565,9 +9565,9 @@
     "country": "Sint Maarten",
     "iso_a3": "SXM",
     "original_value": 116736000.0,
-    "remaining_value": 113413360.30773444,
-    "value_loss": 3322639.692265559,
-    "loss_fraction": 0.028462853723491974
+    "remaining_value": 110406371.38623409,
+    "value_loss": 6329628.613765907,
+    "loss_fraction": 0.05422173634325235
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9575,9 +9575,9 @@
     "country": "New Caledonia",
     "iso_a3": "NCL",
     "original_value": 28465000.0,
-    "remaining_value": 25434645.297028918,
-    "value_loss": 3030354.702971083,
-    "loss_fraction": 0.1064589742831928
+    "remaining_value": 22692174.290840086,
+    "value_loss": 5772825.709159914,
+    "loss_fraction": 0.20280434600948233
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9585,9 +9585,9 @@
     "country": "Fr. Polynesia",
     "iso_a3": "PYF",
     "original_value": 35516000.0,
-    "remaining_value": 32515726.48574572,
-    "value_loss": 3000273.5142542785,
-    "loss_fraction": 0.08447667288698836
+    "remaining_value": 29800478.955345597,
+    "value_loss": 5715521.044654401,
+    "loss_fraction": 0.16092806184971284
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9595,9 +9595,9 @@
     "country": "Saint Lucia",
     "iso_a3": "LCA",
     "original_value": 56573999.99999999,
-    "remaining_value": 53717287.88983878,
-    "value_loss": 2856712.110161214,
-    "loss_fraction": 0.05049514105704413
+    "remaining_value": 51131963.43014289,
+    "value_loss": 5442036.56985711,
+    "loss_fraction": 0.09619324371366901
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9605,9 +9605,9 @@
     "country": "Trinidad and Tobago",
     "iso_a3": "TTO",
     "original_value": 44958000.0,
-    "remaining_value": 42477122.09502113,
-    "value_loss": 2480877.9049788746,
-    "loss_fraction": 0.05518212342583911
+    "remaining_value": 40231927.59101524,
+    "value_loss": 4726072.408984756,
+    "loss_fraction": 0.1051219451262235
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9615,9 +9615,9 @@
     "country": "Madagascar",
     "iso_a3": "MDG",
     "original_value": 50495999.99999999,
-    "remaining_value": 48241720.67687463,
-    "value_loss": 2254279.323125361,
-    "loss_fraction": 0.04464273057520123
+    "remaining_value": 46201597.889446184,
+    "value_loss": 4294402.110553814,
+    "loss_fraction": 0.08504440174575838
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9625,9 +9625,9 @@
     "country": "France",
     "iso_a3": "-99",
     "original_value": 44416000.0,
-    "remaining_value": 42259430.8825988,
-    "value_loss": 2156569.1174011943,
-    "loss_fraction": 0.04855387962448654
+    "remaining_value": 40307735.83135073,
+    "value_loss": 4108264.1686492725,
+    "loss_fraction": 0.0924951406846468
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9635,9 +9635,9 @@
     "country": "Brunei",
     "iso_a3": "BRN",
     "original_value": 28259000.0,
-    "remaining_value": 26402050.290957537,
-    "value_loss": 1856949.7090424653,
-    "loss_fraction": 0.06571179833123837
+    "remaining_value": 24721510.804274105,
+    "value_loss": 3537489.1957258955,
+    "loss_fraction": 0.12518097582100907
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9645,9 +9645,9 @@
     "country": "Cook Is.",
     "iso_a3": "COK",
     "original_value": 19106000.0,
-    "remaining_value": 17299696.773060802,
-    "value_loss": 1806303.2269391944,
-    "loss_fraction": 0.0945411507871451
+    "remaining_value": 15664992.352680832,
+    "value_loss": 3441007.647319166,
+    "loss_fraction": 0.18010089224951145
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9655,9 +9655,9 @@
     "country": "Cambodia",
     "iso_a3": "KHM",
     "original_value": 18285000.0,
-    "remaining_value": 16529474.313790763,
-    "value_loss": 1755525.6862092365,
-    "loss_fraction": 0.09600906131852538
+    "remaining_value": 14940723.567771405,
+    "value_loss": 3344276.432228595,
+    "loss_fraction": 0.1828972618117908
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9665,9 +9665,9 @@
     "country": "Sudan",
     "iso_a3": "SDN",
     "original_value": 28480000.0,
-    "remaining_value": 26808662.527198836,
-    "value_loss": 1671337.4728011652,
-    "loss_fraction": 0.05868460227532181
+    "remaining_value": 25296102.114313778,
+    "value_loss": 3183897.8856862234,
+    "loss_fraction": 0.11179416733448819
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9675,9 +9675,9 @@
     "country": "Cura\u00e7ao",
     "iso_a3": "CUW",
     "original_value": 19676000.0,
-    "remaining_value": 18031653.961394917,
-    "value_loss": 1644346.0386050837,
-    "loss_fraction": 0.0835711546353468
+    "remaining_value": 16543520.796457317,
+    "value_loss": 3132479.2035426837,
+    "loss_fraction": 0.15920304958033563
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9685,9 +9685,9 @@
     "country": "Micronesia",
     "iso_a3": "FSM",
     "original_value": 18108000.0,
-    "remaining_value": 16468390.39761782,
-    "value_loss": 1639609.6023821782,
-    "loss_fraction": 0.0905461454816754
+    "remaining_value": 14984543.707461951,
+    "value_loss": 3123456.2925380473,
+    "loss_fraction": 0.17249040714259153
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9695,9 +9695,9 @@
     "country": "Myanmar",
     "iso_a3": "MMR",
     "original_value": 11580999.999999998,
-    "remaining_value": 9944949.993214896,
-    "value_loss": 1636050.0067851022,
-    "loss_fraction": 0.14127018450782336
+    "remaining_value": 8464324.737074379,
+    "value_loss": 3116675.2629256197,
+    "loss_fraction": 0.26911970148740355
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9705,9 +9705,9 @@
     "country": "Solomon Is.",
     "iso_a3": "SLB",
     "original_value": 21984000.0,
-    "remaining_value": 20371390.485742573,
-    "value_loss": 1612609.51425743,
-    "loss_fraction": 0.07335378067037072
+    "remaining_value": 18911978.8753396,
+    "value_loss": 3072021.1246604,
+    "loss_fraction": 0.13973895217705606
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9715,9 +9715,9 @@
     "country": "Singapore",
     "iso_a3": "SGP",
     "original_value": 12590000.0,
-    "remaining_value": 11044697.494051132,
-    "value_loss": 1545302.5059488672,
-    "loss_fraction": 0.12274046909840089
+    "remaining_value": 9646198.72616741,
+    "value_loss": 2943801.2738325903,
+    "loss_fraction": 0.23382059363245355
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9725,9 +9725,9 @@
     "country": "St. Vin. and Gren.",
     "iso_a3": "VCT",
     "original_value": 24639000.0,
-    "remaining_value": 23147690.68174479,
-    "value_loss": 1491309.3182552077,
-    "loss_fraction": 0.060526373564479395
+    "remaining_value": 21798055.74872383,
+    "value_loss": 2840944.251276169,
+    "loss_fraction": 0.11530274164033318
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9735,9 +9735,9 @@
     "country": "Anguilla",
     "iso_a3": "AIA",
     "original_value": 19685000.0,
-    "remaining_value": 18234907.474269465,
-    "value_loss": 1450092.5257305356,
-    "loss_fraction": 0.07366484763680649
+    "remaining_value": 16922573.738483332,
+    "value_loss": 2762426.2615166707,
+    "loss_fraction": 0.14033153474811635
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9745,9 +9745,9 @@
     "country": "Netherlands",
     "iso_a3": "NLD",
     "original_value": 24388000.0,
-    "remaining_value": 23116596.86243465,
-    "value_loss": 1271403.137565347,
-    "loss_fraction": 0.05213232481406212
+    "remaining_value": 21965977.022938013,
+    "value_loss": 2422022.9770619855,
+    "loss_fraction": 0.09931207877078832
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9755,9 +9755,9 @@
     "country": "Grenada",
     "iso_a3": "GRD",
     "original_value": 23150000.0,
-    "remaining_value": 22139101.566715714,
-    "value_loss": 1010898.4332842857,
-    "loss_fraction": 0.043667318932366556
+    "remaining_value": 21224238.484593432,
+    "value_loss": 1925761.5154065653,
+    "loss_fraction": 0.08318624256615832
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9765,9 +9765,9 @@
     "country": "Iran",
     "iso_a3": "IRN",
     "original_value": 13345000.0,
-    "remaining_value": 12336040.144699767,
-    "value_loss": 1008959.855300233,
-    "loss_fraction": 0.07560583404273008
+    "remaining_value": 11422931.475653056,
+    "value_loss": 1922068.5243469442,
+    "loss_fraction": 0.14402911385140083
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9775,9 +9775,9 @@
     "country": "Nicaragua",
     "iso_a3": "NIC",
     "original_value": 10975000.0,
-    "remaining_value": 10001642.589457422,
-    "value_loss": 973357.4105425776,
-    "loss_fraction": 0.08868860232734192
+    "remaining_value": 9120754.13291639,
+    "value_loss": 1854245.86708361,
+    "loss_fraction": 0.16895178743358633
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9785,9 +9785,9 @@
     "country": "Jordan",
     "iso_a3": "JOR",
     "original_value": 7264000.0,
-    "remaining_value": 6341375.024752962,
-    "value_loss": 922624.9752470376,
-    "loss_fraction": 0.1270133501166076
+    "remaining_value": 5506399.422154393,
+    "value_loss": 1757600.577845607,
+    "loss_fraction": 0.2419604319721375
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9795,9 +9795,9 @@
     "country": "Tonga",
     "iso_a3": "TON",
     "original_value": 13291000.0,
-    "remaining_value": 12464123.640821004,
-    "value_loss": 826876.3591789945,
-    "loss_fraction": 0.062213254019937894
+    "remaining_value": 11715800.535764014,
+    "value_loss": 1575199.4642359857,
+    "loss_fraction": 0.11851624890798176
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9805,9 +9805,9 @@
     "country": "St. Kitts and Nevis",
     "iso_a3": "KNA",
     "original_value": 16240000.0,
-    "remaining_value": 15431634.358997371,
-    "value_loss": 808365.641002628,
-    "loss_fraction": 0.04977620942134409
+    "remaining_value": 14700063.453889994,
+    "value_loss": 1539936.5461100063,
+    "loss_fraction": 0.09482367894766049
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9815,9 +9815,9 @@
     "country": "Haiti",
     "iso_a3": "HTI",
     "original_value": 15206000.0,
-    "remaining_value": 14510864.17126496,
-    "value_loss": 695135.8287350403,
-    "loss_fraction": 0.04571457508450876
+    "remaining_value": 13881766.246259747,
+    "value_loss": 1324233.7537402515,
+    "loss_fraction": 0.08708626553598918
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9825,9 +9825,9 @@
     "country": "Dominica",
     "iso_a3": "DMA",
     "original_value": 14598000.0,
-    "remaining_value": 14171637.633238716,
-    "value_loss": 426362.36676128383,
-    "loss_fraction": 0.029206902778550748
+    "remaining_value": 13785779.691319754,
+    "value_loss": 812220.3086802459,
+    "loss_fraction": 0.05563914979313919
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9835,9 +9835,9 @@
     "country": "Yemen",
     "iso_a3": "YEM",
     "original_value": 2876000.0,
-    "remaining_value": 2505730.353829334,
-    "value_loss": 370269.64617066586,
-    "loss_fraction": 0.12874466139452917
+    "remaining_value": 2170636.3240448814,
+    "value_loss": 705363.6759551184,
+    "loss_fraction": 0.24525857995657802
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9845,9 +9845,9 @@
     "country": "Timor-Leste",
     "iso_a3": "TLS",
     "original_value": 4190000.0,
-    "remaining_value": 3855428.028180263,
-    "value_loss": 334571.971819737,
-    "loss_fraction": 0.07985011260614248
+    "remaining_value": 3552640.393683401,
+    "value_loss": 637359.606316599,
+    "loss_fraction": 0.15211446451470143
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9855,9 +9855,9 @@
     "country": "St-Barth\u00e9lemy",
     "iso_a3": "BLM",
     "original_value": 9474000.0,
-    "remaining_value": 9191236.330204142,
-    "value_loss": 282763.66979585757,
-    "loss_fraction": 0.029846281380183404
+    "remaining_value": 8935335.20903889,
+    "value_loss": 538664.7909611088,
+    "loss_fraction": 0.056857166029249395
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9865,9 +9865,9 @@
     "country": "Israel",
     "iso_a3": "ISR",
     "original_value": 1816000.0,
-    "remaining_value": 1585343.7561882406,
-    "value_loss": 230656.2438117594,
-    "loss_fraction": 0.1270133501166076
+    "remaining_value": 1376599.8555385983,
+    "value_loss": 439400.14446140174,
+    "loss_fraction": 0.2419604319721375
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9875,9 +9875,9 @@
     "country": "South Africa",
     "iso_a3": "ZAF",
     "original_value": 2676000.0,
-    "remaining_value": 2510243.6955984076,
-    "value_loss": 165756.30440159224,
-    "loss_fraction": 0.061941817788337905
+    "remaining_value": 2360234.2401149673,
+    "value_loss": 315765.75988503254,
+    "loss_fraction": 0.11799916288678346
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9885,9 +9885,9 @@
     "country": "Comoros",
     "iso_a3": "COM",
     "original_value": 1814000.0,
-    "remaining_value": 1676878.3121308251,
-    "value_loss": 137121.68786917476,
-    "loss_fraction": 0.07559078713846458
+    "remaining_value": 1552783.1846092222,
+    "value_loss": 261216.81539077783,
+    "loss_fraction": 0.144000449498775
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9895,9 +9895,9 @@
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
     "original_value": 792000.0,
-    "remaining_value": 700199.9312908784,
-    "value_loss": 91800.06870912155,
-    "loss_fraction": 0.11590917766303226
+    "remaining_value": 617120.8691091235,
+    "value_loss": 174879.13089087652,
+    "loss_fraction": 0.22080698344807642
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9905,9 +9905,9 @@
     "country": "Kiribati",
     "iso_a3": "KIR",
     "original_value": 700000.0,
-    "remaining_value": 622137.9409217411,
-    "value_loss": 77862.05907825893,
-    "loss_fraction": 0.11123151296894132
+    "remaining_value": 551672.7774559167,
+    "value_loss": 148327.22254408323,
+    "loss_fraction": 0.21189603220583317
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9915,9 +9915,9 @@
     "country": "Montserrat",
     "iso_a3": "MSR",
     "original_value": 1782000.0,
-    "remaining_value": 1708019.8489659815,
-    "value_loss": 73980.1510340186,
-    "loss_fraction": 0.04151523627049305
+    "remaining_value": 1641067.8122801946,
+    "value_loss": 140932.1877198054,
+    "loss_fraction": 0.07908652509528923
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9925,9 +9925,9 @@
     "country": "Eritrea",
     "iso_a3": "ERI",
     "original_value": 168000.0,
-    "remaining_value": 140350.43151875155,
-    "value_loss": 27649.568481248458,
-    "loss_fraction": 0.16458076476933606
+    "remaining_value": 115327.5720432217,
+    "value_loss": 52672.42795677829,
+    "loss_fraction": 0.31352635688558506
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9935,9 +9935,9 @@
     "country": "Niue",
     "iso_a3": "NIU",
     "original_value": 286000.0,
-    "remaining_value": 268803.7196403568,
-    "value_loss": 17196.28035964321,
-    "loss_fraction": 0.06012685440434689
+    "remaining_value": 253241.08591487972,
+    "value_loss": 32758.914085120283,
+    "loss_fraction": 0.11454165764028071
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9945,9 +9945,9 @@
     "country": "Marshall Is.",
     "iso_a3": "MHL",
     "original_value": 94000.0,
-    "remaining_value": 80277.31471447623,
-    "value_loss": 13722.68528552376,
-    "loss_fraction": 0.14598601367578468
+    "remaining_value": 67858.28453107722,
+    "value_loss": 26141.715468922775,
+    "loss_fraction": 0.27810335605236997
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9955,9 +9955,9 @@
     "country": "Djibouti",
     "iso_a3": "DJI",
     "original_value": 96000.0,
-    "remaining_value": 86465.49161325124,
-    "value_loss": 9534.508386748763,
-    "loss_fraction": 0.09931779569529961
+    "remaining_value": 77836.76152324361,
+    "value_loss": 18163.23847675639,
+    "loss_fraction": 0.18920040079954573
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -12435,9 +12435,9 @@
     "country": "Egypt",
     "iso_a3": "EGY",
     "original_value": 5467295000.0,
-    "remaining_value": 3798816389.7126226,
-    "value_loss": 1668478610.2873769,
-    "loss_fraction": 0.30517442543110934
+    "remaining_value": 2288843247.402547,
+    "value_loss": 3178451752.5974526,
+    "loss_fraction": 0.5813572804462632
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12445,9 +12445,9 @@
     "country": "Indonesia",
     "iso_a3": "IDN",
     "original_value": 3097453000.0,
-    "remaining_value": 2370111912.037769,
-    "value_loss": 727341087.9622314,
-    "loss_fraction": 0.23481908779963132
+    "remaining_value": 1711868227.4319494,
+    "value_loss": 1385584772.5680509,
+    "loss_fraction": 0.44733036225829764
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12455,9 +12455,9 @@
     "country": "Thailand",
     "iso_a3": "THA",
     "original_value": 2410154000.0,
-    "remaining_value": 1764643181.9612143,
-    "value_loss": 645510818.0387857,
-    "loss_fraction": 0.2678296980353893
+    "remaining_value": 1180455891.6361134,
+    "value_loss": 1229698108.3638866,
+    "loss_fraction": 0.5102155747574165
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12465,9 +12465,9 @@
     "country": "Australia",
     "iso_a3": "AUS",
     "original_value": 2176084000.0,
-    "remaining_value": 1708216907.7428975,
-    "value_loss": 467867092.2571025,
-    "loss_fraction": 0.21500415069321888
+    "remaining_value": 1284797189.2502196,
+    "value_loss": 891286810.7497803,
+    "loss_fraction": 0.409582907070582
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12475,9 +12475,9 @@
     "country": "China",
     "iso_a3": "CHN",
     "original_value": 1871813999.9999998,
-    "remaining_value": 1448643237.2375412,
-    "value_loss": 423170762.76245856,
-    "loss_fraction": 0.2260752204879644
+    "remaining_value": 1065673696.9375162,
+    "value_loss": 806140303.0624837,
+    "loss_fraction": 0.43067329502957225
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12485,9 +12485,9 @@
     "country": "United States of America",
     "iso_a3": "USA",
     "original_value": 2387729000.0,
-    "remaining_value": 1969443075.9664829,
-    "value_loss": 418285924.03351706,
-    "loss_fraction": 0.17518149004075298
+    "remaining_value": 1590894314.71615,
+    "value_loss": 796834685.28385,
+    "loss_fraction": 0.3337207385276344
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12495,9 +12495,9 @@
     "country": "Philippines",
     "iso_a3": "PHL",
     "original_value": 1385144000.0,
-    "remaining_value": 1058033326.2076085,
-    "value_loss": 327110673.7923914,
-    "loss_fraction": 0.23615643845866668
+    "remaining_value": 761998166.4254942,
+    "value_loss": 623145833.5745058,
+    "loss_fraction": 0.44987801526376014
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12505,9 +12505,9 @@
     "country": "Mexico",
     "iso_a3": "MEX",
     "original_value": 2999883000.0,
-    "remaining_value": 2700166982.3603587,
-    "value_loss": 299716017.6396413,
-    "loss_fraction": 0.09990923567340503
+    "remaining_value": 2428923986.3964834,
+    "value_loss": 570959013.6035166,
+    "loss_fraction": 0.19032709395783654
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12515,9 +12515,9 @@
     "country": "Malaysia",
     "iso_a3": "MYS",
     "original_value": 1148955000.0,
-    "remaining_value": 864854244.4294363,
-    "value_loss": 284100755.57056373,
-    "loss_fraction": 0.2472688273871159
+    "remaining_value": 607743060.6380761,
+    "value_loss": 541211939.361924,
+    "loss_fraction": 0.47104711617245587
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12525,9 +12525,9 @@
     "country": "Japan",
     "iso_a3": "JPN",
     "original_value": 1177549000.0,
-    "remaining_value": 933501439.5776786,
-    "value_loss": 244047560.42232135,
-    "loss_fraction": 0.20725045023376637
+    "remaining_value": 712638397.3954777,
+    "value_loss": 464910602.6045223,
+    "loss_fraction": 0.39481210769532504
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12535,9 +12535,9 @@
     "country": "Maldives",
     "iso_a3": "MDV",
     "original_value": 1085273000.0,
-    "remaining_value": 849426277.5735453,
-    "value_loss": 235846722.4264547,
-    "loss_fraction": 0.21731557168238286
+    "remaining_value": 635984993.7776039,
+    "value_loss": 449288006.2223962,
+    "loss_fraction": 0.4139861640549394
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12545,9 +12545,9 @@
     "country": "United Arab Emirates",
     "iso_a3": "ARE",
     "original_value": 445654000.00000006,
-    "remaining_value": 317429203.594442,
-    "value_loss": 128224796.40555799,
-    "loss_fraction": 0.287722754436307
+    "remaining_value": 201385762.84741205,
+    "value_loss": 244268237.15258798,
+    "loss_fraction": 0.5481118472011649
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12555,9 +12555,9 @@
     "country": "India",
     "iso_a3": "IND",
     "original_value": 464082000.0,
-    "remaining_value": 353867424.06714964,
-    "value_loss": 110214575.93285036,
-    "loss_fraction": 0.23748944353120863
+    "remaining_value": 254123232.8479201,
+    "value_loss": 209958767.1520799,
+    "loss_fraction": 0.45241738992695235
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12565,9 +12565,9 @@
     "country": "Brazil",
     "iso_a3": "BRA",
     "original_value": 612864000.0,
-    "remaining_value": 514282622.4042869,
-    "value_loss": 98581377.5957131,
-    "loss_fraction": 0.16085359491781714
+    "remaining_value": 425066475.68016654,
+    "value_loss": 187797524.31983346,
+    "loss_fraction": 0.3064260983184417
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12575,9 +12575,9 @@
     "country": "Mauritius",
     "iso_a3": "MUS",
     "original_value": 312389000.0,
-    "remaining_value": 227616989.41431364,
-    "value_loss": 84772010.58568639,
-    "loss_fraction": 0.2713668233698574
+    "remaining_value": 150898319.83426747,
+    "value_loss": 161490680.16573253,
+    "loss_fraction": 0.5169537985195782
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12585,9 +12585,9 @@
     "country": "Honduras",
     "iso_a3": "HND",
     "original_value": 446628000.0,
-    "remaining_value": 369634389.61184055,
-    "value_loss": 76993610.38815942,
-    "loss_fraction": 0.1723886777993306
+    "remaining_value": 299955172.2105563,
+    "value_loss": 146672827.78944367,
+    "loss_fraction": 0.3284004312077247
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12595,9 +12595,9 @@
     "country": "Saudi Arabia",
     "iso_a3": "SAU",
     "original_value": 268681000.00000006,
-    "remaining_value": 193924967.7446808,
-    "value_loss": 74756032.25531922,
-    "loss_fraction": 0.27823341529664997
+    "remaining_value": 126270758.55361691,
+    "value_loss": 142410241.44638312,
+    "loss_fraction": 0.5300346561401181
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12605,9 +12605,9 @@
     "country": "Taiwan",
     "iso_a3": "TWN",
     "original_value": 323440000.0,
-    "remaining_value": 256746030.9799799,
-    "value_loss": 66693969.02002008,
-    "loss_fraction": 0.20620198188232775
+    "remaining_value": 196387989.01686174,
+    "value_loss": 127052010.98313825,
+    "loss_fraction": 0.3928147754858343
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12615,9 +12615,9 @@
     "country": "Oman",
     "iso_a3": "OMN",
     "original_value": 221164000.0,
-    "remaining_value": 155060614.41674036,
-    "value_loss": 66103385.583259635,
-    "loss_fraction": 0.2988885423634029
+    "remaining_value": 95237050.4638904,
+    "value_loss": 125926949.53610958,
+    "loss_fraction": 0.5693826732022824
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12625,9 +12625,9 @@
     "country": "Puerto Rico",
     "iso_a3": "PRI",
     "original_value": 648867000.0,
-    "remaining_value": 583872055.399522,
-    "value_loss": 64994944.60047801,
-    "loss_fraction": 0.10016682093630591
+    "remaining_value": 525051630.5360894,
+    "value_loss": 123815369.46391061,
+    "loss_fraction": 0.19081779388366277
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12635,9 +12635,9 @@
     "country": "Guam",
     "iso_a3": "GUM",
     "original_value": 323244000.0,
-    "remaining_value": 259122366.80325437,
-    "value_loss": 64121633.19674561,
-    "loss_fraction": 0.19836913661737143
+    "remaining_value": 201092288.76019958,
+    "value_loss": 122151711.23980041,
+    "loss_fraction": 0.37789320525609266
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12645,9 +12645,9 @@
     "country": "Bahamas",
     "iso_a3": "BHS",
     "original_value": 526057999.99999994,
-    "remaining_value": 463598545.13638794,
-    "value_loss": 62459454.863612026,
-    "loss_fraction": 0.11873111874282309
+    "remaining_value": 407072738.48481905,
+    "value_loss": 118985261.51518092,
+    "loss_fraction": 0.226182781205078
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12655,9 +12655,9 @@
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
     "original_value": 511669000.0,
-    "remaining_value": 452715212.72003615,
-    "value_loss": 58953787.279963806,
-    "loss_fraction": 0.11521860280760375
+    "remaining_value": 399362035.23166895,
+    "value_loss": 112306964.76833105,
+    "loss_fraction": 0.21949143834848517
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12665,9 +12665,9 @@
     "country": "Aruba",
     "iso_a3": "ABW",
     "original_value": 218226000.0,
-    "remaining_value": 172265826.21330822,
-    "value_loss": 45960173.7866918,
-    "loss_fraction": 0.21060814837229203
+    "remaining_value": 130671868.93635213,
+    "value_loss": 87554131.06364787,
+    "loss_fraction": 0.40120852264921625
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12675,9 +12675,9 @@
     "country": "Fiji",
     "iso_a3": "FJI",
     "original_value": 234676000.0,
-    "remaining_value": 191668994.50922364,
-    "value_loss": 43007005.490776375,
-    "loss_fraction": 0.18326120050953815
+    "remaining_value": 152747654.540071,
+    "value_loss": 81928345.45992899,
+    "loss_fraction": 0.34911258697067016
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12685,9 +12685,9 @@
     "country": "Cayman Is.",
     "iso_a3": "CYM",
     "original_value": 292794000.0,
-    "remaining_value": 251335818.724986,
-    "value_loss": 41458181.27501404,
-    "loss_fraction": 0.14159505070122352
+    "remaining_value": 213816164.67109826,
+    "value_loss": 78977835.32890177,
+    "loss_fraction": 0.26973857158583087
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12695,9 +12695,9 @@
     "country": "Jamaica",
     "iso_a3": "JAM",
     "original_value": 333386000.0,
-    "remaining_value": 295571304.7543111,
-    "value_loss": 37814695.245688915,
-    "loss_fraction": 0.11342616440309106
+    "remaining_value": 261349005.5569626,
+    "value_loss": 72036994.44303738,
+    "loss_fraction": 0.21607684318788845
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12705,9 +12705,9 @@
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
     "original_value": 276056000.0,
-    "remaining_value": 239591162.44850528,
-    "value_loss": 36464837.55149471,
-    "loss_fraction": 0.1320921753249149
+    "remaining_value": 206590484.46440256,
+    "value_loss": 69465515.53559741,
+    "loss_fraction": 0.25163559399396285
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12715,9 +12715,9 @@
     "country": "Tanzania",
     "iso_a3": "TZA",
     "original_value": 131076000.0,
-    "remaining_value": 95303786.41106406,
-    "value_loss": 35772213.58893594,
-    "loss_fraction": 0.2729120021127891
+    "remaining_value": 62929933.11307703,
+    "value_loss": 68146066.88692297,
+    "loss_fraction": 0.5198973640248632
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12725,9 +12725,9 @@
     "country": "Cuba",
     "iso_a3": "CUB",
     "original_value": 283290000.0,
-    "remaining_value": 249790831.4323298,
-    "value_loss": 33499168.56767021,
-    "loss_fraction": 0.11825044501277918
+    "remaining_value": 219474083.87858826,
+    "value_loss": 63815916.12141175,
+    "loss_fraction": 0.2252670977493443
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12735,9 +12735,9 @@
     "country": "Panama",
     "iso_a3": "PAN",
     "original_value": 154178000.0,
-    "remaining_value": 121785858.6472571,
-    "value_loss": 32392141.352742884,
-    "loss_fraction": 0.21009574227673783
+    "remaining_value": 92470970.72302479,
+    "value_loss": 61707029.27697521,
+    "loss_fraction": 0.4002323890371856
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12745,9 +12745,9 @@
     "country": "British Virgin Is.",
     "iso_a3": "VGB",
     "original_value": 195550000.00000003,
-    "remaining_value": 164474898.6422592,
-    "value_loss": 31075101.357740812,
-    "loss_fraction": 0.15891128283170958
+    "remaining_value": 136351931.91350377,
+    "value_loss": 59198068.08649625,
+    "loss_fraction": 0.30272599379440673
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12755,9 +12755,9 @@
     "country": "Barbados",
     "iso_a3": "BRB",
     "original_value": 180082000.0,
-    "remaining_value": 149717104.70621964,
-    "value_loss": 30364895.29378034,
-    "loss_fraction": 0.16861704831010507
+    "remaining_value": 122236874.46534844,
+    "value_loss": 57845125.534651555,
+    "loss_fraction": 0.3212154770307502
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12765,9 +12765,9 @@
     "country": "Costa Rica",
     "iso_a3": "CRI",
     "original_value": 169518000.0,
-    "remaining_value": 141294686.55727404,
-    "value_loss": 28223313.442725964,
-    "loss_fraction": 0.16649154333301458
+    "remaining_value": 115752587.89160705,
+    "value_loss": 53765412.10839296,
+    "loss_fraction": 0.31716639004939273
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12775,9 +12775,9 @@
     "country": "Venezuela",
     "iso_a3": "VEN",
     "original_value": 281865000.0,
-    "remaining_value": 255456343.12547398,
-    "value_loss": 26408656.87452603,
-    "loss_fraction": 0.09369257224034921
+    "remaining_value": 231556508.6540279,
+    "value_loss": 50308491.34597209,
+    "loss_fraction": 0.17848435011786526
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12785,9 +12785,9 @@
     "country": "Qatar",
     "iso_a3": "QAT",
     "original_value": 108066000.00000001,
-    "remaining_value": 81938084.82460012,
-    "value_loss": 26127915.175399896,
-    "loss_fraction": 0.2417773876649445
+    "remaining_value": 58292321.5908632,
+    "value_loss": 49773678.40913681,
+    "loss_fraction": 0.46058592350171934
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12795,9 +12795,9 @@
     "country": "Sri Lanka",
     "iso_a3": "LKA",
     "original_value": 82371000.0,
-    "remaining_value": 56745600.75674511,
-    "value_loss": 25625399.2432549,
-    "loss_fraction": 0.31109734303644365
+    "remaining_value": 33554614.441599414,
+    "value_loss": 48816385.55840059,
+    "loss_fraction": 0.5926404384844253
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12805,9 +12805,9 @@
     "country": "Kuwait",
     "iso_a3": "KWT",
     "original_value": 117235999.99999999,
-    "remaining_value": 93254659.83660121,
-    "value_loss": 23981340.163398776,
-    "loss_fraction": 0.20455611043876265
+    "remaining_value": 71551546.9887253,
+    "value_loss": 45684453.01127468,
+    "loss_fraction": 0.389679390385843
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12815,9 +12815,9 @@
     "country": "Palau",
     "iso_a3": "PLW",
     "original_value": 92503000.0,
-    "remaining_value": 68965135.39299536,
-    "value_loss": 23537864.60700464,
-    "loss_fraction": 0.2544551485573942
+    "remaining_value": 47663367.923656166,
+    "value_loss": 44839632.076343834,
+    "loss_fraction": 0.484737058001836
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12825,9 +12825,9 @@
     "country": "Colombia",
     "iso_a3": "COL",
     "original_value": 147202000.0,
-    "remaining_value": 124518623.77308123,
-    "value_loss": 22683376.22691877,
-    "loss_fraction": 0.1540969295724159
+    "remaining_value": 103990168.28771974,
+    "value_loss": 43211831.71228026,
+    "loss_fraction": 0.29355465083545235
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12835,9 +12835,9 @@
     "country": "Vietnam",
     "iso_a3": "VNM",
     "original_value": 137445000.0,
-    "remaining_value": 115027066.9122983,
-    "value_loss": 22417933.087701697,
-    "loss_fraction": 0.16310475526721013
+    "remaining_value": 94738837.46792828,
+    "value_loss": 42706162.53207173,
+    "loss_fraction": 0.3107145587840353
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12845,9 +12845,9 @@
     "country": "Kenya",
     "iso_a3": "KEN",
     "original_value": 84152000.0,
-    "remaining_value": 62066390.223805934,
-    "value_loss": 22085609.776194062,
-    "loss_fraction": 0.26244901815992566
+    "remaining_value": 42078913.3763503,
+    "value_loss": 42073086.623649694,
+    "loss_fraction": 0.4999653795946584
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12855,9 +12855,9 @@
     "country": "Bahrain",
     "iso_a3": "BHR",
     "original_value": 115837000.0,
-    "remaining_value": 94118692.18550664,
-    "value_loss": 21718307.814493358,
-    "loss_fraction": 0.18749024762807528
+    "remaining_value": 74463623.61339016,
+    "value_loss": 41373376.38660984,
+    "loss_fraction": 0.35716892173148335
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12865,9 +12865,9 @@
     "country": "Seychelles",
     "iso_a3": "SYC",
     "original_value": 73141000.0,
-    "remaining_value": 52883338.06567855,
-    "value_loss": 20257661.934321444,
-    "loss_fraction": 0.2769672541299879
+    "remaining_value": 34550154.015117645,
+    "value_loss": 38590845.984882355,
+    "loss_fraction": 0.527622619117627
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12875,9 +12875,9 @@
     "country": "N. Mariana Is.",
     "iso_a3": "MNP",
     "original_value": 61302000.00000001,
-    "remaining_value": 44060724.2175855,
-    "value_loss": 17241275.78241451,
-    "loss_fraction": 0.28125144012290804
+    "remaining_value": 28457369.63450037,
+    "value_loss": 32844630.365499638,
+    "loss_fraction": 0.5357839934341397
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12885,9 +12885,9 @@
     "country": "Mozambique",
     "iso_a3": "MOZ",
     "original_value": 68356000.0,
-    "remaining_value": 53396543.10113878,
-    "value_loss": 14959456.898861224,
-    "loss_fraction": 0.2188462885315294
+    "remaining_value": 39858234.607669376,
+    "value_loss": 28497765.392330628,
+    "loss_fraction": 0.4169021796525635
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12895,9 +12895,9 @@
     "country": "Turks and Caicos Is.",
     "iso_a3": "TCA",
     "original_value": 97587000.0,
-    "remaining_value": 84129708.36623043,
-    "value_loss": 13457291.633769574,
-    "loss_fraction": 0.13790045429995362
+    "remaining_value": 71950859.43766896,
+    "value_loss": 25636140.56233104,
+    "loss_fraction": 0.2627003654414117
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12905,9 +12905,9 @@
     "country": "Belize",
     "iso_a3": "BLZ",
     "original_value": 80611000.0,
-    "remaining_value": 68589494.87469898,
-    "value_loss": 12021505.125301013,
-    "loss_fraction": 0.14912983495181814
+    "remaining_value": 57710032.73630157,
+    "value_loss": 22900967.26369843,
+    "loss_fraction": 0.28409233558321356
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12915,9 +12915,9 @@
     "country": "Sint Maarten",
     "iso_a3": "SXM",
     "original_value": 116736000.0,
-    "remaining_value": 106118753.12446208,
-    "value_loss": 10617246.875537917,
-    "loss_fraction": 0.0909509223850219
+    "remaining_value": 96510144.70210028,
+    "value_loss": 20225855.29789973,
+    "loss_fraction": 0.17326150714346672
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12925,9 +12925,9 @@
     "country": "Vanuatu",
     "iso_a3": "VUT",
     "original_value": 49991000.0,
-    "remaining_value": 39561348.98212484,
-    "value_loss": 10429651.01787515,
-    "loss_fraction": 0.20863057386079795
+    "remaining_value": 30122514.810947835,
+    "value_loss": 19868485.189052157,
+    "loss_fraction": 0.39744124320482
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12935,9 +12935,9 @@
     "country": "Antigua and Barb.",
     "iso_a3": "ATG",
     "original_value": 66043000.0,
-    "remaining_value": 57313071.184199035,
-    "value_loss": 8729928.815800965,
-    "loss_fraction": 0.1321855278500517
+    "remaining_value": 49412485.60589917,
+    "value_loss": 16630514.394100836,
+    "loss_fraction": 0.25181343055434846
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12945,9 +12945,9 @@
     "country": "St-Martin",
     "iso_a3": "MAF",
     "original_value": 89337000.0,
-    "remaining_value": 81085535.65834141,
-    "value_loss": 8251464.341658583,
-    "loss_fraction": 0.0923633471199904
+    "remaining_value": 73617960.42914039,
+    "value_loss": 15719039.5708596,
+    "loss_fraction": 0.17595217626358173
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12955,9 +12955,9 @@
     "country": "Papua New Guinea",
     "iso_a3": "PNG",
     "original_value": 32024000.0,
-    "remaining_value": 24184968.501465484,
-    "value_loss": 7839031.498534514,
-    "loss_fraction": 0.24478614472066304
+    "remaining_value": 17090644.995291747,
+    "value_loss": 14933355.004708251,
+    "loss_fraction": 0.4663176056928632
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12965,9 +12965,9 @@
     "country": "New Caledonia",
     "iso_a3": "NCL",
     "original_value": 28465000.0,
-    "remaining_value": 21560477.538394473,
-    "value_loss": 6904522.461605527,
-    "loss_fraction": 0.24256182896910336
+    "remaining_value": 15311884.71064147,
+    "value_loss": 13153115.289358532,
+    "loss_fraction": 0.462080284186142
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12975,9 +12975,9 @@
     "country": "Saint Lucia",
     "iso_a3": "LCA",
     "original_value": 56573999.99999999,
-    "remaining_value": 49876031.47624245,
-    "value_loss": 6697968.523757543,
-    "loss_fraction": 0.11839305199840111
+    "remaining_value": 43814369.96224187,
+    "value_loss": 12759630.03775812,
+    "loss_fraction": 0.2255387640569541
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12985,9 +12985,9 @@
     "country": "Madagascar",
     "iso_a3": "MDG",
     "original_value": 50495999.99999999,
-    "remaining_value": 43854233.49852833,
-    "value_loss": 6641766.501471663,
-    "loss_fraction": 0.1315305470031619
+    "remaining_value": 37843434.81469647,
+    "value_loss": 12652565.185303524,
+    "loss_fraction": 0.2505656920410236
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12995,9 +12995,9 @@
     "country": "Fr. Polynesia",
     "iso_a3": "PYF",
     "original_value": 35516000.0,
-    "remaining_value": 28896324.809285752,
-    "value_loss": 6619675.190714247,
-    "loss_fraction": 0.18638571885105998
+    "remaining_value": 22905518.76168936,
+    "value_loss": 12610481.23831064,
+    "loss_fraction": 0.3550647944112693
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13005,9 +13005,9 @@
     "country": "Trinidad and Tobago",
     "iso_a3": "TTO",
     "original_value": 44958000.0,
-    "remaining_value": 38490467.81968188,
-    "value_loss": 6467532.18031812,
-    "loss_fraction": 0.14385720406419591
+    "remaining_value": 32637351.19649398,
+    "value_loss": 12320648.80350602,
+    "loss_fraction": 0.2740479737422933
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13015,9 +13015,9 @@
     "country": "France",
     "iso_a3": "-99",
     "original_value": 44416000.0,
-    "remaining_value": 37955245.1802227,
-    "value_loss": 6460754.8197773015,
-    "loss_fraction": 0.14546007789484197
+    "remaining_value": 32108262.06832424,
+    "value_loss": 12307737.931675758,
+    "loss_fraction": 0.27710144838967393
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13025,9 +13025,9 @@
     "country": "Brunei",
     "iso_a3": "BRN",
     "original_value": 28259000.0,
-    "remaining_value": 22492109.91981001,
-    "value_loss": 5766890.080189994,
-    "loss_fraction": 0.20407268764605943
+    "remaining_value": 17273074.397238065,
+    "value_loss": 10985925.602761937,
+    "loss_fraction": 0.3887584699657432
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13035,9 +13035,9 @@
     "country": "Cook Is.",
     "iso_a3": "COK",
     "original_value": 19106000.0,
-    "remaining_value": 14642471.958627619,
-    "value_loss": 4463528.041372378,
-    "loss_fraction": 0.233619179387228
+    "remaining_value": 10602979.081185617,
+    "value_loss": 8503020.91881438,
+    "loss_fraction": 0.4450445367326693
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13045,9 +13045,9 @@
     "country": "St. Vin. and Gren.",
     "iso_a3": "VCT",
     "original_value": 24639000.0,
-    "remaining_value": 20460002.519475322,
-    "value_loss": 4178997.480524678,
-    "loss_fraction": 0.169609053960172
+    "remaining_value": 16678009.799600488,
+    "value_loss": 7960990.2003995115,
+    "loss_fraction": 0.32310524779412764
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13055,9 +13055,9 @@
     "country": "Solomon Is.",
     "iso_a3": "SLB",
     "original_value": 21984000.0,
-    "remaining_value": 18101583.52355938,
-    "value_loss": 3882416.476440622,
-    "loss_fraction": 0.17660191395745187
+    "remaining_value": 14587996.612380615,
+    "value_loss": 7396003.387619386,
+    "loss_fraction": 0.3364266460889459
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13065,9 +13065,9 @@
     "country": "Singapore",
     "iso_a3": "SGP",
     "original_value": 12590000.0,
-    "remaining_value": 8847646.949902376,
-    "value_loss": 3742353.0500976243,
-    "loss_fraction": 0.2972480579902799
+    "remaining_value": 5460817.439564024,
+    "value_loss": 7129182.560435976,
+    "loss_fraction": 0.5662575504714834
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13075,9 +13075,9 @@
     "country": "Cura\u00e7ao",
     "iso_a3": "CUW",
     "original_value": 19676000.0,
-    "remaining_value": 15956633.362819772,
-    "value_loss": 3719366.637180227,
-    "loss_fraction": 0.18903062803314835
+    "remaining_value": 12590606.556171667,
+    "value_loss": 7085393.443828332,
+    "loss_fraction": 0.3601033464031476
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13085,9 +13085,9 @@
     "country": "Cambodia",
     "iso_a3": "KHM",
     "original_value": 18285000.0,
-    "remaining_value": 14609898.795681736,
-    "value_loss": 3675101.204318264,
-    "loss_fraction": 0.2009899482810098
+    "remaining_value": 11283932.205773707,
+    "value_loss": 7001067.7942262925,
+    "loss_fraction": 0.3828858514753236
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13095,9 +13095,9 @@
     "country": "Micronesia",
     "iso_a3": "FSM",
     "original_value": 18108000.0,
-    "remaining_value": 14495905.95517627,
-    "value_loss": 3612094.04482373,
-    "loss_fraction": 0.1994750411323023
+    "remaining_value": 11226960.844610792,
+    "value_loss": 6881039.155389207,
+    "loss_fraction": 0.37999995335703596
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13105,9 +13105,9 @@
     "country": "Myanmar",
     "iso_a3": "MMR",
     "original_value": 11580999.999999998,
-    "remaining_value": 8040630.0113777,
-    "value_loss": 3540369.988622299,
-    "loss_fraction": 0.3057050331251446
+    "remaining_value": 4836595.171674519,
+    "value_loss": 6744404.828325479,
+    "loss_fraction": 0.5823680881034005
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13115,9 +13115,9 @@
     "country": "Sudan",
     "iso_a3": "SDN",
     "original_value": 28480000.0,
-    "remaining_value": 25219443.82860347,
-    "value_loss": 3260556.1713965316,
-    "loss_fraction": 0.11448582062487822
+    "remaining_value": 22268640.493489612,
+    "value_loss": 6211359.506510391,
+    "loss_fraction": 0.21809548829039294
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13125,9 +13125,9 @@
     "country": "Tonga",
     "iso_a3": "TON",
     "original_value": 13291000.0,
-    "remaining_value": 10166721.406951694,
-    "value_loss": 3124278.5930483053,
-    "loss_fraction": 0.2350672329432176
+    "remaining_value": 7339249.280242977,
+    "value_loss": 5951750.719757023,
+    "loss_fraction": 0.4478030787568297
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13135,9 +13135,9 @@
     "country": "Iran",
     "iso_a3": "IRN",
     "original_value": 13345000.0,
-    "remaining_value": 10477337.868120793,
-    "value_loss": 2867662.1318792067,
-    "loss_fraction": 0.21488663408611516
+    "remaining_value": 7882103.638770111,
+    "value_loss": 5462896.361229889,
+    "loss_fraction": 0.4093590379340494
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13145,9 +13145,9 @@
     "country": "Grenada",
     "iso_a3": "GRD",
     "original_value": 23150000.0,
-    "remaining_value": 20485288.067198068,
-    "value_loss": 2664711.9328019316,
-    "loss_fraction": 0.1151063469892843
+    "remaining_value": 18073723.76801232,
+    "value_loss": 5076276.231987679,
+    "loss_fraction": 0.21927759101458658
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13155,9 +13155,9 @@
     "country": "Anguilla",
     "iso_a3": "AIA",
     "original_value": 19685000.0,
-    "remaining_value": 17096530.4138586,
-    "value_loss": 2588469.5861413996,
-    "loss_fraction": 0.13149451796501904
+    "remaining_value": 14753965.43840063,
+    "value_loss": 4931034.561599371,
+    "loss_fraction": 0.2504970567233615
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13165,9 +13165,9 @@
     "country": "Netherlands",
     "iso_a3": "NLD",
     "original_value": 24388000.0,
-    "remaining_value": 21877558.211028118,
-    "value_loss": 2510441.788971882,
-    "loss_fraction": 0.10293758360553887
+    "remaining_value": 19605608.392008565,
+    "value_loss": 4782391.607991434,
+    "loss_fraction": 0.1960960967685515
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13175,9 +13175,9 @@
     "country": "Jordan",
     "iso_a3": "JOR",
     "original_value": 7264000.0,
-    "remaining_value": 4862776.601740551,
-    "value_loss": 2401223.398259449,
-    "loss_fraction": 0.330564895134836
+    "remaining_value": 2689669.4263157505,
+    "value_loss": 4574330.573684249,
+    "loss_fraction": 0.6297261252318624
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13185,9 +13185,9 @@
     "country": "Nicaragua",
     "iso_a3": "NIC",
     "original_value": 10975000.0,
-    "remaining_value": 8955115.446218416,
-    "value_loss": 2019884.5537815848,
-    "loss_fraction": 0.18404415068624919
+    "remaining_value": 7127119.925046083,
+    "value_loss": 3847880.0749539174,
+    "loss_fraction": 0.35060410705730455
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13195,9 +13195,9 @@
     "country": "St. Kitts and Nevis",
     "iso_a3": "KNA",
     "original_value": 16240000.0,
-    "remaining_value": 14260100.69727213,
-    "value_loss": 1979899.3027278704,
-    "loss_fraction": 0.12191498169506591
+    "remaining_value": 12468291.828303406,
+    "value_loss": 3771708.171696593,
+    "loss_fraction": 0.23224804012910055
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13205,9 +13205,9 @@
     "country": "Haiti",
     "iso_a3": "HTI",
     "original_value": 15206000.0,
-    "remaining_value": 13520799.119623018,
-    "value_loss": 1685200.8803769806,
-    "loss_fraction": 0.11082473236728796
+    "remaining_value": 11995692.322881851,
+    "value_loss": 3210307.6771181487,
+    "loss_fraction": 0.2111211151596836
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13215,9 +13215,9 @@
     "country": "Dominica",
     "iso_a3": "DMA",
     "original_value": 14598000.0,
-    "remaining_value": 13305897.763643013,
-    "value_loss": 1292102.2363569858,
-    "loss_fraction": 0.08851227814474488
+    "remaining_value": 12136545.239739941,
+    "value_loss": 2461454.760260058,
+    "loss_fraction": 0.168615889865739
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13225,9 +13225,9 @@
     "country": "Timor-Leste",
     "iso_a3": "TLS",
     "original_value": 4190000.0,
-    "remaining_value": 3254293.575146301,
-    "value_loss": 935706.4248536988,
-    "loss_fraction": 0.22331895581233863
+    "remaining_value": 2407479.260653704,
+    "value_loss": 1782520.739346296,
+    "loss_fraction": 0.42542261082250504
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13235,9 +13235,9 @@
     "country": "St-Barth\u00e9lemy",
     "iso_a3": "BLM",
     "original_value": 9474000.0,
-    "remaining_value": 8564961.731820712,
-    "value_loss": 909038.2681792881,
-    "loss_fraction": 0.09595084105755627
+    "remaining_value": 7742282.099118457,
+    "value_loss": 1731717.900881543,
+    "loss_fraction": 0.18278635221464462
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13245,9 +13245,9 @@
     "country": "Yemen",
     "iso_a3": "YEM",
     "original_value": 2876000.0,
-    "remaining_value": 2070559.2190201704,
-    "value_loss": 805440.7809798296,
-    "loss_fraction": 0.2800559043740715
+    "remaining_value": 1341635.3122334247,
+    "value_loss": 1534364.6877665753,
+    "loss_fraction": 0.5335064978326062
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13255,9 +13255,9 @@
     "country": "Israel",
     "iso_a3": "ISR",
     "original_value": 1816000.0,
-    "remaining_value": 1215694.1504351378,
-    "value_loss": 600305.8495648622,
-    "loss_fraction": 0.330564895134836
+    "remaining_value": 672417.3565789376,
+    "value_loss": 1143582.6434210623,
+    "loss_fraction": 0.6297261252318624
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13265,9 +13265,9 @@
     "country": "Comoros",
     "iso_a3": "COM",
     "original_value": 1814000.0,
-    "remaining_value": 1321471.4953702434,
-    "value_loss": 492528.5046297567,
-    "loss_fraction": 0.271515162419932
+    "remaining_value": 875733.1986803137,
+    "value_loss": 938266.8013196863,
+    "loss_fraction": 0.5172363844099704
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13275,9 +13275,9 @@
     "country": "South Africa",
     "iso_a3": "ZAF",
     "original_value": 2676000.0,
-    "remaining_value": 2397552.1050452697,
-    "value_loss": 278447.8949547303,
-    "loss_fraction": 0.10405377240460774
+    "remaining_value": 2145556.7601112383,
+    "value_loss": 530443.2398887614,
+    "loss_fraction": 0.1982224364307778
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13285,9 +13285,9 @@
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
     "original_value": 792000.0,
-    "remaining_value": 578498.5105279871,
-    "value_loss": 213501.48947201282,
-    "loss_fraction": 0.2695725877171879
+    "remaining_value": 385279.6625558154,
+    "value_loss": 406720.33744418464,
+    "loss_fraction": 0.5135357796012432
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13295,9 +13295,9 @@
     "country": "Montserrat",
     "iso_a3": "MSR",
     "original_value": 1782000.0,
-    "remaining_value": 1572643.4124300445,
-    "value_loss": 209356.58756995545,
-    "loss_fraction": 0.11748405587539587
+    "remaining_value": 1383175.7006792347,
+    "value_loss": 398824.2993207652,
+    "loss_fraction": 0.22380712644262918
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13305,9 +13305,9 @@
     "country": "Kiribati",
     "iso_a3": "KIR",
     "original_value": 700000.0,
-    "remaining_value": 507281.95431558724,
-    "value_loss": 192718.04568441276,
-    "loss_fraction": 0.27531149383487535
+    "remaining_value": 332872.12297119363,
+    "value_loss": 367127.87702880637,
+    "loss_fraction": 0.5244683957554377
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13315,9 +13315,9 @@
     "country": "Niue",
     "iso_a3": "NIU",
     "original_value": 286000.0,
-    "remaining_value": 217520.40716918284,
-    "value_loss": 68479.59283081717,
-    "loss_fraction": 0.239439135772088
+    "remaining_value": 155546.37565729328,
+    "value_loss": 130453.62434270672,
+    "loss_fraction": 0.4561315536458277
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13325,9 +13325,9 @@
     "country": "Eritrea",
     "iso_a3": "ERI",
     "original_value": 168000.0,
-    "remaining_value": 112658.71277326747,
-    "value_loss": 55341.28722673252,
-    "loss_fraction": 0.32941242396864595
+    "remaining_value": 62574.84783307453,
+    "value_loss": 105425.15216692546,
+    "loss_fraction": 0.6275306676602705
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13335,9 +13335,9 @@
     "country": "Marshall Is.",
     "iso_a3": "MHL",
     "original_value": 94000.0,
-    "remaining_value": 67950.7821282928,
-    "value_loss": 26049.217871707202,
-    "loss_fraction": 0.2771193390607149
+    "remaining_value": 44376.23995439778,
+    "value_loss": 49623.76004560222,
+    "loss_fraction": 0.5279123409106619
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -13345,9 +13345,9 @@
     "country": "Djibouti",
     "iso_a3": "DJI",
     "original_value": 96000.0,
-    "remaining_value": 74391.29935275708,
-    "value_loss": 21608.70064724292,
-    "loss_fraction": 0.22509063174211374
+    "remaining_value": 54835.42526700224,
+    "value_loss": 41164.57473299776,
+    "loss_fraction": 0.42879765346872667
   },
   {
     "scenario": "y_future_rcp85_2100",
