@@ -39,6 +39,12 @@ class DepreciationModel(ABC):
 
     @property
     @abstractmethod
+    def model_type(self) -> str:
+        """Model type for colour selection in plotting."""
+        pass
+
+    @property
+    @abstractmethod
     def description(self) -> str:
         """Model description for documentation."""
         pass
@@ -119,6 +125,10 @@ class LinearModel(DepreciationModel):
         return f"Linear ({self.rate_per_percent * 100:.2f}%/pp)"
 
     @property
+    def model_type(self) -> str:
+        return "linear"
+
+    @property
     def description(self) -> str:
         return (
             f"Linear depreciation: {self.rate_per_percent * 100:.2f}% value loss "
@@ -164,6 +174,10 @@ class CompoundModel(DepreciationModel):
         return f"Compound ({self.rate_per_percent * 100:.2f}%/pp)"
 
     @property
+    def model_type(self) -> str:
+        return "compound"
+
+    @property
     def description(self) -> str:
         return (
             f"Compound depreciation: value multiplied by (1 - {self.rate_per_percent * 100:.2f}%) "
@@ -174,6 +188,7 @@ class CompoundModel(DepreciationModel):
     def calculate(
         self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
     ) -> Union[float, np.ndarray]:
+        """Calculate remaining value after compound depreciation."""
         # delta_cc is negative for decrease (e.g., -0.10 = 10pp decrease)
         # We want: value * (1 - rate)^|delta_cc_pp|
 
@@ -215,11 +230,15 @@ class TippingPointModel(DepreciationModel):
 
     threshold_cc: float = 0.10  # 10% coral cover threshold
     pre_threshold_rate: float = 0.0381  # 3.81% loss per pp before threshold
-    post_threshold_loss: float = 0.90  # 80% of value lost at collapse
+    post_threshold_loss: float = 1  # 80% of value lost at collapse
 
     @property
     def name(self) -> str:
         return f"Tipping Point (threshold={self.threshold_cc * 100:.0f}%)"
+
+    @property
+    def model_type(self) -> str:
+        return "tipping_point"
 
     @property
     def description(self) -> str:
@@ -229,181 +248,63 @@ class TippingPointModel(DepreciationModel):
             f"then {self.post_threshold_loss * 100:.0f}% catastrophic loss."
         )
 
-    # def calculate(
-    #     self,
-    #     delta_cc: Union[float, np.ndarray],
-    #     value: Union[float, np.ndarray],
-    #     current_cover: Union[float, np.ndarray] = None,
-    #     future_cover: Union[float, np.ndarray] = None,
-    # ) -> Union[float, np.ndarray]:
-    #     """
-    #     Calculate remaining value with tipping point dynamics.
-
-    #     The tipping point is crossed when:
-    #     - current_cover >= threshold_cc (starts above threshold)
-    #     - future_cover < threshold_cc (ends below threshold)
-
-    #     Parameters
-    #     ----------
-    #     delta_cc : float or array
-    #         Change in coral cover (proportion, negative for decrease).
-    #     value : float or array
-    #         Original economic value.
-    #     current_cover : float or array, optional
-    #         Current/baseline coral cover (proportion). If not provided, inferred from
-    #         future_cover - delta_cc, or assumed to be above threshold.
-    #     future_cover : float or array, optional
-    #         Future coral cover (proportion). If not provided, calculated as
-    #         current_cover + delta_cc.
-
-    #     Returns
-    #     -------
-    #     float or array
-    #         Remaining value after depreciation.
-    #     """
-    #     delta_cc_pp = np.abs(delta_cc * 100)  # Percentage points of change
-    #     is_decrease = np.asarray(delta_cc) < 0
-
-    #     # Determine current and future cover
-    #     if future_cover is not None:
-    #         future_cover_arr = np.asarray(future_cover)
-    #         if current_cover is not None:
-    #             current_cover_arr = np.asarray(current_cover)
-    #         else:
-    #             # Infer current cover from future cover and change
-    #             current_cover_arr = future_cover_arr - np.asarray(delta_cc)
-    #     elif current_cover is not None:
-    #         current_cover_arr = np.asarray(current_cover)
-    #         future_cover_arr = current_cover_arr + np.asarray(delta_cc)
-    #     else:
-    #         # Neither provided: use fallback logic
-    #         # Assume large decreases cross threshold
-    #         current_cover_arr = None
-    #         future_cover_arr = None
-
-    #     # Pre-threshold gradual loss (linear)
-    #     gradual_loss_factor = 1 - (self.pre_threshold_rate * delta_cc_pp)
-    #     gradual_remaining = value * np.maximum(gradual_loss_factor, 0)
-
-    #     # Check if we've crossed the threshold
-    #     # Threshold is crossed if: started above threshold AND ended below threshold
-    #     if current_cover_arr is not None and future_cover_arr is not None:
-    #         started_above = current_cover_arr >= self.threshold_cc
-    #         ended_below = future_cover_arr < self.threshold_cc
-    #         crossed_threshold = started_above & ended_below
-    #     elif future_cover_arr is not None:
-    #         # Only future cover known: check if below threshold
-    #         # This is less precise but better than nothing
-    #         ended_below = future_cover_arr < self.threshold_cc
-    #         # Assume we started above if future is below (conservative)
-    #         crossed_threshold = ended_below
-    #     else:
-    #         # Fallback: assume threshold crossed for large decreases
-    #         # (>50pp decrease likely crosses most thresholds)
-    #         crossed_threshold = delta_cc_pp > 50
-
-    #     # Apply catastrophic loss at threshold
-    #     # If threshold crossed, apply additional loss to the gradually-depreciated value
-    #     collapse_remaining = gradual_remaining * (1 - self.post_threshold_loss)
-
-    #     # Combine: use collapse value if threshold crossed, else gradual
-    #     remaining = np.where(
-    #         is_decrease & crossed_threshold,
-    #         collapse_remaining,
-    #         np.where(is_decrease, gradual_remaining, value),
-    #     )
-
-    #     return np.maximum(remaining, 0)
-
     def calculate(
         self,
         delta_cc: Union[float, np.ndarray],
         value: Union[float, np.ndarray],
-        current_cover: Union[float, np.ndarray] = None,
-        future_cover: Union[float, np.ndarray] = None,
+        threshold: float = None,  # If None, uses self.threshold_cc
+        original_cc: Union[float, np.ndarray] = 0.5,
     ) -> Union[float, np.ndarray]:
         """
-        Calculate remaining value with tipping point dynamics.
+        Calculate remaining value with tipping point behavior.
 
-        The tipping point is crossed when:
-        - current_cover >= threshold_cc (starts above threshold)
-        - future_cover < threshold_cc (ends below threshold)
+        Parameters
+        ----------
+        delta_cc : float or array
+            Change in coral cover (negative for decrease).
+        value : float or array
+            Current economic value.
+        threshold : float, optional
+            Coral cover threshold. If None, uses self.threshold_cc.
+        original_cc : float or array, optional
+            Original/baseline coral cover. Default: 0.5.
 
-        Before threshold: linear depreciation (same as LinearModel)
-        At threshold crossing: catastrophic loss applied
-        After threshold: continue with linear depreciation from post-collapse value
+        Returns
+        -------
+        float or array
+            Remaining value after depreciation.
         """
-        delta_cc_pp = np.abs(delta_cc * 100)  # Percentage points of change
+        # Use model's threshold_cc if threshold not provided
+        if threshold is None:
+            threshold = self.threshold_cc
+
+        # delta_cc is negative for decrease (e.g., -0.10 = 10pp decrease)
+        delta_cc_pp = np.abs(delta_cc * 100)  # Always positive, in percentage points
+
+        # Only apply depreciation for coral cover DECREASE (delta_cc < 0)
         is_decrease = np.asarray(delta_cc) < 0
 
-        # Determine current and future cover
-        if future_cover is not None:
-            future_cover_arr = np.asarray(future_cover)
-            if current_cover is not None:
-                current_cover_arr = np.asarray(current_cover)
-            else:
-                current_cover_arr = future_cover_arr - np.asarray(delta_cc)
-        elif current_cover is not None:
-            current_cover_arr = np.asarray(current_cover)
-            future_cover_arr = current_cover_arr + np.asarray(delta_cc)
-        else:
-            current_cover_arr = None
-            future_cover_arr = None
+        # Baseline compound decline before threshold
+        decay_factor = (1 - self.pre_threshold_rate) ** delta_cc_pp
 
-        # Check if we've crossed the threshold
-        if current_cover_arr is not None and future_cover_arr is not None:
-            started_above = current_cover_arr >= self.threshold_cc
-            ended_below = future_cover_arr < self.threshold_cc
-            crossed_threshold = started_above & ended_below
-        elif future_cover_arr is not None:
-            ended_below = future_cover_arr < self.threshold_cc
-            crossed_threshold = ended_below
-        else:
-            crossed_threshold = delta_cc_pp > 50
+        # Apply depreciation
+        remaining_value = np.where(is_decrease, value * decay_factor, value)
 
-        # Calculate value using linear depreciation (same as LinearModel)
-        # This gives us the correct gradient before AND after threshold
-        delta_cc_pp_signed = (
-            np.asarray(delta_cc) * 100
-        )  # Keep sign for linear calculation
-        linear_remaining = value * (1 + self.pre_threshold_rate * delta_cc_pp_signed)
+        # Calculate remaining coral cover
+        remaining_cc = np.maximum(original_cc + delta_cc, 0)
 
-        # If threshold is crossed, apply catastrophic loss at the crossing point
-        # Calculate how much cover change is needed to reach threshold
-        if current_cover_arr is not None and future_cover_arr is not None:
-            # Calculate cover change to threshold
-            cover_to_threshold = self.threshold_cc - current_cover_arr
-            # Value at threshold (using linear depreciation)
-            value_at_threshold = value * (
-                1 + self.pre_threshold_rate * cover_to_threshold * 100
-            )
-            # Apply catastrophic loss
-            value_after_collapse = value_at_threshold * (1 - self.post_threshold_loss)
-            # Remaining cover change after threshold
-            cover_change_after = future_cover_arr - self.threshold_cc
-            # Continue linear depreciation from post-collapse value
-            if np.any(crossed_threshold):
-                # For points that cross threshold: use post-collapse value + linear depreciation for remaining change
-                remaining_after = np.where(
-                    crossed_threshold,
-                    value_after_collapse
-                    * (1 + self.pre_threshold_rate * cover_change_after * 100),
-                    linear_remaining,
-                )
-            else:
-                remaining_after = linear_remaining
-        else:
-            # Fallback: if threshold crossed, apply catastrophic loss to linear value
-            remaining_after = np.where(
-                crossed_threshold,
-                linear_remaining * (1 - self.post_threshold_loss),
-                linear_remaining,
+        # Apply tipping point collapse: if remaining_cc < threshold, catastrophic loss
+        # Uses post_threshold_loss to determine how much value is lost
+        collapse_mask = remaining_cc < threshold
+        if np.any(collapse_mask):
+            # Apply catastrophic loss: lose post_threshold_loss fraction
+            remaining_value = np.where(
+                collapse_mask,
+                remaining_value * (1 - self.post_threshold_loss),
+                remaining_value,
             )
 
-        # Only apply to decreases
-        remaining = np.where(is_decrease, remaining_after, value)
-
-        return np.maximum(remaining, 0)
+        return np.maximum(remaining_value, 0)
 
 
 @dataclass
@@ -502,7 +403,10 @@ def list_models() -> Dict[str, str]:
 
 
 def compare_models(
-    delta_cc_range: np.ndarray = None, value: float = 100.0, models: list = None
+    delta_cc_range: np.ndarray = None,
+    value: float = 100.0,
+    models: list = None,
+    original_cc: float = 0.5,
 ) -> dict:
     """
     Compare multiple models across a range of coral cover changes.
@@ -515,6 +419,8 @@ def compare_models(
         Base value for comparison.
     models : list, optional
         List of model names or instances. Default: all registered models.
+    original_cc : float, optional
+        Original coral cover (for tipping point model). Default: 0.5.
 
     Returns
     -------
@@ -534,6 +440,15 @@ def compare_models(
             model = get_model(m)
         else:
             model = m
-        results[model.name] = model.calculate(delta_cc_range, value)
+
+        # TippingPointModel requires original_cc parameter
+        if model.model_type == "tipping_point":
+            threshold = getattr(model, "threshold_cc", 0.1)
+            results[model.name] = model.calculate(
+                delta_cc_range, value, original_cc=original_cc, threshold=threshold
+            )
+        else:
+            # Standard models use simple signature
+            results[model.name] = model.calculate(delta_cc_range, value)
 
     return results

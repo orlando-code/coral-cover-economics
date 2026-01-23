@@ -25,6 +25,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict
 
+import numpy as np
+
 if TYPE_CHECKING:
     from src.economics.cumulative_impact import CumulativeImpactResult
 
@@ -42,7 +44,7 @@ from src.economics.analysis import (
 )
 from src.economics.cumulative_impact import (
     add_spatial_cumulative_losses,
-    calculate_cumulative_impacts_multi_scenario,
+    calculate_cumulative_impacts_multi_scenario_per_site,
     print_cumulative_summary,
     summarize_cumulative_impacts,
 )
@@ -64,7 +66,6 @@ from src.economics.plotting import (
     plot_loss_as_gdp_pct_bar,
     plot_loss_as_gdp_pct_choropleth,
     plot_model_comparison,
-    plot_model_comparison_interactive,
     plot_scenario_comparison,
     plot_trajectory_comparison_interactive,
 )
@@ -85,7 +86,7 @@ CONFIG = {
     "models": {
         "linear": {"rate_per_percent": 0.0381},  # Chen et al. default
         "compound": {"rate_per_percent": 0.0381},
-        "tipping_point": {"threshold_cc": 0.10, "post_threshold_loss": 0.80},
+        "tipping_point": {"threshold_cc": 0.10, "post_threshold_loss": 1.0},
     },
     # Value types to analyze
     "value_types": ["tourism"],  # Add "shoreline_protection" and fisheries when ready
@@ -324,7 +325,7 @@ def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
                 try:
                     result = add_spatial_cumulative_losses(
                         result=result,
-                        baseline_year=2017,
+                        baseline_year=2013,
                         discount_rate=0.0,
                         interpolation_method="linear",
                     )
@@ -360,10 +361,36 @@ def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
 def step_cumulative_impact(
     aligned_data: dict, models: list, data: dict, verbose: bool = True
 ):
-    """Step 4b: Calculate cumulative impact over time."""
+    """
+    Step 4b: Calculate cumulative impact over time.
+
+    **REFACTORED**: Now calculates cumulative impact per-site, then aggregates.
+    This is critical for tipping point models where each site's original_cc
+    determines when it crosses the threshold.
+
+    Logic:
+    1. For each site individually:
+       - Use site's own baseline_cover as original_cc (for tipping point models)
+       - Use site's own baseline_value
+       - Use site's own projected_cover for each scenario
+       - Generate site-specific trajectory
+       - Calculate site's cumulative impact
+    2. Aggregate all site results:
+       - Sum annual_values across sites
+       - Sum annual_losses across sites
+       - Sum annual_value_lost across sites
+       - Sum annual_opportunity_cost across sites
+       - Sum cumulative_losses across sites
+    3. Create aggregated CumulativeImpactResult with combined trajectory
+
+    This preserves the true distribution of tipping point behaviors:
+    - Sites with high original_cc (e.g., 70%) collapse later
+    - Sites with low original_cc (e.g., 15%) collapse early
+    - Total cumulative loss = sum of all these different trajectories
+    """
     if verbose:
         print("\n" + "=" * 60)
-        print("STEP 4b: CUMULATIVE IMPACT ANALYSIS")
+        print("STEP 4b: CUMULATIVE IMPACT ANALYSIS (Per-Site Calculation)")
         print("=" * 60)
 
     all_cumulative = {}
@@ -374,23 +401,76 @@ def step_cumulative_impact(
 
         gdf = aligned_data[value_type]
 
-        # Get baseline values
-        baseline_cover = gdf["nearest_y_new"].mean()
+        # Find baseline coral cover column
+        baseline_cover_col = None
+        for col in [
+            "nearest_y_new",
+            "nearest_average_coral_cover",
+            "average_coral_cover",
+        ]:
+            if col in gdf.columns:
+                baseline_cover_col = col
+                break
+
+        if baseline_cover_col is None:
+            if verbose:
+                print(
+                    f"\n  ⚠️  {value_type.title()}: No baseline cover column found, skipping"
+                )
+            continue
+
+        # Get value column
         value_col = (
             "approx_price_corrected"
             if "approx_price_corrected" in gdf.columns
             else "approx_price"
         )
-        baseline_value = gdf[value_col].sum()
+
+        if value_col not in gdf.columns:
+            if verbose:
+                print(f"\n  ⚠️  {value_type.title()}: No value column found, skipping")
+            continue
+
+        # Extract per-site data (vectorized)
+        baseline_covers = gdf[baseline_cover_col].fillna(0).values
+        baseline_values = gdf[value_col].fillna(0).values
+
+        # Create mask for valid sites (must have positive cover and value)
+        valid_mask = (
+            ~np.isnan(baseline_covers)
+            & ~np.isnan(baseline_values)
+            & (baseline_covers > 0)
+            & (baseline_values > 0)
+        )
+
+        valid_indices = np.where(valid_mask)[0]
+        valid_baseline_covers = baseline_covers[valid_indices]
+        valid_baseline_values = baseline_values[valid_indices]
+
+        if len(valid_indices) == 0:
+            if verbose:
+                print(f"\n  ⚠️  {value_type.title()}: No valid sites found, skipping")
+            continue
+
+        # Calculate aggregate statistics for reporting
+        total_baseline_value = baseline_values.sum()
+        mean_baseline_cover = baseline_covers[valid_indices].mean()
 
         if verbose:
             print(f"\n  {value_type.title()}:")
-            print(f"    Baseline cover: {baseline_cover * 100:.1f}%")
-            print(f"    Baseline value: ${baseline_value / 1e9:.2f}B")
+            print(f"\tValid sites: {len(valid_indices)} / {len(gdf)}")
+            print(
+                f"\t\tMissing (nan) baseline covers: {np.isnan(baseline_covers).sum()}"
+            )
+            print(
+                f"\t\tMissing (nan) or zero baseline values: {(np.isnan(baseline_values) | (baseline_values <= 0)).sum()}"
+            )
+            print(f"\tMean baseline cover: {mean_baseline_cover * 100:.1f}%")
+            print(f"\tTotal baseline value: ${total_baseline_value / 1e9:.2f}B")
 
-        # Build scenario endpoints from the data
-        # We need to extract the projected covers for each scenario/year
-        scenario_endpoints = {}
+        # Build scenario endpoints per site
+        # Structure: scenario_endpoints[rcp][year] = array of projected covers (one per site)
+        scenario_endpoints_per_site = {}
 
         for scenario in CONFIG["scenarios"]:
             # Parse scenario
@@ -398,31 +478,42 @@ def step_cumulative_impact(
             rcp = parts[0]  # e.g., "rcp45"
             year = int(parts[1])  # e.g., 2050
 
-            if rcp not in scenario_endpoints:
-                scenario_endpoints[rcp] = {}
+            if rcp not in scenario_endpoints_per_site:
+                scenario_endpoints_per_site[rcp] = {}
 
-            # Get projected cover for this scenario
+            # Get projected cover column for this scenario
             proj_col = f"nearest_y_future_{scenario.lower()}"
             if proj_col in gdf.columns:
-                projected_cover = gdf[proj_col].mean()
-                scenario_endpoints[rcp][year] = projected_cover
+                projected_covers = gdf[proj_col].fillna(0).values
+                # Extract only valid sites
+                valid_projected_covers = projected_covers[valid_indices]
+                scenario_endpoints_per_site[rcp][year] = valid_projected_covers
+            else:
+                if verbose:
+                    print(f"    ⚠️  Column not found: {proj_col}")
 
         if verbose:
-            print("\n    Scenario endpoints:")
-            for rcp, endpoints in scenario_endpoints.items():
-                print(f"      {rcp.upper()}: {endpoints}")
+            print("\n    Scenario endpoints (mean across sites):")
+            for rcp, endpoints in scenario_endpoints_per_site.items():
+                mean_endpoints = {
+                    year: covers.mean() for year, covers in endpoints.items()
+                }
+                print(f"      {rcp.upper()}: {mean_endpoints}")
 
         # Calculate cumulative impacts for each model and interpolation method
         for model in models:
-            cumulative_results = calculate_cumulative_impacts_multi_scenario(
-                baseline_year=2017,
-                baseline_cover=baseline_cover,
-                baseline_value=baseline_value,
-                scenario_endpoints=scenario_endpoints,
+            print(f"\nCalculating cumulative impacts for {model.name}")
+            # Calculate per-site cumulative impacts, then aggregate
+            cumulative_results = calculate_cumulative_impacts_multi_scenario_per_site(
+                baseline_year=2013,
+                baseline_covers=valid_baseline_covers,  # Per-site baseline covers
+                baseline_values=valid_baseline_values,  # Per-site baseline values
+                scenario_endpoints_per_site=scenario_endpoints_per_site,  # Per-site projected covers
                 model=model,
                 interpolation_methods=["linear", "exponential"],
                 discount_rate=0.0,
                 value_type=value_type,
+                verbose=verbose,
             )
 
             for key, result in cumulative_results.items():
@@ -455,27 +546,24 @@ def step_generate_outputs(
         print("STEP 5: GENERATING OUTPUTS")
         print("=" * 60)
 
-    output_dir = Path(CONFIG["output_dir"])
     results_dir = Path(CONFIG["results_dir"])
-    output_dir.mkdir(parents=True, exist_ok=True)
     results_dir.mkdir(parents=True, exist_ok=True)
 
     # Timestamp for this run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = output_dir / f"run_{timestamp}"
 
-    # Create matching run directory in results_dir (organized like figures_dir)
+    # Create run directory in results_dir (figures will go here too)
     results_run_dir = results_dir / f"run_{timestamp}"
     results_run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create subdirectories
+    # Create subdirectories (all in results_run_dir, including figures)
     subdirs = {
-        "models": run_dir / "01_model_comparison",
-        "verification": run_dir / "02_verification",
-        "scenarios": run_dir / "03_scenario_results",
-        "gdp_impact": run_dir / "04_gdp_impact",
-        "trajectories": run_dir / "05_trajectories",
-        "summary": run_dir / "06_summary",
+        "models": results_run_dir / "figures" / "01_model_comparison",
+        "verification": results_run_dir / "figures" / "02_verification",
+        "scenarios": results_run_dir / "figures" / "03_scenario_results",
+        "gdp_impact": results_run_dir / "figures" / "04_gdp_impact",
+        "trajectories": results_run_dir / "figures" / "05_trajectories",
+        "summary": results_run_dir / "summary",
     }
     for subdir in subdirs.values():
         subdir.mkdir(parents=True, exist_ok=True)
@@ -486,12 +574,17 @@ def step_generate_outputs(
     if verbose:
         print("\n  📊 Generating model comparison plots...")
 
-    models = [get_model(name, **kwargs) for name, kwargs in CONFIG["models"].items()]
-    plot_model_comparison(models, save_path=subdirs["models"] / "model_comparison.png")
-    plot_model_comparison_interactive(
-        models, save_path=subdirs["models"] / "model_comparison.html"
-    )
+        # Ensure the subdirectory exists before saving plots
+        subdirs["models"].mkdir(parents=True, exist_ok=True)
 
+        models = [
+            get_model(name, **kwargs) for name, kwargs in CONFIG["models"].items()
+        ]
+        plot_model_comparison(models, save_path=subdirs["models"])
+    # plot_model_comparison_interactive(
+    #     models, save_path=subdirs["models"] / "model_comparison.html"
+    # ) # TODO: implement
+    # TODO: fix this
     # -------------------------------------------------------------------------
     # 2. Verification plots (from original notebook)
     # -------------------------------------------------------------------------
@@ -664,24 +757,16 @@ def step_generate_outputs(
     if verbose:
         print("\n  💾 Saving CSV results...")
 
-    # Create summary subdirectory in results_run_dir
-    results_summary_dir = results_run_dir / "summary"
-    results_summary_dir.mkdir(parents=True, exist_ok=True)
-
-    # Summary table (save to both locations for convenience)
+    # Summary table (save to summary subdirectory)
     summary = results.summary_table()
     summary.to_csv(subdirs["summary"] / f"summary_{timestamp}.csv", index=False)
-    summary.to_csv(results_summary_dir / f"summary_{timestamp}.csv", index=False)
 
-    # Per-country results (save to both locations)
+    # Per-country results (save to summary subdirectory)
     for key, result in results.results.items():
         by_country = result.by_country
         safe_key = utils.sanitize_filename(key)
         by_country.to_csv(
             subdirs["summary"] / f"{safe_key}_by_country.csv", index=False
-        )
-        by_country.to_csv(
-            results_summary_dir / f"{safe_key}_by_country.csv", index=False
         )
 
     # -------------------------------------------------------------------------
@@ -694,10 +779,6 @@ def step_generate_outputs(
     results_save_dir = results_run_dir / "results"
     results.save(results_save_dir)
 
-    # Also save to run_dir for completeness
-    run_results_dir = run_dir / "results"
-    results.save(run_results_dir)
-
     # Save cumulative results to results_run_dir
     if cumulative_results:
         cumulative_save_dir = results_run_dir / "cumulative_results"
@@ -707,36 +788,26 @@ def step_generate_outputs(
             safe_key = utils.sanitize_filename(key)
             result.save(cumulative_save_dir / f"{safe_key}.pkl")
 
-        # Also save to run_dir for completeness
-        run_cumulative_dir = run_dir / "cumulative_results"
-        run_cumulative_dir.mkdir(parents=True, exist_ok=True)
-        for key, result in cumulative_results.items():
-            safe_key = utils.sanitize_filename(key)
-            result.save(run_cumulative_dir / f"{safe_key}.pkl")
-
         if verbose:
             print(f"  ✓ Saved {len(cumulative_results)} cumulative impact results")
 
     if verbose:
-        print(f"\n✓ Outputs saved to {run_dir}")
-        print("  ├── 01_model_comparison/")
-        print("  ├── 02_verification/")
-        print("  ├── 03_scenario_results/")
-        print("  │   ├── {model_name}/")
-        print("  │   │   └── {scenario}/")
-        print("  ├── 04_gdp_impact/")
-        print("  │   └── {model_name}/")
-        print("  ├── 05_trajectories/")
-        print("  │   └── {model_name}/")
-        print("  ├── 06_summary/")
-        print("  ├── results/ (for reloading)")
-        print("  └── cumulative_results/ (for reloading)")
-        print(f"\n✓ Results saved to {results_run_dir}")
+        print(f"\n✓ All outputs saved to {results_run_dir}")
+        print("  ├── figures/")
+        print("  │   ├── 01_model_comparison/")
+        print("  │   ├── 02_verification/")
+        print("  │   ├── 03_scenario_results/")
+        print("  │   │   ├── {model_name}/")
+        print("  │   │   │   └── {scenario}/")
+        print("  │   ├── 04_gdp_impact/")
+        print("  │   │   └── {model_name}/")
+        print("  │   └── 05_trajectories/")
+        print("  │       └── {model_name}/")
         print("  ├── summary/ (CSV files)")
         print("  ├── results/ (pickle files for reloading)")
         print("  └── cumulative_results/ (pickle files for reloading)")
 
-    return run_dir
+    return results_run_dir
 
 
 def step_print_summaries(results: AnalysisResults, verbose: bool = True):

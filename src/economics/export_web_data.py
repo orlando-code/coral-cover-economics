@@ -194,8 +194,8 @@ def export_cumulative_site_results(
         gdf = result.gdf.copy()
 
         print(
-            f"Dataframe is large {gdf.shape[0]} rows. Subsampling is suggested for performance."
-        )
+            f"Dataframe is large: {gdf.shape[0]} rows. Subsampling is suggested for performance and to stop Git screaming at you."
+        )  # TODO: implement batching into multipolygon shapes for each country?
         # Sample for performance
         if sample_fraction < 1.0:
             gdf = gdf.sample(frac=sample_fraction, random_state=42)
@@ -387,6 +387,12 @@ def export_trajectory_data(
                 "coral_cover": (traj.covers * 100).tolist(),  # as percentage
                 "annual_value": (result.annual_values / 1e9).tolist(),  # billions
                 "annual_loss": (result.annual_losses / 1e9).tolist(),  # billions
+                "annual_value_lost": (
+                    result.annual_value_lost / 1e9
+                ).tolist(),  # billions - value lost each year (year-over-year decline)
+                "annual_opportunity_cost": (
+                    result.annual_opportunity_cost / 1e9
+                ).tolist(),  # billions - opportunity cost (baseline revenue lost)
                 "cumulative_loss": (
                     result.cumulative_losses / 1e12
                 ).tolist(),  # trillions
@@ -460,12 +466,13 @@ def export_model_comparison(output_dir: Path) -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Standard models (linear and compound)
     models = {
         "linear": get_model("linear"),
         "compound": get_model("compound"),
     }
 
-    # Generate curves
+    # Generate curves for standard models
     delta_cc_range = np.linspace(-50, 10, 100)  # -50% to +10% change
     baseline = 100  # $100 baseline for easy percentage calculation
 
@@ -479,8 +486,32 @@ def export_model_comparison(output_dir: Path) -> None:
             "loss_pct": [(baseline - r) for r in remaining],
         }
 
+    # Export tipping point model data with multiple original_cc values
+    tipping_point_model = get_model("tipping_point")
+    threshold = getattr(tipping_point_model, "threshold_cc", 0.1)
+    original_cc_values = [0.1, 0.3, 0.5, 0.7]  # Different starting coral cover levels
+
+    tipping_point_curves = {}
+    for og_cc in original_cc_values:
+        remaining = [
+            tipping_point_model.calculate(
+                d / 100, baseline, original_cc=og_cc, threshold=threshold
+            )
+            for d in delta_cc_range
+        ]
+        tipping_point_curves[f"tipping_point_{og_cc}"] = {
+            "name": f"{int(og_cc * 100)}% initial cover",
+            "delta_cc": delta_cc_range.tolist(),
+            "remaining_value": remaining,
+            "loss_pct": [(baseline - r) for r in remaining],
+            "original_cc": og_cc,
+        }
+
+    # Combine all curves
+    all_curves = {**curves, **tipping_point_curves}
+
     with open(output_dir / "model_curves.json", "w") as f:
-        json.dump(curves, f, indent=2)
+        json.dump(all_curves, f, indent=2)
 
     print("Exported model comparison curves")
 
