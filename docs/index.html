@@ -493,10 +493,9 @@
 
             <div class="nav-links">
                 <a class="nav-link active" data-page="overview">Overview</a>
-                <a class="nav-link" data-page="map">Point Map</a>
+                <a class="nav-link" data-page="map">Map</a>
                 <a class="nav-link" data-page="trajectories">Trajectories</a>
-                <a class="nav-link" data-page="countries">By Country</a>
-                <a class="nav-link" data-page="gdp">GDP Impact</a>
+                <a class="nav-link" data-page="gdp">Country-level Impact</a>
                 <a class="nav-link" data-page="models">Models</a>
             </div>
         </div>
@@ -531,7 +530,7 @@
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Cumulative Impact Over Time</h2>
-                            <p class="chart-subtitle">Total accumulated losses from 2017 to 2100</p>
+                            <p class="chart-subtitle">Economic losses over time by scenario and model</p>
                         </div>
                         <div class="controls">
                             <div class="control-group">
@@ -546,7 +545,6 @@
                             <div class="toggle-group">
                                 <button class="toggle-btn active" data-metric="cumulative_loss">Cumulative Loss</button>
                                 <button class="toggle-btn" data-metric="annual_loss">Annual Loss</button>
-                                <button class="toggle-btn" data-metric="coral_cover">Coral Cover</button>
                             </div>
                         </div>
                     </div>
@@ -554,7 +552,7 @@
                 </div>
             </section>
             
-            <!-- Point Map Page -->
+            <!-- Map Page -->
             <section id="page-map" class="page">
                 <div class="chart-section">
                     <div class="chart-header">
@@ -597,7 +595,7 @@
                             </div>
                             <div class="control-group">
                                 <label class="toggle-label">
-                                    <input type="checkbox" id="map-choropleth-toggle" />
+                                    <input type="checkbox" id="map-choropleth-toggle" checked />
                                     <span>Show Country Choropleth</span>
                                 </label>
                             </div>
@@ -660,16 +658,41 @@
                 <div class="chart-section">
                     <div class="chart-header">
                         <div>
+                            <h2 class="chart-title">Annual Loss - Value Lost</h2>
+                            <p class="chart-subtitle">Year-over-year decline in economic value (decreases as less value remains)</p>
+                        </div>
+                    </div>
+                    <div id="annual-loss-chart" style="height: 350px;"></div>
+                </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
                             <h2 class="chart-title">Cumulative Losses</h2>
-                            <p class="chart-subtitle">Total accumulated economic losses by model</p>
+                            <p class="chart-subtitle">Cumulative sum of opportunity cost (baseline revenue lost after collapse)</p>
                         </div>
                     </div>
                     <div id="cumulative-chart" style="height: 350px;"></div>
                 </div>
+                
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <div>
+                            <h2 class="chart-title">Annual Loss Components</h2>
+                            <p class="chart-subtitle">Value lost (year-over-year decline) vs opportunity cost (baseline revenue lost after collapse)</p>
+                        </div>
+                    </div>
+                    <div id="loss-components-chart" style="height: 400px;"></div>
+                    <p class="chart-note" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic;">
+                        <strong>Value Lost</strong> (solid lines): The year-over-year decline in economic value as coral cover decreases. This decreases over time as less value remains.<br>
+                        <strong>Opportunity Cost</strong> (dotted lines): The baseline revenue opportunity lost each year after a reef collapses (value reaches zero). This stays constant at the baseline value.
+                    </p>
+                </div>
             </section>
             
-            <!-- Countries Page -->
-            <section id="page-countries" class="page">
+            <!-- GDP Impact Page -->
+            <section id="page-gdp" class="page">
+                <!-- Country-Level Impact Chart -->
                 <div class="chart-section">
                     <div class="chart-header">
                         <div>
@@ -703,6 +726,22 @@
                                 </select>
                             </div>
                             <div class="control-group">
+                                <span class="control-label">Metric:</span>
+                                <select id="country-metric">
+                                    <option value="value_loss" selected>Absolute Value Loss ($)</option>
+                                    <option value="reef_loss_pct">Loss % of reef tourism</option>
+                                    <option value="gdp_pct">% of national GDP</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Colour by:</span>
+                                <select id="country-color-mode">
+                                    <option value="reef_loss_pct" selected>Loss % of reef tourism</option>
+                                    <option value="gdp_pct">% of national GDP</option>
+                                    <option value="value_loss">Absolute Value Loss ($)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
                                 <span class="control-label">Show:</span>
                                 <select id="country-limit">
                                     <option value="10">Top 10</option>
@@ -711,71 +750,9 @@
                                     <option value="all">All Countries</option>
                                 </select>
                             </div>
-                            <div class="control-group">
-                                <span class="control-label">Metric:</span>
-                                <select id="country-metric">
-                                    <option value="value_loss" selected>Value Loss ($)</option>
-                                    <!-- <option value="loss_fraction">Loss Fraction (%)</option> -->
-                                </select>
-                            </div>
-                            <div class="control-group">
-                                <span class="control-label">Colour by:</span>
-                                <select id="country-color-mode">
-                                    <option value="reef_loss_pct" selected>Loss % of reef tourism</option>
-                                    <option value="gdp_pct">% of national GDP</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                     <div id="country-chart" style="height: 500px;"></div>
-                </div>
-            </section>
-            
-            <!-- GDP Impact Page -->
-            <section id="page-gdp" class="page">
-                <div class="chart-section">
-                    <div class="chart-header">
-                        <div>
-                            <h2 class="chart-title">GDP Impact Analysis</h2>
-                            <p class="chart-subtitle">Projected tourism loss as percentage of national GDP</p>
-                        </div>
-                        <div class="controls">
-                            <div class="control-group">
-                                <span class="control-label">Scenario:</span>
-                                <select id="gdp-scenario">
-                                    <option value="y_future_rcp45_2050">RCP 4.5 - 2050</option>
-                                    <option value="y_future_rcp45_2100">RCP 4.5 - 2100</option>
-                                    <option value="y_future_rcp85_2050">RCP 8.5 - 2050</option>
-                                    <option value="y_future_rcp85_2100" selected>RCP 8.5 - 2100</option>
-                                </select>
-                            </div>
-                            <div class="control-group">
-                                <span class="control-label">Model:</span>
-                                <select id="gdp-model">
-                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
-                                    <option value="Compound (3.81%/pp)">Compound</option>
-                                    <option value="Tipping Point (threshold=10%)">Tipping Point</option>
-                                </select>
-                            </div>
-                            <div class="control-group">
-                                <span class="control-label">Show:</span>
-                                <select id="gdp-limit">
-                                    <option value="10">Top 10</option>
-                                    <option value="25" selected>Top 25</option>
-                                    <option value="50">Top 50</option>
-                                    <option value="all">All Countries</option>
-                                </select>
-                            </div>
-                            <div class="control-group">
-                                <span class="control-label">Metric:</span>
-                                <select id="gdp-metric">
-                                    <option value="loss_as_gdp_pct" selected>% of GDP</option>
-                                    <option value="value_loss">Value Loss ($)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="gdp-chart" style="height: 500px;"></div>
                 </div>
                 
                 <div class="chart-section">
@@ -786,10 +763,25 @@
                         </div>
                         <div class="controls">
                             <div class="control-group">
+                                <span class="control-label">Model:</span>
+                                <select id="gdp-comparison-model">
+                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
+                                    <option value="Compound (3.81%/pp)">Compound</option>
+                                    <option value="Tipping Point (threshold=10%)">Tipping Point</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <span class="control-label">Metric:</span>
+                                <select id="gdp-comparison-metric">
+                                    <option value="loss_as_gdp_pct" selected>% of National GDP</option>
+                                    <option value="value_loss">Absolute Value Loss ($)</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
                                 <span class="control-label">Show:</span>
                                 <select id="gdp-comparison-limit">
-                                    <option value="10">Top 10</option>
-                                    <option value="15" selected>Top 15</option>
+                                    <option value="10" selected>Top 10</option>
+                                    <option value="15">Top 15</option>
                                     <option value="25">Top 25</option>
                                     <option value="all">All Countries</option>
                                 </select>
@@ -807,11 +799,11 @@
                             <span>RCP 8.5</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="opacity: 0.5; background: #94a3b8;"></div>
+                            <div class="legend-color" style="opacity: 0.5; background: #bcd2f0;"></div>
                             <span>2050 (lighter)</span>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color" style="background: #E3B710;"></div>
+                            <div class="legend-color" style="background: #4b4b4d;"></div>
                             <span>2100 (darker)</span>
                         </div>
                     </div>
@@ -827,8 +819,9 @@
                             <p class="chart-subtitle">How economic value changes with coral cover loss</p>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: center; align-items: center;">
-                        <div id="model-chart" style="height: 500px; width: 100%; max-width: 700px;"></div>
+                    <div style="display: flex; flex-direction: row; gap: 2rem; justify-content: center; align-items: flex-start;">
+                        <div id="model-chart" style="height: 500px; width: 70%; max-width: 500px;"></div>
+                        <div id="tipping-point-chart" style="height: 500px; width: 70%; max-width: 500px;"></div>
                     </div>
                     <div style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
                         <h3 style="margin-bottom: 1rem; font-size: 1rem;">Model Descriptions</h3>
@@ -845,6 +838,13 @@
                                 <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
                                     Value decreases compound with each percentage point of cover loss. 
                                     Remaining value = V₀ × (1 - 0.0381)^|Δcover|
+                                </p>
+                            </div>
+                            <div>
+                                <strong style="color: #dc2626;">Tipping Point Model</strong>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    Models ecosystem collapse: gradual depreciation (3.81%/pp) until coral cover falls below 10%, 
+                                    then catastrophic loss (90% of remaining value). The tipping point depends on initial coral cover.
                                 </p>
                             </div>
                         </div>
@@ -870,6 +870,7 @@
         let currentSiteData = null;
         let currentSiteGeojson = null;
         let map = null;
+        let isInitialMapLoad = true;
         let siteLayer = null;
         let choroplethLayer = null;
         let countryBoundaries = null;
@@ -979,10 +980,8 @@
                         }, 100);
                     } else if (page === 'trajectories') {
                         renderTrajectoryPage();
-                    } else if (page === 'countries') {
-                        renderCountryChart();
                     } else if (page === 'gdp') {
-                        renderGdpChart();
+                        renderCountryChart();
                         renderGdpComparison();
                     }
                 });
@@ -1013,9 +1012,17 @@
             document.getElementById('map-metric').addEventListener('change', () => {
                 // Re-render sites and choropleth with new metric
                 if (currentSiteGeojson) {
+                    // Preserve current map view when changing metric
+                    let currentView = null;
+                    if (map) {
+                        currentView = {
+                            center: map.getCenter(),
+                            zoom: map.getZoom()
+                        };
+                    }
                     const scenario = document.getElementById('map-scenario').value;
                     const isCumulative = scenario.startsWith('cumulative_');
-                    renderSites(currentSiteGeojson, isCumulative);
+                    renderSites(currentSiteGeojson, isCumulative, currentView);
                 }
                 if (document.getElementById('map-choropleth-toggle').checked) {
                     renderChoropleth();
@@ -1034,13 +1041,9 @@
             document.getElementById('country-metric').addEventListener('change', renderCountryChart);
             document.getElementById('country-color-mode').addEventListener('change', renderCountryChart);
             
-            // GDP controls
-            document.getElementById('gdp-scenario').addEventListener('change', renderGdpChart);
-            document.getElementById('gdp-model').addEventListener('change', renderGdpChart);
-            document.getElementById('gdp-limit').addEventListener('change', renderGdpChart);
-            document.getElementById('gdp-metric').addEventListener('change', renderGdpChart);
-            
             // GDP comparison controls
+            document.getElementById('gdp-comparison-model').addEventListener('change', renderGdpComparison);
+            document.getElementById('gdp-comparison-metric').addEventListener('change', renderGdpComparison);
             document.getElementById('gdp-comparison-limit').addEventListener('change', renderGdpComparison);
         }
         
@@ -1055,9 +1058,26 @@
                 r.scenario.includes('rcp85') && r.scenario.includes('2100')
             ) || summaryData.snapshot_results[summaryData.snapshot_results.length - 1];
             
-            const cumulative = summaryData.cumulative_results.find(r => 
-                r.scenario.toLowerCase().includes('rcp85') && r.interpolation === 'linear'
-            ) || summaryData.cumulative_results[0];
+            // Calculate model cumulative average: average across all models and interpolations for RCP 8.5 by 2100
+            const rcp85_2100_results = summaryData.cumulative_results.filter(r => {
+                const scenario = r.scenario.toLowerCase();
+                const period = r.period || '';
+                // Match RCP 8.5 and end year 2100 (check both scenario name and period)
+                return scenario.includes('rcp85') && (scenario.includes('2100') || period.includes('2100'));
+            });
+            
+            let cumulativeAverage = 0;
+            if (rcp85_2100_results.length > 0) {
+                const total = rcp85_2100_results.reduce((sum, r) => sum + (r.total_cumulative_loss_trillions || 0), 0);
+                cumulativeAverage = total / rcp85_2100_results.length;
+            }
+            
+            // Use first result for other fields (cover change, etc.) - they should be similar across models
+            const cumulative = rcp85_2100_results.find(r => r.interpolation === 'linear') || 
+                              summaryData.cumulative_results.find(r => 
+                                  r.scenario.toLowerCase().includes('rcp85')
+                              ) || 
+                              summaryData.cumulative_results[0];
             
             const html = `
                 <div class="stat-card">
@@ -1071,9 +1091,9 @@
                     <div class="stat-detail">${worstCase.loss_fraction_pct.toFixed(1)}% decline under RCP 8.5</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Cumulative Loss (2017-2100)</div>
-                    <div class="stat-value loss">-$${cumulative.total_cumulative_loss_trillions.toFixed(2)}T</div>
-                    <div class="stat-detail">Total lost value over 83 years</div>
+                    <div class="stat-label">Cumulative Loss (2013-2100)</div>
+                    <div class="stat-value loss">-$${cumulativeAverage.toFixed(2)}T</div>
+                    <div class="stat-detail">Model average loss since 2013 (RCP 8.5)</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Coral Cover Change</div>
@@ -1103,9 +1123,9 @@
             
             // Distinct colors for each model
             const modelColors = {
-                'Tipping Point (threshold=10%)': '#3A9AB2',
-                'Compound (3.81%/pp)': '#E3B710',
-                'Linear (3.81%/pp)': '#F11B00',
+                'Tipping Point (threshold=10%)': '#F11B00',
+                'Compound (3.81%/pp)': '#3A9AB2',
+                'Linear (3.81%/pp)': '#E3B710',
             };
             
             const traces = models.map(model => ({
@@ -1149,93 +1169,78 @@
             
             const modelFilter = document.getElementById('overview-model').value;
             
-            // Color and dash config
-            const colors = {
-                'Linear': '#F11B00',
-                'Compound': '#E3B710',
-                'Tipping': '#3A9AB2',
+            // Color and linestyle config - matching scenario comparison chart
+            // Color = RCP scenario (blue for RCP45, red for RCP85)
+            const rcpColors = {
+                'rcp45': '#3498db',  // Blue (matching scenario comparison)
+                'rcp85': '#e74c3c',  // Red (matching scenario comparison)
             };
-            const scenarioLineStyle = {
-                'rcp45': 'dash',
-                'rcp85': 'solid'
+            // Linestyle = Model (solid for Linear, dashed for Compound, dotted for Tipping Point)
+            const modelLineStyles = {
+                'Linear': 'solid',      // Solid (matches no hatch in scenario comparison)
+                'Compound': 'dash',     // Dashed (matches /// hatch conceptually)
+                'Tipping': 'dot',       // Dotted (matches ... hatch conceptually)
             };
 
             // Map trace types for Plotly
             const metricMap = {
-                'cumulative_loss': { data: 'cumulative_loss', title: 'Cumulative Loss ($ Trillion)' },
-                'annual_loss': { data: 'annual_loss', title: 'Annual Loss ($ Billion)' },
-                'coral_cover': { data: 'coral_cover', title: 'Coral Cover (%)' }
+                'cumulative_loss': { title: 'Cumulative Loss ($ Trillion)' },
+                'annual_loss': { title: 'Annual Loss ($ Billion/year)' }
             };
             const config = metricMap[metric];
 
-            let traces = [];
-
-            if (metric === 'coral_cover') {
-
-
-                let relevantModels;
-                if (modelFilter === 'all') {
-                    //relevantModels = ['Linear', 'Compound', 'Tipping'];
-                } else {
-                    // Only plot the filter, but make sure label is pretty
-                    relevantModels = [modelFilter];
-                }
-
-                // Only show linear interpolation for clarity
-                const filtered = trajectoryData.filter(t => t.interpolation === 'linear');
-
-                // Get all unique scenario+interpolation keys
-                const scenarioKeys = Array.from(new Set(filtered.map(t => `${t.scenario}_${t.interpolation}`)));
-                traces = [];
-
-                for (const key of scenarioKeys) {
-                    const [scenario, interpolation] = key.split('_');
-                    // Get one representative trajectory for the coral_cover line
-                    const t = filtered.find(x => x.scenario === scenario && x.interpolation === interpolation);
-                    if (!t) continue;
-
-                    for (const m of relevantModels) {
-                        // Use coloring/dashing by model and by scenario
-                        traces.push({
-                            x: t.years,
-                            y: t.coral_cover,
-                            name: modelFilter === 'all'
-                                ? `${scenario.toUpperCase()} - ${m}`
-                                : `${scenario.toUpperCase()}`,
-                            mode: 'lines',
-                            line: {
-                                color: colors[m] || '#94a3b8',
-                                dash: scenarioLineStyle[scenario.toLowerCase()] || 'solid',
-                                width: 2,
-                            }
-                        });
+            // Filter data: use linear interpolation only, apply model filter
+            let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
+            if (modelFilter !== 'all') {
+                filtered = filtered.filter(t => {
+                    const modelName = t.model.toLowerCase();
+                    if (modelFilter === 'Linear') {
+                        return modelName.includes('linear') && !modelName.includes('compound') && !modelName.includes('tipping');
+                    } else if (modelFilter === 'Compound') {
+                        return modelName.includes('compound') && !modelName.includes('tipping');
+                    } else if (modelFilter === 'Tipping') {
+                        return modelName.includes('tipping');
                     }
-                }
-            } else {
-                // For loss metrics, plot by model/scenario as before
-                let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
-                if (modelFilter !== 'all') {
-                    filtered = filtered.filter(t => t.model.includes(modelFilter));
-                }
-
-                traces = filtered.map(t => {
-                    const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                    t.model.includes('Compound') ? 'Compound' : 'Tipping';
-                    return {
-                        x: t.years,
-                        y: t[config.data],
-                        name: modelFilter === 'all'
-                            ? `${t.scenario.toUpperCase()} - ${modelShort}`
-                            : `${t.scenario.toUpperCase()}`,
-                        mode: 'lines',
-                        line: {
-                            color: colors[modelShort] || '#94a3b8',
-                            dash: modelFilter === 'all' ? (scenarioLineStyle[t.scenario.toLowerCase()] || 'solid') : 'solid',
-                            width: 2
-                        }
-                    };
+                    return t.model.includes(modelFilter);
                 });
             }
+
+            // Create traces
+            const traces = filtered.map(t => {
+                const modelName = t.model.toLowerCase();
+                const modelShort = modelName.includes('linear') && !modelName.includes('compound') && !modelName.includes('tipping') ? 'Linear' : 
+                                modelName.includes('compound') && !modelName.includes('tipping') ? 'Compound' : 
+                                modelName.includes('tipping') ? 'Tipping' : 'Unknown';
+                
+                const scenario = t.scenario.toLowerCase();
+                const color = rcpColors[scenario] || '#94a3b8';
+                const linestyle = modelLineStyles[modelShort] || 'solid';
+                
+                let yData;
+                if (metric === 'cumulative_loss') {
+                    // Cumulative loss: use cumulative_losses directly (already in trillions from export)
+                    // This is the cumulative sum of opportunity cost
+                    yData = t.cumulative_loss || [];
+                } else if (metric === 'annual_loss') {
+                    // Annual loss: year-on-year value lost (value_lost_this_year)
+                    // This is the year-over-year decline in value (already in billions from export)
+                    yData = t.annual_value_lost || t.annual_loss || [];
+                }
+                
+                return {
+                    x: t.years,
+                    y: yData,
+                    name: modelFilter === 'all'
+                        ? `${t.scenario.toUpperCase()} - ${modelShort}`
+                        : `${t.scenario.toUpperCase()}`,
+                    mode: 'lines',
+                    line: {
+                        color: color,
+                        dash: linestyle,
+                        width: 2.5
+                    }
+                };
+            });
             
             const layout = {
                 paper_bgcolor: 'transparent',
@@ -1247,7 +1252,9 @@
                 },
                 yaxis: { 
                     gridcolor: '#334155',
-                    title: config.title
+                    title: config.title,
+                    // Adjust scale based on metric
+                    type: metric === 'cumulative_loss' ? 'linear' : 'linear'
                 },
                 legend: { 
                     orientation: 'h', 
@@ -1332,6 +1339,24 @@
                 };
             });
             
+            // Annual loss chart - show value lost each year (not total annual loss)
+            const annualLossTraces = economicFiltered.map(t => {
+                const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                return {
+                    x: t.years,
+                    y: t.annual_value_lost || t.annual_loss || [], // fallback for old data
+                    name: `${t.scenario.toUpperCase()} - ${modelShort}`,
+                    mode: 'lines',
+                    line: { 
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                        dash: t.model.includes('Linear') ? 'solid' : 
+                              t.model.includes('Compound') ? 'dash' : 'dot',
+                        width: 2 
+                    }
+                };
+            });
+            
             Plotly.newPlot('annual-value-chart', valueTraces, {
                 paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
@@ -1341,13 +1366,34 @@
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
             
-            // Cumulative loss chart
+            // Annual loss chart - show value lost each year (not total annual loss)
+            Plotly.newPlot('annual-loss-chart', annualLossTraces, {
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { gridcolor: '#334155', title: 'Year' },
+                yaxis: { gridcolor: '#334155', title: 'Annual Loss - Value Lost ($ Billion/year)' },
+                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
+                margin: { t: 20, r: 20, b: 60, l: 60 }
+            }, {responsive: true});
+            
+            // Cumulative loss chart - cumulative sum of opportunity cost
             const cumulativeTraces = economicFiltered.map(t => {
                 const modelShort = t.model.includes('Linear') ? 'Linear' : 
                                    t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                
+                // Calculate cumulative sum of opportunity cost
+                const oppCost = t.annual_opportunity_cost || [];
+                let cumulative = 0;
+                const cumulativeOppCost = oppCost.length > 0 
+                    ? oppCost.map(val => {
+                        cumulative += val;
+                        return cumulative / 1e3; // Convert to trillions
+                    })
+                    : (t.cumulative_loss || []); // Fallback for old data
+                
                 return {
                     x: t.years,
-                    y: t.cumulative_loss,
+                    y: cumulativeOppCost,
                     name: `${t.scenario.toUpperCase()} - ${modelShort}`,
                     mode: 'lines',
                     line: { 
@@ -1364,6 +1410,51 @@
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { gridcolor: '#334155', title: 'Year' },
                 yaxis: { gridcolor: '#334155', title: 'Cumulative Loss ($ Trillion)' },
+                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
+                margin: { t: 20, r: 20, b: 60, l: 60 }
+            }, {responsive: true});
+            
+            // Loss components chart - show value lost vs opportunity cost
+            const lossComponentsTraces = [];
+            economicFiltered.forEach(t => {
+                const modelShort = t.model.includes('Linear') ? 'Linear' : 
+                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                
+                // Value lost (solid lines)
+                lossComponentsTraces.push({
+                    x: t.years,
+                    y: t.annual_value_lost || t.annual_loss || [], // fallback for old data
+                    name: `${t.scenario.toUpperCase()} - ${modelShort} (Value Lost)`,
+                    mode: 'lines',
+                    line: { 
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                        dash: t.model.includes('Linear') ? 'solid' : 
+                              t.model.includes('Compound') ? 'dash' : 'dot',
+                        width: 2 
+                    },
+                    legendgroup: `${t.scenario}_${modelShort}`,
+                });
+                
+                // Opportunity cost (dotted lines)
+                lossComponentsTraces.push({
+                    x: t.years,
+                    y: t.annual_opportunity_cost || [], // fallback for old data
+                    name: `${t.scenario.toUpperCase()} - ${modelShort} (Opportunity Cost)`,
+                    mode: 'lines',
+                    line: { 
+                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                        dash: 'dot',
+                        width: 2 
+                    },
+                    legendgroup: `${t.scenario}_${modelShort}`,
+                });
+            });
+            
+            Plotly.newPlot('loss-components-chart', lossComponentsTraces, {
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                xaxis: { gridcolor: '#334155', title: 'Year' },
+                yaxis: { gridcolor: '#334155', title: 'Loss ($ Billion/year)' },
                 legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
@@ -1393,11 +1484,26 @@
             
             console.log('Filtered countries:', filtered.length, 'for scenario:', scenario, 'model:', model);
             
-            // Sort by selected metric (use cumulative or annual loss)
+            // Sort by selected metric
             if (metric === 'value_loss') {
                 const lossKey = isCumulative ? 'cumulative_loss' : 'value_loss';
                 filtered = filtered.sort((a, b) => (b[lossKey] || 0) - (a[lossKey] || 0));
+            } else if (metric === 'reef_loss_pct') {
+                const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+                filtered = filtered.sort((a, b) => (b[fractionKey] || 0) - (a[fractionKey] || 0));
+            } else if (metric === 'gdp_pct' && !isCumulative && window.gdpImpactLookup) {
+                // Sort by GDP % if available
+                filtered = filtered.sort((a, b) => {
+                    const keyA = `${scenario}||${model}||${a.country}`;
+                    const keyB = `${scenario}||${model}||${b.country}`;
+                    const recA = window.gdpImpactLookup[keyA];
+                    const recB = window.gdpImpactLookup[keyB];
+                    const valA = recA ? recA.loss_as_gdp_pct : 0;
+                    const valB = recB ? recB.loss_as_gdp_pct : 0;
+                    return valB - valA;
+                });
             } else {
+                // Fallback: sort by reef loss fraction
                 const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
                 filtered = filtered.sort((a, b) => (b[fractionKey] || 0) - (a[fractionKey] || 0));
             }
@@ -1418,19 +1524,41 @@
                 xData = filtered.map(c => (c[lossKey] || 0) / 1e6);
                 xTitle = isCumulative ? 'Cumulative Loss ($ Million)' : 'Value Loss ($ Million)';
                 textFn = c => `$${((c[lossKey] || 0) / 1e6).toFixed(1)}M`;
-            } else {
+            } else if (metric === 'reef_loss_pct') {
                 const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
                 xData = filtered.map(c => (c[fractionKey] || 0) * 100);
                 xTitle = isCumulative ? 'Cumulative Loss Fraction (%)' : 'Loss Fraction (%)';
                 textFn = c => `${((c[fractionKey] || 0) * 100).toFixed(1)}%`;
+            } else if (metric === 'gdp_pct') {
+                // For GDP %, need to look up from gdpImpactData
+                if (!isCumulative && window.gdpImpactLookup) {
+                    xData = filtered.map(c => {
+                        const key = `${scenario}||${model}||${c.country}`;
+                        const rec = window.gdpImpactLookup[key];
+                        return rec ? rec.loss_as_gdp_pct : 0;
+                    });
+                    xTitle = 'Loss as % of National GDP';
+                    textFn = c => {
+                        const key = `${scenario}||${model}||${c.country}`;
+                        const rec = window.gdpImpactLookup[key];
+                        return rec ? `${rec.loss_as_gdp_pct.toFixed(2)}%` : '0%';
+                    };
+                } else {
+                    // Fallback for cumulative or if GDP data not available
+                    const fractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+                    xData = filtered.map(c => (c[fractionKey] || 0) * 100);
+                    xTitle = isCumulative ? 'Cumulative Loss Fraction (%)' : 'Loss Fraction (%)';
+                    textFn = c => `${((c[fractionKey] || 0) * 100).toFixed(1)}%`;
+                }
             }
 
-            // Configure colouring (either reef loss % or GDP %)
+            // Configure colouring (loss % of reef tourism, % of national GDP, or absolute value loss)
             let colorValues;
             let colorbarTitle;
             let colorbarFormat;
 
             const reefFractionKey = isCumulative ? 'cumulative_loss_fraction' : 'loss_fraction';
+            const lossKey = isCumulative ? 'cumulative_loss' : 'value_loss';
 
             if (colorMode === 'gdp_pct' && !isCumulative && window.gdpImpactLookup) {
                 // Use loss_as_gdp_pct from gdpImpactData where available (annual scenarios only)
@@ -1441,6 +1569,11 @@
                 });
                 colorbarTitle = '% GDP';
                 colorbarFormat = '.1f';
+            } else if (colorMode === 'value_loss') {
+                // Color by absolute value loss
+                colorValues = filtered.map(c => (c[lossKey] || 0) / 1e6); // Convert to millions for color scale
+                colorbarTitle = isCumulative ? 'Cumulative Loss ($M)' : 'Value Loss ($M)';
+                colorbarFormat = ',.0f';
             } else {
                 // Default: colour by reef tourism loss fraction
                 colorValues = filtered.map(c => c[reefFractionKey] || 0);
@@ -1510,7 +1643,7 @@
             }
             
             // Dynamic height based on number of countries
-            const chartHeight = Math.max(400, filtered.length * 22);
+            const chartHeight = Math.max(500, filtered.length * 30);
             document.getElementById('gdp-chart').style.height = chartHeight + 'px';
             
             // Configure based on metric
@@ -1557,7 +1690,7 @@
                 yaxis: { 
                     autorange: 'reversed'
                 },
-                margin: { t: 20, r: 100, b: 60, l: 150 }
+                margin: { t: 20, r: 100, b: 0, l: 150 }
             };
             
             Plotly.newPlot('gdp-chart', [trace], layout, {responsive: true});
@@ -1566,62 +1699,136 @@
         function renderGdpComparison() {
             if (!gdpImpactData) return;
             
+            const model = document.getElementById('gdp-comparison-model').value;
+            const metric = document.getElementById('gdp-comparison-metric').value;
             const limitValue = document.getElementById('gdp-comparison-limit').value;
             const limit = limitValue === 'all' ? 9999 : parseInt(limitValue);
             
-            // Get top countries by worst-case GDP impact
+            // Get top countries by worst-case impact for selected model and metric
             const worstCase = gdpImpactData.filter(c => 
                 c.scenario.includes('rcp85') && c.scenario.includes('2100') &&
-                c.model.includes('Compound')
-            ).sort((a, b) => b.loss_as_gdp_pct - a.loss_as_gdp_pct).slice(0, limit);
+                c.model === model
+            );
             
-            const topCountries = worstCase.map(c => c.country);
+            // Sort by selected metric
+            const metricKey = metric === 'loss_as_gdp_pct' ? 'loss_as_gdp_pct' : 'value_loss';
+            worstCase.sort((a, b) => (b[metricKey] || 0) - (a[metricKey] || 0));
+            const topCountries = worstCase.slice(0, limit).map(c => c.country);
             
-            // Dynamic height based on number of countries
-            const chartHeight = Math.max(400, topCountries.length * 30);
+            // Dynamic height based on number of countries - increased spacing
+            const chartHeight = Math.max(1000, topCountries.length * 100);
             document.getElementById('gdp-comparison-chart').style.height = chartHeight + 'px';
             
-            // Create traces for each scenario/model combo
-            const scenarios = [
-                { key: 'rcp45_2050', name: 'RCP 4.5 - 2050', color: '#3A9AB2', opacity: 0.5 },
-                { key: 'rcp45_2100', name: 'RCP 4.5 - 2100', color: '#3A9AB2', opacity: 1 },
-                { key: 'rcp85_2050', name: 'RCP 8.5 - 2050', color: '#F11B00', opacity: 0.5 },
-                { key: 'rcp85_2100', name: 'RCP 8.5 - 2100', color: '#F11B00', opacity: 1 },
+            // Create traces: 2050 overlaid on 2100 for each RCP (2 bars per country)
+            // 2100 is the full bar (lighter), 2050 is overlaid on top (darker)
+            // Use custom y positions to group RCP 4.5 and RCP 8.5 side by side
+            const rcpScenarios = [
+                { rcp: 'rcp45', color: '#3A9AB2', name: 'RCP 4.5', yOffset: -0.2 },
+                { rcp: 'rcp85', color: '#F11B00', name: 'RCP 8.5', yOffset: 0.2 },
             ];
             
-            const traces = scenarios.map(s => {
-                const data = gdpImpactData.filter(c => 
-                    c.scenario.toLowerCase().includes(s.key) &&
-                    c.model.includes('Compound') &&
+            const traces = [];
+            
+            // Create custom y positions for each country to offset RCP bars
+            // Use larger spacing (multiply by 1.5) to spread countries out more
+            const createYPositions = (offset) => {
+                return topCountries.map((country, idx) => {
+                    // Use numeric index with larger spacing and offset to create side-by-side bars
+                    return idx * 1.5 + offset;
+                });
+            };
+            
+            // For each RCP, create two traces: 2100 (base, lighter) and 2050 (overlay, darker)
+            rcpScenarios.forEach(rcp => {
+                // Get data for both years
+                const data2100 = gdpImpactData.filter(c => 
+                    c.scenario.toLowerCase().includes(rcp.rcp) && 
+                    c.scenario.includes('2100') &&
+                    c.model === model &&
                     topCountries.includes(c.country)
                 );
                 
-                const countryMap = {};
-                data.forEach(d => { countryMap[d.country] = d.loss_as_gdp_pct; });
+                const data2050 = gdpImpactData.filter(c => 
+                    c.scenario.toLowerCase().includes(rcp.rcp) && 
+                    c.scenario.includes('2050') &&
+                    c.model === model &&
+                    topCountries.includes(c.country)
+                );
                 
-                return {
-                    y: topCountries,
-                    x: topCountries.map(c => countryMap[c] || 0),
-                    name: s.name,
+                const countryMap2100 = {};
+                data2100.forEach(d => { countryMap2100[d.country] = d[metricKey] || 0; });
+                
+                const countryMap2050 = {};
+                data2050.forEach(d => { countryMap2050[d.country] = d[metricKey] || 0; });
+                
+                const yPositions = createYPositions(rcp.yOffset);
+                
+                // 2100 trace (base, lighter opacity) - full height
+                traces.push({
+                    y: yPositions,
+                    x: topCountries.map(c => countryMap2100[c] || 0),
+                    name: `${rcp.name} - 2100`,
                     type: 'bar',
                     orientation: 'h',
+                    width: 0.4,  // Narrower bars
                     marker: {
-                        color: s.color,
-                        opacity: s.opacity
+                        color: rcp.color,
+                        opacity: 0.5,  // Lighter for base
+                        line: { width: 0 }
                     }
-                };
+                });
+                
+                // 2050 trace (overlay, darker opacity) - overlaid on top of 2100
+                // Since 2050 < 2100, this will show as a darker section on the lighter bar
+                traces.push({
+                    y: yPositions,
+                    x: topCountries.map(c => countryMap2050[c] || 0),
+                    name: `${rcp.name} - 2050`,
+                    type: 'bar',
+                    orientation: 'h',
+                    width: 0.4,  // Narrower bars
+                    marker: {
+                        color: rcp.color,
+                        opacity: 1.0,  // Darker for overlay
+                        line: { width: 0 }
+                    }
+                });
             });
             
+            // Determine axis title based on metric
+            const xAxisTitle = metric === 'loss_as_gdp_pct' 
+                ? 'Projected Loss as % of National GDP'
+                : 'Projected Value Loss ($ Million)';
+            
+            // Format function for text labels
+            const formatValue = (val) => {
+                if (metric === 'loss_as_gdp_pct') {
+                    return `${val.toFixed(2)}%`;
+                } else {
+                    if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+                    if (val >= 1e3) return `$${(val / 1e3).toFixed(1)}k`;
+                    return `$${val.toFixed(0)}`;
+                }
+            };
+            
+            // Create custom y-axis tick labels (country names at their base positions)
+            // Match the spacing used in createYPositions
+            const yTickPositions = topCountries.map((_, idx) => idx * 1.5);
+            const yTickLabels = topCountries;
+            
             const layout = {
-                barmode: 'group',
+                barmode: 'overlay',  // Overlay 2050 on 2100 within each RCP
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { 
                     gridcolor: '#334155',
-                    title: 'Projected Loss as % of National GDP'
+                    title: xAxisTitle
                 },
                 yaxis: { 
+                    tickmode: 'array',
+                    tickvals: yTickPositions,
+                    ticktext: yTickLabels,
                     autorange: 'reversed'
                 },
                 legend: { 
@@ -1638,18 +1845,21 @@
         function renderModelComparison() {
             if (!modelCurves) return;
             
-            const traces = Object.entries(modelCurves).map(([key, curve]) => ({
-                x: curve.delta_cc,
-                y: curve.remaining_value,
-                name: curve.name,
-                mode: 'lines',
-                line: {
-                    color: key === 'linear' ? '#3A9AB2' : '#F11B00',
-                    width: 3
-                }
-            }));
+            // Standard models (linear and compound)
+            const standardTraces = Object.entries(modelCurves)
+                .filter(([key]) => key === 'linear' || key === 'compound')
+                .map(([key, curve]) => ({
+                    x: curve.delta_cc,
+                    y: curve.remaining_value,
+                    name: curve.name,
+                    mode: 'lines',
+                    line: {
+                        color: key === 'linear' ? '#3A9AB2' : '#F11B00',
+                        width: 3
+                    }
+                }));
             
-            const layout = {
+            const standardLayout = {
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
@@ -1679,7 +1889,101 @@
                 }]
             };
             
-            Plotly.newPlot('model-chart', traces, layout, {responsive: true});
+            Plotly.newPlot('model-chart', standardTraces, standardLayout, {responsive: true});
+            
+            // Tipping point model with multiple original_cc values
+            const tippingPointTraces = Object.entries(modelCurves)
+                .filter(([key]) => key.startsWith('tipping_point_'))
+                .sort(([key1], [key2]) => {
+                    const cc1 = modelCurves[key1].original_cc || 0;
+                    const cc2 = modelCurves[key2].original_cc || 0;
+                    return cc1 - cc2;
+                })
+                .map(([key, curve]) => {
+                    const ogCc = curve.original_cc || 0.5;
+                    // Get color from reds colormap (darker for lower initial cover)
+                    // Limit redIntensity to avoid very dark colors (max 0.7 instead of 1.0)
+                    const redIntensity = Math.max(0.3, Math.min(0.7, 0.3 + (ogCc - 0.1) * 0.4 / 0.6));
+                    const color = `rgb(${Math.round(220 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))})`;
+                    
+                    return {
+                        x: curve.delta_cc,
+                        y: curve.remaining_value,
+                        name: curve.name,
+                        mode: 'lines',
+                        line: {
+                            color: color,
+                            width: 3
+                        }
+                    };
+                });
+            
+            // Add markers at tipping points
+            const tippingPointMarkers = Object.entries(modelCurves)
+                .filter(([key]) => key.startsWith('tipping_point_'))
+                .map(([key, curve]) => {
+                    const ogCc = curve.original_cc || 0.5;
+                    // Find where value drops to near zero (tipping point)
+                    const zeroIdx = curve.remaining_value.findIndex((v, i) => 
+                        i > 0 && v < 1 && curve.remaining_value[i - 1] > 1
+                    );
+                    if (zeroIdx === -1) return null;
+                    
+                    const redIntensity = Math.max(0.3, Math.min(1, 0.3 + (ogCc - 0.1) * 0.7 / 0.6));
+                    const color = `rgb(${Math.round(220 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))})`;
+                    
+                    return {
+                        x: [curve.delta_cc[zeroIdx]],
+                        y: [curve.remaining_value[zeroIdx]],
+                        name: `${curve.name} (tipping point)`,
+                        mode: 'markers',
+                        marker: {
+                            symbol: 'x',
+                            size: 12,
+                            color: 'black',
+                            line: { width: 1, color: 'black' }
+                        },
+                        showlegend: false
+                    };
+                })
+                .filter(t => t !== null);
+            
+            const tippingPointLayout = {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                autosize: true,
+                title: {
+                    text: 'Tipping Point Model: Effect of Initial Coral Cover',
+                    font: { size: 14, color: '#e2e8f0' },
+                    x: 0.5
+                },
+                xaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Change in Coral Cover (percentage points)',
+                    zeroline: true,
+                    zerolinecolor: '#64748b',
+                    range: [-50, 0]
+                },
+                yaxis: { 
+                    gridcolor: '#334155',
+                    title: 'Remaining Value (%)',
+                    range: [0, 100]
+                },
+                legend: { 
+                    orientation: 'h', 
+                    y: -0.15
+                },
+                margin: { t: 50, r: 30, b: 70, l: 60 },
+                shapes: [{
+                    type: 'line',
+                    x0: 0, x1: 0,
+                    y0: 0, y1: 120,
+                    line: { color: '#64748b', width: 1, dash: 'dot' }
+                }]
+            };
+            
+            Plotly.newPlot('tipping-point-chart', [...tippingPointTraces, ...tippingPointMarkers], tippingPointLayout, {responsive: true});
         }
         
         // ============================================================
@@ -1731,6 +2035,15 @@
             if (!map || !siteLayer) {
                 console.warn('Map not initialized yet');
                 return;
+            }
+            
+            // Store current view before loading new data (if not initial load)
+            let currentView = null;
+            if (!isInitialMapLoad && map) {
+                currentView = {
+                    center: map.getCenter(),
+                    zoom: map.getZoom()
+                };
             }
             
             const scenario = document.getElementById('map-scenario').value;
@@ -1794,7 +2107,10 @@
                 }
                 
                 console.log(`✓ Loaded ${geojson.features.length} features from ${filename}`);
-                renderSites(geojson, isCumulative);
+                renderSites(geojson, isCumulative, currentView);
+                
+                // Mark that initial load is complete
+                isInitialMapLoad = false;
             } catch (error) {
                 console.error('Error loading site data:', error);
                 console.error('Error details:', error.message, error.stack);
@@ -1873,7 +2189,7 @@
             legendEl.innerHTML = html;
         }
         
-        function renderSites(geojson, isCumulative = false) {
+        function renderSites(geojson, isCumulative = false, preserveView = null) {
             if (!geojson || !geojson.features || geojson.features.length === 0) {
                 console.warn('No features to render');
                 siteLayer.clearLayers();
@@ -1968,23 +2284,30 @@
                 
                 console.log(`✓ Added ${layerCount} layers to map`);
                 
-                // Fit map bounds to show all polygons
+                // Only fit bounds on initial load, otherwise preserve current view
                 if (layerCount > 0) {
-                    try {
-                        const bounds = geoJsonLayer.getBounds();
-                        if (bounds && bounds.isValid()) {
-                            map.fitBounds(bounds, { 
-                                padding: [50, 50],
-                                maxZoom: 10  // Don't zoom in too much
-                            });
-                            console.log(`✓ Map bounds set to show all polygons`);
-                        } else {
-                            console.warn('Invalid bounds, using default view');
+                    if (preserveView) {
+                        // Restore the previous view
+                        map.setView(preserveView.center, preserveView.zoom);
+                        console.log(`✓ Preserved map view (zoom: ${preserveView.zoom})`);
+                    } else {
+                        // Initial load: fit bounds to show all polygons
+                        try {
+                            const bounds = geoJsonLayer.getBounds();
+                            if (bounds && bounds.isValid()) {
+                                map.fitBounds(bounds, { 
+                                    padding: [50, 50],
+                                    maxZoom: 10  // Don't zoom in too much
+                                });
+                                console.log(`✓ Map bounds set to show all polygons`);
+                            } else {
+                                console.warn('Invalid bounds, using default view');
+                                map.setView([0, 0], 2);
+                            }
+                        } catch (boundsError) {
+                            console.warn('Error setting map bounds:', boundsError);
                             map.setView([0, 0], 2);
                         }
-                    } catch (boundsError) {
-                        console.warn('Error setting map bounds:', boundsError);
-                        map.setView([0, 0], 2);
                     }
                 }
                 

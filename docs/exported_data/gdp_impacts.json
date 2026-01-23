@@ -2036,594 +2036,666 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Egypt",
-    "iso_a3": "EGY",
-    "value_loss": 676261621.8085927,
-    "national_gdp": 476747720364.742,
-    "loss_as_gdp_pct": 0.141848947131034
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Thailand",
-    "iso_a3": "THA",
-    "value_loss": 436636663.17380905,
-    "national_gdp": 495644697587.661,
-    "loss_as_gdp_pct": 0.08809469067236099
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Indonesia",
-    "iso_a3": "IDN",
-    "value_loss": 402379754.500256,
-    "national_gdp": 1319101183380.15,
-    "loss_as_gdp_pct": 0.03050408562815266
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "China",
-    "iso_a3": "CHN",
-    "value_loss": 319276346.96076983,
-    "national_gdp": 18316765021690.2,
-    "loss_as_gdp_pct": 0.0017430826162954634
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Australia",
-    "iso_a3": "AUS",
-    "value_loss": 266826305.5917346,
-    "national_gdp": 1695627535475.8,
-    "loss_as_gdp_pct": 0.01573613898154007
+    "country": "Mexico",
+    "iso_a3": "MEX",
+    "value_loss": 1800835819.5220854,
+    "national_gdp": 1466934724293.06,
+    "loss_as_gdp_pct": 0.1227618236653262
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "United States of America",
     "iso_a3": "USA",
-    "value_loss": 255841705.99227977,
+    "value_loss": 1215813200.275714,
     "national_gdp": 25604848907611.0,
-    "loss_as_gdp_pct": 0.0009991924065454307
+    "loss_as_gdp_pct": 0.004748370922486933
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Mexico",
-    "iso_a3": "MEX",
-    "value_loss": 198284706.9476446,
-    "national_gdp": 1466934724293.06,
-    "loss_as_gdp_pct": 0.013516941392412756
+    "country": "Indonesia",
+    "iso_a3": "IDN",
+    "value_loss": 663902462.9180499,
+    "national_gdp": 1319101183380.15,
+    "loss_as_gdp_pct": 0.05032991185837795
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Philippines",
-    "iso_a3": "PHL",
-    "value_loss": 179938185.96387076,
-    "national_gdp": 404353369604.631,
-    "loss_as_gdp_pct": 0.044500231601831565
+    "country": "Egypt",
+    "iso_a3": "EGY",
+    "value_loss": 646569960.1528878,
+    "national_gdp": 476747720364.742,
+    "loss_as_gdp_pct": 0.1356209862226968
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Japan",
     "iso_a3": "JPN",
-    "value_loss": 160756127.00299996,
+    "value_loss": 476991267.3979532,
     "national_gdp": 4262463317796.53,
-    "loss_as_gdp_pct": 0.0037714371952906906
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Malaysia",
-    "iso_a3": "MYS",
-    "value_loss": 154353310.58205482,
-    "national_gdp": 407830525989.553,
-    "loss_as_gdp_pct": 0.03784741473373888
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Maldives",
-    "iso_a3": "MDV",
-    "value_loss": 145319960.34680325,
-    "national_gdp": 6177123352.26211,
-    "loss_as_gdp_pct": 2.352550727250508
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "India",
-    "iso_a3": "IND",
-    "value_loss": 72303398.43371074,
-    "national_gdp": 3346107287730.93,
-    "loss_as_gdp_pct": 0.0021608212832512396
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "United Arab Emirates",
-    "iso_a3": "ARE",
-    "value_loss": 71682972.51968145,
-    "national_gdp": 511403403675.97,
-    "loss_as_gdp_pct": 0.014016913459007884
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Brazil",
-    "iso_a3": "BRA",
-    "value_loss": 65108098.83237777,
-    "national_gdp": 1951923832083.87,
-    "loss_as_gdp_pct": 0.003335586038870609
+    "loss_as_gdp_pct": 0.011190507268565367
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Bahamas",
     "iso_a3": "BHS",
-    "value_loss": 47260665.0935492,
+    "value_loss": 412030533.14809376,
     "national_gdp": 13896800000.0,
-    "loss_as_gdp_pct": 0.34008307735269416
+    "loss_as_gdp_pct": 2.9649310139607232
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Honduras",
-    "iso_a3": "HND",
-    "value_loss": 46648924.258572556,
-    "national_gdp": 31426041806.7985,
-    "loss_as_gdp_pct": 0.14844034302939432
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mauritius",
-    "iso_a3": "MUS",
-    "value_loss": 45248141.87847752,
-    "national_gdp": 12936444123.3037,
-    "loss_as_gdp_pct": 0.34977263803866754
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Oman",
-    "iso_a3": "OMN",
-    "value_loss": 44433389.89150384,
-    "national_gdp": 109852795838.752,
-    "loss_as_gdp_pct": 0.04044811927838926
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Guam",
-    "iso_a3": "GUM",
-    "value_loss": 42859677.477316566,
-    "national_gdp": 6910000000.0,
-    "loss_as_gdp_pct": 0.620255824563192
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Saudi Arabia",
-    "iso_a3": "SAU",
-    "value_loss": 42372085.2528002,
-    "national_gdp": 1239075200000.0,
-    "loss_as_gdp_pct": 0.003419654049471751
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Taiwan",
-    "iso_a3": "TWN",
-    "value_loss": 33958426.53729439,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Thailand",
+    "iso_a3": "THA",
+    "value_loss": 410716264.55865645,
+    "national_gdp": 495644697587.661,
+    "loss_as_gdp_pct": 0.0828650576829819
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
-    "value_loss": 32766740.657464117,
+    "value_loss": 348801544.5008638,
     "national_gdp": 113478087134.8,
-    "loss_as_gdp_pct": 0.028874949767650458
+    "loss_as_gdp_pct": 0.3073734791515514
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Puerto Rico",
-    "iso_a3": "PRI",
-    "value_loss": 32485609.749048907,
-    "national_gdp": 113843700000.0,
-    "loss_as_gdp_pct": 0.028535272262803217
+    "country": "Australia",
+    "iso_a3": "AUS",
+    "value_loss": 336017716.6003638,
+    "national_gdp": 1695627535475.8,
+    "loss_as_gdp_pct": 0.019816717384580327
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cayman Is.",
-    "iso_a3": "CYM",
-    "value_loss": 27289573.357185047,
-    "national_gdp": 6660161212.01997,
-    "loss_as_gdp_pct": 0.40974343545819897
+    "country": "Maldives",
+    "iso_a3": "MDV",
+    "value_loss": 331887162.39975226,
+    "national_gdp": 6177123352.26211,
+    "loss_as_gdp_pct": 5.372843368559455
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Tanzania",
-    "iso_a3": "TZA",
-    "value_loss": 23043796.627189204,
-    "national_gdp": 75749121842.9149,
-    "loss_as_gdp_pct": 0.030421206301211496
+    "country": "Brazil",
+    "iso_a3": "BRA",
+    "value_loss": 313893182.34979707,
+    "national_gdp": 1951923832083.87,
+    "loss_as_gdp_pct": 0.016081220854539457
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Aruba",
-    "iso_a3": "ABW",
-    "value_loss": 22185539.88340026,
-    "national_gdp": 3324034443.26581,
-    "loss_as_gdp_pct": 0.6674280986572246
+    "country": "China",
+    "iso_a3": "CHN",
+    "value_loss": 298217216.5457235,
+    "national_gdp": 18316765021690.2,
+    "loss_as_gdp_pct": 0.001628110729119378
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fiji",
-    "iso_a3": "FJI",
-    "value_loss": 21875176.353566777,
-    "national_gdp": 4977861885.60316,
-    "loss_as_gdp_pct": 0.4394492425921575
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Barbados",
-    "iso_a3": "BRB",
-    "value_loss": 21223447.157632485,
-    "national_gdp": 6884900000.0,
-    "loss_as_gdp_pct": 0.30826079039103665
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Costa Rica",
-    "iso_a3": "CRI",
-    "value_loss": 21143005.967444632,
-    "national_gdp": 69243626028.5936,
-    "loss_as_gdp_pct": 0.030534227018547234
+    "country": "Philippines",
+    "iso_a3": "PHL",
+    "value_loss": 295637369.5206302,
+    "national_gdp": 404353369604.631,
+    "loss_as_gdp_pct": 0.07311361589732733
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Venezuela",
     "iso_a3": "VEN",
-    "value_loss": 20667946.45203319,
+    "value_loss": 222624496.8369919,
     "national_gdp": 89013255584.7499,
-    "loss_as_gdp_pct": 0.02321895353255016
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Panama",
-    "iso_a3": "PAN",
-    "value_loss": 20581255.6635653,
-    "national_gdp": 76479304470.9375,
-    "loss_as_gdp_pct": 0.026910882369996284
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "British Virgin Is.",
-    "iso_a3": "VGB",
-    "value_loss": 20489838.11015906,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "U.S. Virgin Is.",
-    "iso_a3": "VIR",
-    "value_loss": 20169257.191463422,
-    "national_gdp": 4672000000.0,
-    "loss_as_gdp_pct": 0.4317049912556383
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cuba",
-    "iso_a3": "CUB",
-    "value_loss": 19143979.873801053,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Qatar",
-    "iso_a3": "QAT",
-    "value_loss": 18582235.799807254,
-    "national_gdp": 235709340659.341,
-    "loss_as_gdp_pct": 0.007883538152466871
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sri Lanka",
-    "iso_a3": "LKA",
-    "value_loss": 18222013.652108043,
-    "national_gdp": 74143020262.8076,
-    "loss_as_gdp_pct": 0.02457684295503236
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kenya",
-    "iso_a3": "KEN",
-    "value_loss": 17364849.90517014,
-    "national_gdp": 114448978152.637,
-    "loss_as_gdp_pct": 0.015172568759863617
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Palau",
-    "iso_a3": "PLW",
-    "value_loss": 16379817.07063366,
-    "national_gdp": 243826812.744141,
-    "loss_as_gdp_pct": 6.717807974556832
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Vietnam",
-    "iso_a3": "VNM",
-    "value_loss": 16139993.539992483,
-    "national_gdp": 413445230668.578,
-    "loss_as_gdp_pct": 0.0039037803178652384
+    "loss_as_gdp_pct": 0.25010263401166155
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Jamaica",
     "iso_a3": "JAM",
-    "value_loss": 15866720.775033472,
+    "value_loss": 213799962.4101952,
     "national_gdp": 18813516805.214,
-    "loss_as_gdp_pct": 0.08433681453239061
+    "loss_as_gdp_pct": 1.1364167828044909
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Bahrain",
-    "iso_a3": "BHR",
-    "value_loss": 15547735.65809152,
-    "national_gdp": 46458191489.3617,
-    "loss_as_gdp_pct": 0.03346608027488918
+    "country": "Malaysia",
+    "iso_a3": "MYS",
+    "value_loss": 213175694.32055634,
+    "national_gdp": 407830525989.553,
+    "loss_as_gdp_pct": 0.052270656739906975
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Seychelles",
-    "iso_a3": "SYC",
-    "value_loss": 12745982.160246456,
-    "national_gdp": 2018346588.73752,
-    "loss_as_gdp_pct": 0.631506116509905
+    "country": "Puerto Rico",
+    "iso_a3": "PRI",
+    "value_loss": 210814810.68922502,
+    "national_gdp": 113843700000.0,
+    "loss_as_gdp_pct": 0.1851791629130334
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Colombia",
-    "iso_a3": "COL",
-    "value_loss": 12098515.200920409,
-    "national_gdp": 345632492851.448,
-    "loss_as_gdp_pct": 0.003500398675225341
+    "country": "U.S. Virgin Is.",
+    "iso_a3": "VIR",
+    "value_loss": 183023546.13533506,
+    "national_gdp": 4672000000.0,
+    "loss_as_gdp_pct": 3.9174560388556303
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "N. Mariana Is.",
-    "iso_a3": "MNP",
-    "value_loss": 11657100.76991037,
-    "national_gdp": 1096000000.0,
-    "loss_as_gdp_pct": 1.0636040848458368
+    "country": "India",
+    "iso_a3": "IND",
+    "value_loss": 171629260.21932897,
+    "national_gdp": 3346107287730.93,
+    "loss_as_gdp_pct": 0.005129221673454308
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Kuwait",
-    "iso_a3": "KWT",
-    "value_loss": 11085127.586022764,
-    "national_gdp": 183502046693.878,
-    "loss_as_gdp_pct": 0.006040874086006904
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mozambique",
-    "iso_a3": "MOZ",
-    "value_loss": 9161724.246854767,
-    "national_gdp": 18883528581.3734,
-    "loss_as_gdp_pct": 0.04851701421889888
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Turks and Caicos Is.",
-    "iso_a3": "TCA",
-    "value_loss": 7711844.83585355,
-    "national_gdp": 1434119000.0,
-    "loss_as_gdp_pct": 0.5377409291595432
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Belize",
-    "iso_a3": "BLZ",
-    "value_loss": 7522236.841179371,
-    "national_gdp": 2846604350.0,
-    "loss_as_gdp_pct": 0.2642529806145828
+    "country": "Costa Rica",
+    "iso_a3": "CRI",
+    "value_loss": 134592908.4184377,
+    "national_gdp": 69243626028.5936,
+    "loss_as_gdp_pct": 0.19437588141738654
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Sint Maarten",
     "iso_a3": "SXM",
-    "value_loss": 5920909.009455841,
+    "value_loss": 116736000.0,
     "national_gdp": 1592564639.32961,
-    "loss_as_gdp_pct": 0.37178453315077037
+    "loss_as_gdp_pct": 7.330063541354278
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "St-Martin",
-    "iso_a3": "MAF",
-    "value_loss": 5847469.8416492175,
+    "country": "Honduras",
+    "iso_a3": "HND",
+    "value_loss": 99361387.04787931,
+    "national_gdp": 31426041806.7985,
+    "loss_as_gdp_pct": 0.31617531618755795
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "British Virgin Is.",
+    "iso_a3": "VGB",
+    "value_loss": 93068700.43766867,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Vanuatu",
-    "iso_a3": "VUT",
-    "value_loss": 5445220.913857919,
-    "national_gdp": 1055031360.57356,
-    "loss_as_gdp_pct": 0.5161193417888228
+    "country": "Cuba",
+    "iso_a3": "CUB",
+    "value_loss": 78033879.31935997,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Antigua and Barb.",
-    "iso_a3": "ATG",
-    "value_loss": 5404991.172898293,
-    "national_gdp": 1866566666.66667,
-    "loss_as_gdp_pct": 0.28956861115229116
+    "country": "Panama",
+    "iso_a3": "PAN",
+    "value_loss": 76366177.42709976,
+    "national_gdp": 76479304470.9375,
+    "loss_as_gdp_pct": 0.09985208149496087
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Taiwan",
+    "iso_a3": "TWN",
+    "value_loss": 70000993.68583748,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fiji",
+    "iso_a3": "FJI",
+    "value_loss": 68017668.8272776,
+    "national_gdp": 4977861885.60316,
+    "loss_as_gdp_pct": 1.3664032950371021
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "United Arab Emirates",
+    "iso_a3": "ARE",
+    "value_loss": 67212191.57276501,
+    "national_gdp": 511403403675.97,
+    "loss_as_gdp_pct": 0.013142695392647657
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Bahrain",
+    "iso_a3": "BHR",
+    "value_loss": 56308360.7634233,
+    "national_gdp": 46458191489.3617,
+    "loss_as_gdp_pct": 0.1212022228121324
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Saint Lucia",
     "iso_a3": "LCA",
-    "value_loss": 4667307.592235172,
+    "value_loss": 46327706.77190986,
     "national_gdp": 2342714814.81481,
-    "loss_as_gdp_pct": 0.19922645141099346
+    "loss_as_gdp_pct": 1.9775222523434652
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Papua New Guinea",
-    "iso_a3": "PNG",
-    "value_loss": 4553261.827575856,
-    "national_gdp": 31653185952.609,
-    "loss_as_gdp_pct": 0.01438484528664185
+    "country": "Colombia",
+    "iso_a3": "COL",
+    "value_loss": 43570681.14866453,
+    "national_gdp": 345632492851.448,
+    "loss_as_gdp_pct": 0.012606072070715613
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fr. Polynesia",
-    "iso_a3": "PYF",
-    "value_loss": 4040926.791966583,
-    "national_gdp": 5622688338.06317,
-    "loss_as_gdp_pct": 0.07186823364566118
+    "country": "Mauritius",
+    "iso_a3": "MUS",
+    "value_loss": 42883016.196719065,
+    "national_gdp": 12936444123.3037,
+    "loss_as_gdp_pct": 0.33148998123425305
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "New Caledonia",
-    "iso_a3": "NCL",
-    "value_loss": 3806160.6261165813,
-    "national_gdp": 9623318718.31459,
-    "loss_as_gdp_pct": 0.03955143477554056
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Trinidad and Tobago",
-    "iso_a3": "TTO",
-    "value_loss": 3089839.560413181,
-    "national_gdp": 28341164301.126,
-    "loss_as_gdp_pct": 0.010902302839726387
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "France",
-    "iso_a3": "-99",
-    "value_loss": 2776859.9624212184,
+    "country": "St-Martin",
+    "iso_a3": "MAF",
+    "value_loss": 42561493.23076352,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Myanmar",
-    "iso_a3": "MMR",
-    "value_loss": 2574412.5788417654,
-    "national_gdp": 62253049903.28,
-    "loss_as_gdp_pct": 0.004135399924729028
+    "country": "Vietnam",
+    "iso_a3": "VNM",
+    "value_loss": 41209969.28206956,
+    "national_gdp": 413445230668.578,
+    "loss_as_gdp_pct": 0.009967455475403439
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Brunei",
-    "iso_a3": "BRN",
-    "value_loss": 2542350.1968938345,
-    "national_gdp": 16681536466.7183,
-    "loss_as_gdp_pct": 0.015240503786723323
+    "country": "Guam",
+    "iso_a3": "GUM",
+    "value_loss": 40827399.267554745,
+    "national_gdp": 6910000000.0,
+    "loss_as_gdp_pct": 0.5908451413539036
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cook Is.",
-    "iso_a3": "COK",
-    "value_loss": 2447896.738540623,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Oman",
+    "iso_a3": "OMN",
+    "value_loss": 40518665.0652463,
+    "national_gdp": 109852795838.752,
+    "loss_as_gdp_pct": 0.03688450963480423
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cambodia",
-    "iso_a3": "KHM",
-    "value_loss": 2389530.343571167,
-    "national_gdp": 39994532959.6074,
-    "loss_as_gdp_pct": 0.005974642449217948
+    "country": "Saudi Arabia",
+    "iso_a3": "SAU",
+    "value_loss": 39779030.2721279,
+    "national_gdp": 1239075200000.0,
+    "loss_as_gdp_pct": 0.0032103806348579888
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Micronesia",
-    "iso_a3": "FSM",
-    "value_loss": 2250839.038402393,
-    "national_gdp": 415956900.0,
-    "loss_as_gdp_pct": 0.5411231400182069
+    "country": "Tanzania",
+    "iso_a3": "TZA",
+    "value_loss": 32668644.47420598,
+    "national_gdp": 75749121842.9149,
+    "loss_as_gdp_pct": 0.0431274233673002
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cayman Is.",
+    "iso_a3": "CYM",
+    "value_loss": 26539138.599461943,
+    "national_gdp": 6660161212.01997,
+    "loss_as_gdp_pct": 0.3984759190448011
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Qatar",
+    "iso_a3": "QAT",
+    "value_loss": 23081324.614704397,
+    "national_gdp": 235709340659.341,
+    "loss_as_gdp_pct": 0.009792282541769393
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Aruba",
+    "iso_a3": "ABW",
+    "value_loss": 21486452.333736315,
+    "national_gdp": 3324034443.26581,
+    "loss_as_gdp_pct": 0.6463968018522162
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Turks and Caicos Is.",
+    "iso_a3": "TCA",
+    "value_loss": 21356181.978909157,
+    "national_gdp": 1434119000.0,
+    "loss_as_gdp_pct": 1.4891499226290954
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Barbados",
+    "iso_a3": "BRB",
+    "value_loss": 20308855.536327872,
+    "national_gdp": 6884900000.0,
+    "loss_as_gdp_pct": 0.2949767685271808
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Netherlands",
     "iso_a3": "NLD",
-    "value_loss": 2216788.4027095437,
+    "value_loss": 18723861.49650398,
     "national_gdp": 1046540797548.64,
-    "loss_as_gdp_pct": 0.00021182054325087255
+    "loss_as_gdp_pct": 0.0017891191189451695
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Trinidad and Tobago",
+    "iso_a3": "TTO",
+    "value_loss": 18553282.39783301,
+    "national_gdp": 28341164301.126,
+    "loss_as_gdp_pct": 0.06546407974176235
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Vanuatu",
+    "iso_a3": "VUT",
+    "value_loss": 17877215.284925338,
+    "national_gdp": 1055031360.57356,
+    "loss_as_gdp_pct": 1.6944724065080417
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mozambique",
+    "iso_a3": "MOZ",
+    "value_loss": 16970380.68394979,
+    "national_gdp": 18883528581.3734,
+    "loss_as_gdp_pct": 0.08986869488305947
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Belize",
+    "iso_a3": "BLZ",
+    "value_loss": 16770842.98413797,
+    "national_gdp": 2846604350.0,
+    "loss_as_gdp_pct": 0.5891525804820037
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Sri Lanka",
+    "iso_a3": "LKA",
+    "value_loss": 16624440.196477557,
+    "national_gdp": 74143020262.8076,
+    "loss_as_gdp_pct": 0.022422124345016576
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Kenya",
+    "iso_a3": "KEN",
+    "value_loss": 16479704.778552186,
+    "national_gdp": 114448978152.637,
+    "loss_as_gdp_pct": 0.014399171617394194
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Palau",
+    "iso_a3": "PLW",
+    "value_loss": 15240738.473915404,
+    "national_gdp": 243826812.744141,
+    "loss_as_gdp_pct": 6.250640896458024
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Seychelles",
+    "iso_a3": "SYC",
+    "value_loss": 11888412.954388168,
+    "national_gdp": 2018346588.73752,
+    "loss_as_gdp_pct": 0.5890174175598055
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Kitts and Nevis",
+    "iso_a3": "KNA",
+    "value_loss": 10737389.640187707,
+    "national_gdp": 981429629.62963,
+    "loss_as_gdp_pct": 1.094055988939295
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "N. Mariana Is.",
+    "iso_a3": "MNP",
+    "value_loss": 10736681.253870506,
+    "national_gdp": 1096000000.0,
+    "loss_as_gdp_pct": 0.9796242019954842
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Kuwait",
+    "iso_a3": "KWT",
+    "value_loss": 10588608.496505171,
+    "national_gdp": 183502046693.878,
+    "loss_as_gdp_pct": 0.005770294493864318
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "France",
+    "iso_a3": "-99",
+    "value_loss": 9987365.049582137,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St-Barth\u00e9lemy",
+    "iso_a3": "BLM",
+    "value_loss": 9474000.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Haiti",
+    "iso_a3": "HTI",
+    "value_loss": 9006972.952329975,
+    "national_gdp": 20253551920.5516,
+    "loss_as_gdp_pct": 0.04447107839484913
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Dominica",
+    "iso_a3": "DMA",
+    "value_loss": 8231382.870177131,
+    "national_gdp": 623062962.962963,
+    "loss_as_gdp_pct": 1.32111573941628
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Papua New Guinea",
+    "iso_a3": "PNG",
+    "value_loss": 7478816.53094051,
+    "national_gdp": 31653185952.609,
+    "loss_as_gdp_pct": 0.02362737369356045
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cook Is.",
+    "iso_a3": "COK",
+    "value_loss": 6377099.696753425,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fr. Polynesia",
+    "iso_a3": "PYF",
+    "value_loss": 6256170.867582118,
+    "national_gdp": 5622688338.06317,
+    "loss_as_gdp_pct": 0.11126654175780196
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cura\u00e7ao",
+    "iso_a3": "CUW",
+    "value_loss": 5493614.347248241,
+    "national_gdp": 3075180834.72417,
+    "loss_as_gdp_pct": 0.17864361943257864
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Antigua and Barb.",
+    "iso_a3": "ATG",
+    "value_loss": 5285218.695944077,
+    "national_gdp": 1866566666.66667,
+    "loss_as_gdp_pct": 0.2831518847051128
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Brunei",
+    "iso_a3": "BRN",
+    "value_loss": 4840122.275008829,
+    "national_gdp": 16681536466.7183,
+    "loss_as_gdp_pct": 0.029014846951690952
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cambodia",
+    "iso_a3": "KHM",
+    "value_loss": 3700982.66737759,
+    "national_gdp": 39994532959.6074,
+    "loss_as_gdp_pct": 0.00925372143016499
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "New Caledonia",
+    "iso_a3": "NCL",
+    "value_loss": 3605174.619063477,
+    "national_gdp": 9623318718.31459,
+    "loss_as_gdp_pct": 0.03746290364676688
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Vin. and Gren.",
+    "iso_a3": "VCT",
+    "value_loss": 3279651.5011801277,
+    "national_gdp": 989188888.888889,
+    "loss_as_gdp_pct": 0.33154956935110863
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "South Africa",
+    "iso_a3": "ZAF",
+    "value_loss": 2676000.0,
+    "national_gdp": 407596043067.885,
+    "loss_as_gdp_pct": 0.0006565323794260468
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Myanmar",
+    "iso_a3": "MMR",
+    "value_loss": 2524882.084967688,
+    "national_gdp": 62253049903.28,
+    "loss_as_gdp_pct": 0.004055836764448479
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Iran",
+    "iso_a3": "IRN",
+    "value_loss": 2494848.230527387,
+    "national_gdp": 422662261525.665,
+    "loss_as_gdp_pct": 0.00059026992888408
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Micronesia",
+    "iso_a3": "FSM",
+    "value_loss": 2149424.165439183,
+    "national_gdp": 415956900.0,
+    "loss_as_gdp_pct": 0.5167420387639159
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Madagascar",
     "iso_a3": "MDG",
-    "value_loss": 2174444.8964679735,
+    "value_loss": 2110447.7344841985,
     "national_gdp": 15325603272.6097,
-    "loss_as_gdp_pct": 0.014188315185962015
+    "loss_as_gdp_pct": 0.013770731872304454
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Anguilla",
     "iso_a3": "AIA",
-    "value_loss": 2141163.1726499177,
+    "value_loss": 2065120.6467768825,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -2632,169 +2704,97 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Sudan",
     "iso_a3": "SDN",
-    "value_loss": 2059816.5683846816,
+    "value_loss": 2022326.663923532,
     "national_gdp": 51666875363.0963,
-    "loss_as_gdp_pct": 0.003986725641736661
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cura\u00e7ao",
-    "iso_a3": "CUW",
-    "value_loss": 1997448.3028746615,
-    "national_gdp": 3075180834.72417,
-    "loss_as_gdp_pct": 0.06495384857761782
+    "loss_as_gdp_pct": 0.003914164829421838
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Singapore",
     "iso_a3": "SGP",
-    "value_loss": 1963719.0702186862,
+    "value_loss": 1851028.4179541436,
     "national_gdp": 509017841146.557,
-    "loss_as_gdp_pct": 0.0003857859020806483
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Vin. and Gren.",
-    "iso_a3": "VCT",
-    "value_loss": 1744348.6988920418,
-    "national_gdp": 989188888.888889,
-    "loss_as_gdp_pct": 0.17634131544394818
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Iran",
-    "iso_a3": "IRN",
-    "value_loss": 1498272.8214481112,
-    "national_gdp": 422662261525.665,
-    "loss_as_gdp_pct": 0.0003544846459771126
+    "loss_as_gdp_pct": 0.0003636470607365594
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Nicaragua",
     "iso_a3": "NIC",
-    "value_loss": 1274540.53627642,
+    "value_loss": 1216441.3900005422,
     "national_gdp": 15634572502.2294,
-    "loss_as_gdp_pct": 0.008152065149812556
+    "loss_as_gdp_pct": 0.007780458274935784
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Solomon Is.",
     "iso_a3": "SLB",
-    "value_loss": 1107476.789482244,
+    "value_loss": 1109141.0829657535,
     "national_gdp": 1466670929.62333,
-    "loss_as_gdp_pct": 0.07550956162788786
+    "loss_as_gdp_pct": 0.07562303585376187
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Grenada",
     "iso_a3": "GRD",
-    "value_loss": 958957.6346383974,
+    "value_loss": 1030862.7405807285,
     "national_gdp": 1224007407.40741,
-    "loss_as_gdp_pct": 0.07834573784725546
+    "loss_as_gdp_pct": 0.08422030245423234
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Jordan",
     "iso_a3": "JOR",
-    "value_loss": 923876.7947459705,
+    "value_loss": 883421.8222681303,
     "national_gdp": 48764963380.2817,
-    "loss_as_gdp_pct": 0.00189455037121907
+    "loss_as_gdp_pct": 0.0018115912758489739
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Tonga",
     "iso_a3": "TON",
-    "value_loss": 832079.7157802368,
+    "value_loss": 819932.7520345569,
     "national_gdp": 556514555.400882,
-    "loss_as_gdp_pct": 0.14951625392454523
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Kitts and Nevis",
-    "iso_a3": "KNA",
-    "value_loss": 779858.3888267447,
-    "national_gdp": 981429629.62963,
-    "loss_as_gdp_pct": 0.07946146776932404
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Haiti",
-    "iso_a3": "HTI",
-    "value_loss": 688834.8591685145,
-    "national_gdp": 20253551920.5516,
-    "loss_as_gdp_pct": 0.0034010570682643706
+    "loss_as_gdp_pct": 0.14733356820180976
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Timor-Leste",
     "iso_a3": "TLS",
-    "value_loss": 562371.6471417852,
+    "value_loss": 535491.6597143634,
     "national_gdp": 3208599889.00965,
-    "loss_as_gdp_pct": 0.017527010739733086
+    "loss_as_gdp_pct": 0.01668926255182429
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Yemen",
     "iso_a3": "YEM",
-    "value_loss": 538861.576730997,
+    "value_loss": 496209.16223448806,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Dominica",
-    "iso_a3": "DMA",
-    "value_loss": 530755.0401063365,
-    "national_gdp": 623062962.962963,
-    "loss_as_gdp_pct": 0.08518481624751725
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St-Barth\u00e9lemy",
-    "iso_a3": "BLM",
-    "value_loss": 520032.1776824094,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "South Africa",
-    "iso_a3": "ZAF",
-    "value_loss": 244081.47278738747,
-    "national_gdp": 407596043067.885,
-    "loss_as_gdp_pct": 5.988318015804088e-05
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Israel",
     "iso_a3": "ISR",
-    "value_loss": 230969.19868649263,
+    "value_loss": 220855.45556703256,
     "national_gdp": 525181008025.57,
-    "loss_as_gdp_pct": 4.397897013732972e-05
+    "loss_as_gdp_pct": 4.2053206835742915e-05
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
-    "value_loss": 164589.58169227926,
+    "value_loss": 151221.48558041872,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -2803,25 +2803,25 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Kiribati",
     "iso_a3": "KIR",
-    "value_loss": 152471.6891296026,
+    "value_loss": 136465.5143164068,
     "national_gdp": 270040453.254018,
-    "loss_as_gdp_pct": 0.056462536369014896
+    "loss_as_gdp_pct": 0.05053521154774476
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Comoros",
     "iso_a3": "COM",
-    "value_loss": 123252.26948195852,
+    "value_loss": 121407.915544251,
     "national_gdp": 1222485532.31976,
-    "loss_as_gdp_pct": 0.010082104550397245
+    "loss_as_gdp_pct": 0.009931235367167918
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Montserrat",
     "iso_a3": "MSR",
-    "value_loss": 88363.17405093687,
+    "value_loss": 87613.64198208188,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -2830,25 +2830,16 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Eritrea",
     "iso_a3": "ERI",
-    "value_loss": 40579.80371905738,
+    "value_loss": 36672.29730530664,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Marshall Is.",
-    "iso_a3": "MHL",
-    "value_loss": 16961.70473947435,
-    "national_gdp": 258723510.742188,
-    "loss_as_gdp_pct": 0.006555919363809304
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
     "country": "Niue",
     "iso_a3": "NIU",
-    "value_loss": 16252.651392973876,
+    "value_loss": 16099.468879428681,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -2857,27 +2848,18 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Djibouti",
     "iso_a3": "DJI",
-    "value_loss": 13061.282729494818,
+    "value_loss": 16052.436564986461,
     "national_gdp": 3562814908.76149,
-    "loss_as_gdp_pct": 0.00036660009189293523
+    "loss_as_gdp_pct": 0.0004505548835981106
   },
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "USNB Guantanamo Bay",
-    "iso_a3": "-99",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tuvalu",
-    "iso_a3": "TUV",
-    "value_loss": 0.0,
-    "national_gdp": 59065982.0873657,
-    "loss_as_gdp_pct": 0.0
+    "country": "Marshall Is.",
+    "iso_a3": "MHL",
+    "value_loss": 15792.068457766673,
+    "national_gdp": 258723510.742188,
+    "loss_as_gdp_pct": 0.006103839737047749
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -2891,8 +2873,17 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Wallis and Futuna Is.",
-    "iso_a3": "WLF",
+    "country": "USNB Guantanamo Bay",
+    "iso_a3": "-99",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Scarborough Reef",
+    "iso_a3": "-99",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -2936,8 +2927,8 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Scarborough Reef",
-    "iso_a3": "-99",
+    "country": "Wallis and Futuna Is.",
+    "iso_a3": "WLF",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -2945,19 +2936,10 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Guatemala",
-    "iso_a3": "GTM",
+    "country": "Tuvalu",
+    "iso_a3": "TUV",
     "value_loss": 0.0,
-    "national_gdp": 95641446500.6523,
-    "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Ecuador",
-    "iso_a3": "ECU",
-    "value_loss": 0.0,
-    "national_gdp": 116133121000.0,
+    "national_gdp": 59065982.0873657,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -2972,10 +2954,28 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
+    "country": "Ecuador",
+    "iso_a3": "ECU",
+    "value_loss": 0.0,
+    "national_gdp": 116133121000.0,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Samoa",
     "iso_a3": "WSM",
     "value_loss": 0.0,
     "national_gdp": 889554711.842341,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Guatemala",
+    "iso_a3": "GTM",
+    "value_loss": 0.0,
+    "national_gdp": 95641446500.6523,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -2999,8 +2999,26 @@
   {
     "scenario": "y_future_rcp45_2050",
     "model": "Tipping Point (threshold=10%)",
+    "country": "New Zealand",
+    "iso_a3": "NZL",
+    "value_loss": 0.0,
+    "national_gdp": 249509991440.438,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Spratly Is.",
     "iso_a3": "-99",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Pitcairn Is.",
+    "iso_a3": "PCN",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -3022,24 +3040,6 @@
     "value_loss": 0.0,
     "national_gdp": 10203000000.0,
     "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "New Zealand",
-    "iso_a3": "NZL",
-    "value_loss": 0.0,
-    "national_gdp": 249509991440.438,
-    "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp45_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Pitcairn Is.",
-    "iso_a3": "PCN",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2050",
@@ -5087,270 +5087,180 @@
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Egypt",
-    "iso_a3": "EGY",
-    "value_loss": 1477096579.4713194,
-    "national_gdp": 476747720364.742,
-    "loss_as_gdp_pct": 0.30982771733889947
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Thailand",
-    "iso_a3": "THA",
-    "value_loss": 630316221.3084989,
-    "national_gdp": 495644697587.661,
-    "loss_as_gdp_pct": 0.12717098041728156
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Indonesia",
-    "iso_a3": "IDN",
-    "value_loss": 598887505.7405995,
-    "national_gdp": 1319101183380.15,
-    "loss_as_gdp_pct": 0.04540118023440564
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "China",
-    "iso_a3": "CHN",
-    "value_loss": 410304145.156454,
-    "national_gdp": 18316765021690.2,
-    "loss_as_gdp_pct": 0.002240046998859151
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Australia",
-    "iso_a3": "AUS",
-    "value_loss": 391770209.0716421,
-    "national_gdp": 1695627535475.8,
-    "loss_as_gdp_pct": 0.023104732665343852
+    "country": "Mexico",
+    "iso_a3": "MEX",
+    "value_loss": 1819630013.8425019,
+    "national_gdp": 1466934724293.06,
+    "loss_as_gdp_pct": 0.1240430118469935
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "United States of America",
     "iso_a3": "USA",
-    "value_loss": 383261446.8449056,
+    "value_loss": 1439247962.6385763,
     "national_gdp": 25604848907611.0,
-    "loss_as_gdp_pct": 0.0014968315112024809
+    "loss_as_gdp_pct": 0.005620997678337255
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Philippines",
-    "iso_a3": "PHL",
-    "value_loss": 283513204.2001176,
-    "national_gdp": 404353369604.631,
-    "loss_as_gdp_pct": 0.07011520751696254
+    "country": "Egypt",
+    "iso_a3": "EGY",
+    "value_loss": 1310013050.00304,
+    "national_gdp": 476747720364.742,
+    "loss_as_gdp_pct": 0.27478118804654117
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Malaysia",
-    "iso_a3": "MYS",
-    "value_loss": 235241122.62107298,
-    "national_gdp": 407830525989.553,
-    "loss_as_gdp_pct": 0.05768109732597577
+    "country": "Indonesia",
+    "iso_a3": "IDN",
+    "value_loss": 854321275.386459,
+    "national_gdp": 1319101183380.15,
+    "loss_as_gdp_pct": 0.06476540891255143
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Thailand",
+    "iso_a3": "THA",
+    "value_loss": 585991682.7878389,
+    "national_gdp": 495644697587.661,
+    "loss_as_gdp_pct": 0.11822817547325802
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Japan",
     "iso_a3": "JPN",
-    "value_loss": 228377721.13716093,
+    "value_loss": 522859254.0716686,
     "national_gdp": 4262463317796.53,
-    "loss_as_gdp_pct": 0.005357881208822231
+    "loss_as_gdp_pct": 0.012266598327981845
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Maldives",
-    "iso_a3": "MDV",
-    "value_loss": 216725573.15028733,
-    "national_gdp": 6177123352.26211,
-    "loss_as_gdp_pct": 3.5085194319605217
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mexico",
-    "iso_a3": "MEX",
-    "value_loss": 210969973.7246717,
-    "national_gdp": 1466934724293.06,
-    "loss_as_gdp_pct": 0.014381687898644678
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "India",
-    "iso_a3": "IND",
-    "value_loss": 114694307.11158368,
-    "national_gdp": 3346107287730.93,
-    "loss_as_gdp_pct": 0.00342769365262524
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "United Arab Emirates",
-    "iso_a3": "ARE",
-    "value_loss": 109072774.87596902,
-    "national_gdp": 511403403675.97,
-    "loss_as_gdp_pct": 0.021328128458268644
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Brazil",
-    "iso_a3": "BRA",
-    "value_loss": 90713374.98133887,
-    "national_gdp": 1951923832083.87,
-    "loss_as_gdp_pct": 0.004647382930126605
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Honduras",
-    "iso_a3": "HND",
-    "value_loss": 72648970.79348877,
-    "national_gdp": 31426041806.7985,
-    "loss_as_gdp_pct": 0.23117442292007762
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mauritius",
-    "iso_a3": "MUS",
-    "value_loss": 71883531.85173653,
-    "national_gdp": 12936444123.3037,
-    "loss_as_gdp_pct": 0.5556668522399103
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Saudi Arabia",
-    "iso_a3": "SAU",
-    "value_loss": 69180756.81251259,
-    "national_gdp": 1239075200000.0,
-    "loss_as_gdp_pct": 0.005583257320662426
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Oman",
-    "iso_a3": "OMN",
-    "value_loss": 67685066.39993179,
-    "national_gdp": 109852795838.752,
-    "loss_as_gdp_pct": 0.06161433205512919
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Puerto Rico",
-    "iso_a3": "PRI",
-    "value_loss": 63373755.75143096,
-    "national_gdp": 113843700000.0,
-    "loss_as_gdp_pct": 0.05566733666547289
+    "country": "Australia",
+    "iso_a3": "AUS",
+    "value_loss": 465856367.61333257,
+    "national_gdp": 1695627535475.8,
+    "loss_as_gdp_pct": 0.02747397986094932
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Bahamas",
     "iso_a3": "BHS",
-    "value_loss": 60279592.16106599,
+    "value_loss": 417030644.6526771,
     "national_gdp": 13896800000.0,
-    "loss_as_gdp_pct": 0.4337659904515139
+    "loss_as_gdp_pct": 3.0009113224100306
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Guam",
-    "iso_a3": "GUM",
-    "value_loss": 55251244.15658017,
-    "national_gdp": 6910000000.0,
-    "loss_as_gdp_pct": 0.7995838517594815
+    "country": "Maldives",
+    "iso_a3": "MDV",
+    "value_loss": 392428560.19771254,
+    "national_gdp": 6177123352.26211,
+    "loss_as_gdp_pct": 6.352933846690988
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Philippines",
+    "iso_a3": "PHL",
+    "value_loss": 388589912.3665579,
+    "national_gdp": 404353369604.631,
+    "loss_as_gdp_pct": 0.09610156402221001
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
-    "value_loss": 52586940.14644427,
+    "value_loss": 388145470.43922126,
     "national_gdp": 113478087134.8,
-    "loss_as_gdp_pct": 0.04634105268621292
+    "loss_as_gdp_pct": 0.3420444248219882
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Taiwan",
-    "iso_a3": "TWN",
-    "value_loss": 51859972.61824829,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "China",
+    "iso_a3": "CHN",
+    "value_loss": 373442514.7897275,
+    "national_gdp": 18316765021690.2,
+    "loss_as_gdp_pct": 0.00203880168985903
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cayman Is.",
-    "iso_a3": "CYM",
-    "value_loss": 44702697.2473843,
-    "national_gdp": 6660161212.01997,
-    "loss_as_gdp_pct": 0.6711954234186825
+    "country": "Brazil",
+    "iso_a3": "BRA",
+    "value_loss": 328303268.03041303,
+    "national_gdp": 1951923832083.87,
+    "loss_as_gdp_pct": 0.016819471263892355
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Aruba",
-    "iso_a3": "ABW",
-    "value_loss": 41092836.559663415,
-    "national_gdp": 3324034443.26581,
-    "loss_as_gdp_pct": 1.2362337773880094
+    "country": "Malaysia",
+    "iso_a3": "MYS",
+    "value_loss": 281842675.93368906,
+    "national_gdp": 407830525989.553,
+    "loss_as_gdp_pct": 0.06910779305934268
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fiji",
-    "iso_a3": "FJI",
-    "value_loss": 35348499.460521296,
-    "national_gdp": 4977861885.60316,
-    "loss_as_gdp_pct": 0.7101141066761071
+    "country": "Puerto Rico",
+    "iso_a3": "PRI",
+    "value_loss": 256576101.00994942,
+    "national_gdp": 113843700000.0,
+    "loss_as_gdp_pct": 0.22537575729702164
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Tanzania",
-    "iso_a3": "TZA",
-    "value_loss": 34550683.48738445,
-    "national_gdp": 75749121842.9149,
-    "loss_as_gdp_pct": 0.04561199212188109
+    "country": "Jamaica",
+    "iso_a3": "JAM",
+    "value_loss": 233625927.51805285,
+    "national_gdp": 18813516805.214,
+    "loss_as_gdp_pct": 1.2417982769351528
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Panama",
-    "iso_a3": "PAN",
-    "value_loss": 34277984.07647892,
-    "national_gdp": 76479304470.9375,
-    "loss_as_gdp_pct": 0.0448199474532417
+    "country": "Venezuela",
+    "iso_a3": "VEN",
+    "value_loss": 225936417.75170192,
+    "national_gdp": 89013255584.7499,
+    "loss_as_gdp_pct": 0.253823339307691
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "India",
+    "iso_a3": "IND",
+    "value_loss": 201133824.75356975,
+    "national_gdp": 3346107287730.93,
+    "loss_as_gdp_pct": 0.006010979549013896
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
-    "value_loss": 33804440.98479499,
+    "value_loss": 191843564.61267266,
     "national_gdp": 4672000000.0,
-    "loss_as_gdp_pct": 0.7235539594348243
+    "loss_as_gdp_pct": 4.106240680921932
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "British Virgin Is.",
-    "iso_a3": "VGB",
-    "value_loss": 30892568.546691205,
+    "country": "Cuba",
+    "iso_a3": "CUB",
+    "value_loss": 187501686.88014302,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -5359,196 +5269,331 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Costa Rica",
     "iso_a3": "CRI",
-    "value_loss": 30620669.32984499,
+    "value_loss": 135717278.31641674,
     "national_gdp": 69243626028.5936,
-    "loss_as_gdp_pct": 0.04422164332815331
+    "loss_as_gdp_pct": 0.1959996697174313
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cuba",
-    "iso_a3": "CUB",
-    "value_loss": 30186959.975593917,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Jamaica",
-    "iso_a3": "JAM",
-    "value_loss": 29196354.896263476,
-    "national_gdp": 18813516805.214,
-    "loss_as_gdp_pct": 0.15518818304173712
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Barbados",
-    "iso_a3": "BRB",
-    "value_loss": 29033121.303000104,
-    "national_gdp": 6884900000.0,
-    "loss_as_gdp_pct": 0.4216927087248922
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Qatar",
-    "iso_a3": "QAT",
-    "value_loss": 25895575.80072252,
-    "national_gdp": 235709340659.341,
-    "loss_as_gdp_pct": 0.010986232335250605
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Bahrain",
-    "iso_a3": "BHR",
-    "value_loss": 24067735.87788468,
-    "national_gdp": 46458191489.3617,
-    "loss_as_gdp_pct": 0.05180515019271868
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Vietnam",
-    "iso_a3": "VNM",
-    "value_loss": 24027905.21092024,
-    "national_gdp": 413445230668.578,
-    "loss_as_gdp_pct": 0.005811629552979717
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Venezuela",
-    "iso_a3": "VEN",
-    "value_loss": 23927099.317294434,
-    "national_gdp": 89013255584.7499,
-    "loss_as_gdp_pct": 0.02688037771465773
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sri Lanka",
-    "iso_a3": "LKA",
-    "value_loss": 22889104.918899037,
-    "national_gdp": 74143020262.8076,
-    "loss_as_gdp_pct": 0.030871557211678505
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kenya",
-    "iso_a3": "KEN",
-    "value_loss": 21957699.293802343,
-    "national_gdp": 114448978152.637,
-    "loss_as_gdp_pct": 0.019185579153461772
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Palau",
-    "iso_a3": "PLW",
-    "value_loss": 20991100.7805457,
-    "national_gdp": 243826812.744141,
-    "loss_as_gdp_pct": 8.609020699693373
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Colombia",
-    "iso_a3": "COL",
-    "value_loss": 19018463.988085065,
-    "national_gdp": 345632492851.448,
-    "loss_as_gdp_pct": 0.005502510435631743
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kuwait",
-    "iso_a3": "KWT",
-    "value_loss": 18826331.586611394,
-    "national_gdp": 183502046693.878,
-    "loss_as_gdp_pct": 0.010259466815657856
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Seychelles",
-    "iso_a3": "SYC",
-    "value_loss": 18039461.839505464,
-    "national_gdp": 2018346588.73752,
-    "loss_as_gdp_pct": 0.8937742377927859
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "N. Mariana Is.",
-    "iso_a3": "MNP",
-    "value_loss": 16383101.351045521,
-    "national_gdp": 1096000000.0,
-    "loss_as_gdp_pct": 1.4948085174311607
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mozambique",
-    "iso_a3": "MOZ",
-    "value_loss": 15444068.177826455,
-    "national_gdp": 18883528581.3734,
-    "loss_as_gdp_pct": 0.08178592317253879
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Turks and Caicos Is.",
-    "iso_a3": "TCA",
-    "value_loss": 11806212.116651082,
-    "national_gdp": 1434119000.0,
-    "loss_as_gdp_pct": 0.8232379681638052
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Belize",
-    "iso_a3": "BLZ",
-    "value_loss": 11697160.403092138,
-    "national_gdp": 2846604350.0,
-    "loss_as_gdp_pct": 0.4109162695227434
+    "country": "Honduras",
+    "iso_a3": "HND",
+    "value_loss": 120212044.49721229,
+    "national_gdp": 31426041806.7985,
+    "loss_as_gdp_pct": 0.3825236574057075
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Sint Maarten",
     "iso_a3": "SXM",
-    "value_loss": 9144773.52268045,
+    "value_loss": 116736000.0,
     "national_gdp": 1592564639.32961,
-    "loss_as_gdp_pct": 0.5742167882447736
+    "loss_as_gdp_pct": 7.330063541354278
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Vanuatu",
-    "iso_a3": "VUT",
-    "value_loss": 8372846.370030586,
-    "national_gdp": 1055031360.57356,
-    "loss_as_gdp_pct": 0.7936111364006042
+    "country": "Vietnam",
+    "iso_a3": "VNM",
+    "value_loss": 102505265.74601492,
+    "national_gdp": 413445230668.578,
+    "loss_as_gdp_pct": 0.024792949136274885
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Antigua and Barb.",
-    "iso_a3": "ATG",
-    "value_loss": 8298569.621277924,
-    "national_gdp": 1866566666.66667,
-    "loss_as_gdp_pct": 0.44459004703526483
+    "country": "British Virgin Is.",
+    "iso_a3": "VGB",
+    "value_loss": 98331517.04104836,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "United Arab Emirates",
+    "iso_a3": "ARE",
+    "value_loss": 98093494.52735361,
+    "national_gdp": 511403403675.97,
+    "loss_as_gdp_pct": 0.019181236147874092
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Taiwan",
+    "iso_a3": "TWN",
+    "value_loss": 85873658.76441176,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Panama",
+    "iso_a3": "PAN",
+    "value_loss": 84424367.28669769,
+    "national_gdp": 76479304470.9375,
+    "loss_as_gdp_pct": 0.11038851342951131
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fiji",
+    "iso_a3": "FJI",
+    "value_loss": 78904430.20301688,
+    "national_gdp": 4977861885.60316,
+    "loss_as_gdp_pct": 1.5851068594575146
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mauritius",
+    "iso_a3": "MUS",
+    "value_loss": 65311133.79368959,
+    "national_gdp": 12936444123.3037,
+    "loss_as_gdp_pct": 0.5048615614242725
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Tanzania",
+    "iso_a3": "TZA",
+    "value_loss": 62757404.497622676,
+    "national_gdp": 75749121842.9149,
+    "loss_as_gdp_pct": 0.08284901919756396
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Saudi Arabia",
+    "iso_a3": "SAU",
+    "value_loss": 61807639.381122015,
+    "national_gdp": 1239075200000.0,
+    "loss_as_gdp_pct": 0.0049882072840390975
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Bahrain",
+    "iso_a3": "BHR",
+    "value_loss": 61794038.27701452,
+    "national_gdp": 46458191489.3617,
+    "loss_as_gdp_pct": 0.1330099952150839
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Oman",
+    "iso_a3": "OMN",
+    "value_loss": 58488760.09335852,
+    "national_gdp": 109852795838.752,
+    "loss_as_gdp_pct": 0.05324285071379663
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Colombia",
+    "iso_a3": "COL",
+    "value_loss": 52652003.54444852,
+    "national_gdp": 345632492851.448,
+    "loss_as_gdp_pct": 0.01523352249381201
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Guam",
+    "iso_a3": "GUM",
+    "value_loss": 51489198.10076598,
+    "national_gdp": 6910000000.0,
+    "loss_as_gdp_pct": 0.7451403487809838
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Saint Lucia",
+    "iso_a3": "LCA",
+    "value_loss": 47004882.64674471,
+    "national_gdp": 2342714814.81481,
+    "loss_as_gdp_pct": 2.0064278566685214
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Barbados",
+    "iso_a3": "BRB",
+    "value_loss": 44743696.61412069,
+    "national_gdp": 6884900000.0,
+    "loss_as_gdp_pct": 0.6498815758271099
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "St-Martin",
     "iso_a3": "MAF",
-    "value_loss": 7224365.489085631,
+    "value_loss": 43058411.82932391,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cayman Is.",
+    "iso_a3": "CYM",
+    "value_loss": 42205369.22279774,
+    "national_gdp": 6660161212.01997,
+    "loss_as_gdp_pct": 0.6336989132729598
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Belize",
+    "iso_a3": "BLZ",
+    "value_loss": 38611430.426434554,
+    "national_gdp": 2846604350.0,
+    "loss_as_gdp_pct": 1.3564031273413375
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Aruba",
+    "iso_a3": "ABW",
+    "value_loss": 38119886.80993272,
+    "national_gdp": 3324034443.26581,
+    "loss_as_gdp_pct": 1.1467957826718713
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Qatar",
+    "iso_a3": "QAT",
+    "value_loss": 28934178.235385157,
+    "national_gdp": 235709340659.341,
+    "loss_as_gdp_pct": 0.012275363443149369
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Turks and Caicos Is.",
+    "iso_a3": "TCA",
+    "value_loss": 24598981.616103698,
+    "national_gdp": 1434119000.0,
+    "loss_as_gdp_pct": 1.7152678136266026
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mozambique",
+    "iso_a3": "MOZ",
+    "value_loss": 22085142.82863275,
+    "national_gdp": 18883528581.3734,
+    "loss_as_gdp_pct": 0.11695453385982851
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Vanuatu",
+    "iso_a3": "VUT",
+    "value_loss": 20473704.15799494,
+    "national_gdp": 1055031360.57356,
+    "loss_as_gdp_pct": 1.9405777802533342
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Sri Lanka",
+    "iso_a3": "LKA",
+    "value_loss": 20316461.434737585,
+    "national_gdp": 74143020262.8076,
+    "loss_as_gdp_pct": 0.027401718142481633
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Kenya",
+    "iso_a3": "KEN",
+    "value_loss": 20144622.045340933,
+    "national_gdp": 114448978152.637,
+    "loss_as_gdp_pct": 0.017601399654678163
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Trinidad and Tobago",
+    "iso_a3": "TTO",
+    "value_loss": 19985192.05509554,
+    "national_gdp": 28341164301.126,
+    "loss_as_gdp_pct": 0.07051648211326846
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Palau",
+    "iso_a3": "PLW",
+    "value_loss": 19097429.159803808,
+    "national_gdp": 243826812.744141,
+    "loss_as_gdp_pct": 7.832374522257173
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Netherlands",
+    "iso_a3": "NLD",
+    "value_loss": 18974544.195450563,
+    "national_gdp": 1046540797548.64,
+    "loss_as_gdp_pct": 0.0018130725758513666
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Kuwait",
+    "iso_a3": "KWT",
+    "value_loss": 17329492.456926607,
+    "national_gdp": 183502046693.878,
+    "loss_as_gdp_pct": 0.009443759766797606
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Seychelles",
+    "iso_a3": "SYC",
+    "value_loss": 16243914.419114292,
+    "national_gdp": 2018346588.73752,
+    "loss_as_gdp_pct": 0.8048129349912541
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "N. Mariana Is.",
+    "iso_a3": "MNP",
+    "value_loss": 14590481.27340872,
+    "national_gdp": 1096000000.0,
+    "loss_as_gdp_pct": 1.3312482913694088
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "France",
+    "iso_a3": "-99",
+    "value_loss": 12137718.755839897,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Kitts and Nevis",
+    "iso_a3": "KNA",
+    "value_loss": 10957659.448291237,
+    "national_gdp": 981429629.62963,
+    "loss_as_gdp_pct": 1.116499758869764
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St-Barth\u00e9lemy",
+    "iso_a3": "BLM",
+    "value_loss": 9474000.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -5557,259 +5602,223 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Papua New Guinea",
     "iso_a3": "PNG",
-    "value_loss": 7023043.729092581,
+    "value_loss": 9442818.085673958,
     "national_gdp": 31653185952.609,
-    "loss_as_gdp_pct": 0.02218747818815916
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Saint Lucia",
-    "iso_a3": "LCA",
-    "value_loss": 6263873.845422099,
-    "national_gdp": 2342714814.81481,
-    "loss_as_gdp_pct": 0.2673767120867956
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Fr. Polynesia",
-    "iso_a3": "PYF",
-    "value_loss": 5983313.5552196065,
-    "national_gdp": 5622688338.06317,
-    "loss_as_gdp_pct": 0.10641375078030128
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "New Caledonia",
-    "iso_a3": "NCL",
-    "value_loss": 5665484.984356659,
-    "national_gdp": 9623318718.31459,
-    "loss_as_gdp_pct": 0.05887246541647227
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "France",
-    "iso_a3": "-99",
-    "value_loss": 5543519.757844416,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Trinidad and Tobago",
-    "iso_a3": "TTO",
-    "value_loss": 5164033.010966023,
-    "national_gdp": 28341164301.126,
-    "loss_as_gdp_pct": 0.018220962823185267
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Madagascar",
-    "iso_a3": "MDG",
-    "value_loss": 4537127.205704528,
-    "national_gdp": 15325603272.6097,
-    "loss_as_gdp_pct": 0.029604884877931004
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Brunei",
-    "iso_a3": "BRN",
-    "value_loss": 4511007.640542597,
-    "national_gdp": 16681536466.7183,
-    "loss_as_gdp_pct": 0.027041919367215405
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cook Is.",
-    "iso_a3": "COK",
-    "value_loss": 3859404.9102584394,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Myanmar",
-    "iso_a3": "MMR",
-    "value_loss": 3844305.4608915225,
-    "national_gdp": 62253049903.28,
-    "loss_as_gdp_pct": 0.006175288547090081
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cura\u00e7ao",
-    "iso_a3": "CUW",
-    "value_loss": 3714347.050882324,
-    "national_gdp": 3075180834.72417,
-    "loss_as_gdp_pct": 0.12078467090262951
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Vin. and Gren.",
-    "iso_a3": "VCT",
-    "value_loss": 3515993.8995949314,
-    "national_gdp": 989188888.888889,
-    "loss_as_gdp_pct": 0.3554421141491276
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cambodia",
-    "iso_a3": "KHM",
-    "value_loss": 3499123.5377162574,
-    "national_gdp": 39994532959.6074,
-    "loss_as_gdp_pct": 0.008749004623332415
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Micronesia",
-    "iso_a3": "FSM",
-    "value_loss": 3295846.1526486417,
-    "national_gdp": 415956900.0,
-    "loss_as_gdp_pct": 0.7923528020928711
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Singapore",
-    "iso_a3": "SGP",
-    "value_loss": 3187635.393179786,
-    "national_gdp": 509017841146.557,
-    "loss_as_gdp_pct": 0.0006262325473699847
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sudan",
-    "iso_a3": "SDN",
-    "value_loss": 2884316.6530477125,
-    "national_gdp": 51666875363.0963,
-    "loss_as_gdp_pct": 0.0055825258113206344
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Anguilla",
-    "iso_a3": "AIA",
-    "value_loss": 2753133.5671631927,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Netherlands",
-    "iso_a3": "NLD",
-    "value_loss": 2546952.7338270675,
-    "national_gdp": 1046540797548.64,
-    "loss_as_gdp_pct": 0.00024336869998693893
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Iran",
-    "iso_a3": "IRN",
-    "value_loss": 2380244.037896591,
-    "national_gdp": 422662261525.665,
-    "loss_as_gdp_pct": 0.0005631550896701141
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Solomon Is.",
-    "iso_a3": "SLB",
-    "value_loss": 2324544.762204609,
-    "national_gdp": 1466670929.62333,
-    "loss_as_gdp_pct": 0.15849122766765397
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Jordan",
-    "iso_a3": "JOR",
-    "value_loss": 2208714.8923725067,
-    "national_gdp": 48764963380.2817,
-    "loss_as_gdp_pct": 0.004529306984501108
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Grenada",
-    "iso_a3": "GRD",
-    "value_loss": 2192436.0238494985,
-    "national_gdp": 1224007407.40741,
-    "loss_as_gdp_pct": 0.17911950618773895
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tonga",
-    "iso_a3": "TON",
-    "value_loss": 1989606.1597160527,
-    "national_gdp": 556514555.400882,
-    "loss_as_gdp_pct": 0.3575119716829062
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Nicaragua",
-    "iso_a3": "NIC",
-    "value_loss": 1725262.167249505,
-    "national_gdp": 15634572502.2294,
-    "loss_as_gdp_pct": 0.011034917437003746
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Kitts and Nevis",
-    "iso_a3": "KNA",
-    "value_loss": 1590664.1781654633,
-    "national_gdp": 981429629.62963,
-    "loss_as_gdp_pct": 0.16207623350089248
+    "loss_as_gdp_pct": 0.029832125271091827
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Haiti",
     "iso_a3": "HTI",
-    "value_loss": 1218087.0997967701,
+    "value_loss": 9393502.847878106,
     "national_gdp": 20253551920.5516,
-    "loss_as_gdp_pct": 0.0060141900273835815
+    "loss_as_gdp_pct": 0.046379533252863016
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fr. Polynesia",
+    "iso_a3": "PYF",
+    "value_loss": 9188339.759044396,
+    "national_gdp": 5622688338.06317,
+    "loss_as_gdp_pct": 0.16341541993077058
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominica",
     "iso_a3": "DMA",
-    "value_loss": 1058702.7991450957,
+    "value_loss": 8454298.70184451,
     "national_gdp": 623062962.962963,
-    "loss_as_gdp_pct": 0.1699190711177016
+    "loss_as_gdp_pct": 1.3568931559725952
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "St-Barth\u00e9lemy",
-    "iso_a3": "BLM",
-    "value_loss": 800741.9846676722,
+    "country": "Antigua and Barb.",
+    "iso_a3": "ATG",
+    "value_loss": 7940828.801285672,
+    "national_gdp": 1866566666.66667,
+    "loss_as_gdp_pct": 0.42542433351531284
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cook Is.",
+    "iso_a3": "COK",
+    "value_loss": 7483715.13577613,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Yemen",
-    "iso_a3": "YEM",
-    "value_loss": 762600.6052056199,
+    "country": "Cura\u00e7ao",
+    "iso_a3": "CUW",
+    "value_loss": 6816229.51986352,
+    "national_gdp": 3075180834.72417,
+    "loss_as_gdp_pct": 0.22165296566941256
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Vin. and Gren.",
+    "iso_a3": "VCT",
+    "value_loss": 6642024.625290025,
+    "national_gdp": 989188888.888889,
+    "loss_as_gdp_pct": 0.6714617096792009
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Brunei",
+    "iso_a3": "BRN",
+    "value_loss": 6492013.484387047,
+    "national_gdp": 16681536466.7183,
+    "loss_as_gdp_pct": 0.03891735930523789
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "New Caledonia",
+    "iso_a3": "NCL",
+    "value_loss": 6176541.229105839,
+    "national_gdp": 9623318718.31459,
+    "loss_as_gdp_pct": 0.06418306833536515
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cambodia",
+    "iso_a3": "KHM",
+    "value_loss": 4590314.8243187815,
+    "national_gdp": 39994532959.6074,
+    "loss_as_gdp_pct": 0.011477355739982723
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Madagascar",
+    "iso_a3": "MDG",
+    "value_loss": 4329188.969887606,
+    "national_gdp": 15325603272.6097,
+    "loss_as_gdp_pct": 0.028248081937660756
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Myanmar",
+    "iso_a3": "MMR",
+    "value_loss": 3481281.118959041,
+    "national_gdp": 62253049903.28,
+    "loss_as_gdp_pct": 0.005592145484225695
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Iran",
+    "iso_a3": "IRN",
+    "value_loss": 3205412.980168456,
+    "national_gdp": 422662261525.665,
+    "loss_as_gdp_pct": 0.000758386369437863
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Micronesia",
+    "iso_a3": "FSM",
+    "value_loss": 3046037.30710818,
+    "national_gdp": 415956900.0,
+    "loss_as_gdp_pct": 0.7322963766457967
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Singapore",
+    "iso_a3": "SGP",
+    "value_loss": 2864360.7568084514,
+    "national_gdp": 509017841146.557,
+    "loss_as_gdp_pct": 0.0005627230570850937
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Sudan",
+    "iso_a3": "SDN",
+    "value_loss": 2779099.0775498617,
+    "national_gdp": 51666875363.0963,
+    "loss_as_gdp_pct": 0.005378879713586991
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "South Africa",
+    "iso_a3": "ZAF",
+    "value_loss": 2676000.0,
+    "national_gdp": 407596043067.885,
+    "loss_as_gdp_pct": 0.0006565323794260468
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Anguilla",
+    "iso_a3": "AIA",
+    "value_loss": 2611813.297554207,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Solomon Is.",
+    "iso_a3": "SLB",
+    "value_loss": 2254517.321677136,
+    "national_gdp": 1466670929.62333,
+    "loss_as_gdp_pct": 0.15371664332749407
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Grenada",
+    "iso_a3": "GRD",
+    "value_loss": 2202778.022689962,
+    "national_gdp": 1224007407.40741,
+    "loss_as_gdp_pct": 0.17996443562018158
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Jordan",
+    "iso_a3": "JOR",
+    "value_loss": 1936278.820028102,
+    "national_gdp": 48764963380.2817,
+    "loss_as_gdp_pct": 0.003970635238518489
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Tonga",
+    "iso_a3": "TON",
+    "value_loss": 1879880.8547781247,
+    "national_gdp": 556514555.400882,
+    "loss_as_gdp_pct": 0.3377954514458231
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Nicaragua",
+    "iso_a3": "NIC",
+    "value_loss": 1617653.1113573154,
+    "national_gdp": 15634572502.2294,
+    "loss_as_gdp_pct": 0.010346641144979483
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Montserrat",
+    "iso_a3": "MSR",
+    "value_loss": 762683.7033311797,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -5818,70 +5827,61 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Timor-Leste",
     "iso_a3": "TLS",
-    "value_loss": 762003.8479306698,
+    "value_loss": 708372.0829491984,
     "national_gdp": 3208599889.00965,
-    "loss_as_gdp_pct": 0.023748796181809567
+    "loss_as_gdp_pct": 0.02207729562590744
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Yemen",
+    "iso_a3": "YEM",
+    "value_loss": 678203.0897239426,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Israel",
     "iso_a3": "ISR",
-    "value_loss": 552178.7230931267,
+    "value_loss": 484069.7050070255,
     "national_gdp": 525181008025.57,
-    "loss_as_gdp_pct": 0.000105140649538919
+    "loss_as_gdp_pct": 9.217197454014887e-05
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Comoros",
     "iso_a3": "COM",
-    "value_loss": 399720.0707328399,
+    "value_loss": 364999.4909364944,
     "national_gdp": 1222485532.31976,
-    "loss_as_gdp_pct": 0.032697325257857277
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "South Africa",
-    "iso_a3": "ZAF",
-    "value_loss": 288049.8666449201,
-    "national_gdp": 407596043067.885,
-    "loss_as_gdp_pct": 7.067042763144427e-05
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kiribati",
-    "iso_a3": "KIR",
-    "value_loss": 194206.4322516917,
-    "national_gdp": 270040453.254018,
-    "loss_as_gdp_pct": 0.07191753306272532
+    "loss_as_gdp_pct": 0.029857162419245964
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
-    "value_loss": 188847.8590781929,
+    "value_loss": 170922.43014005054,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Montserrat",
-    "iso_a3": "MSR",
-    "value_loss": 167747.89471970833,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Kiribati",
+    "iso_a3": "KIR",
+    "value_loss": 168008.6428745611,
+    "national_gdp": 270040453.254018,
+    "loss_as_gdp_pct": 0.0622161016433049
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Eritrea",
     "iso_a3": "ERI",
-    "value_loss": 49944.95410483731,
+    "value_loss": 43928.117582153456,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -5890,27 +5890,27 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Niue",
     "iso_a3": "NIU",
-    "value_loss": 43056.86476415047,
+    "value_loss": 40695.4766613351,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Marshall Is.",
-    "iso_a3": "MHL",
-    "value_loss": 24188.17291162342,
-    "national_gdp": 258723510.742188,
-    "loss_as_gdp_pct": 0.009349043247842432
+    "country": "Djibouti",
+    "iso_a3": "DJI",
+    "value_loss": 22193.5137907257,
+    "national_gdp": 3562814908.76149,
+    "loss_as_gdp_pct": 0.0006229207623485734
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Djibouti",
-    "iso_a3": "DJI",
-    "value_loss": 20303.05980290178,
-    "national_gdp": 3562814908.76149,
-    "loss_as_gdp_pct": 0.0005698600775744354
+    "country": "Marshall Is.",
+    "iso_a3": "MHL",
+    "value_loss": 21687.01621520085,
+    "national_gdp": 258723510.742188,
+    "loss_as_gdp_pct": 0.008382313672610704
   },
   {
     "scenario": "y_future_rcp45_2100",
@@ -6014,10 +6014,10 @@
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Samoa",
-    "iso_a3": "WSM",
+    "country": "Somalia",
+    "iso_a3": "SOM",
     "value_loss": 0.0,
-    "national_gdp": 889554711.842341,
+    "national_gdp": 10203000000.0,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -6059,6 +6059,15 @@
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
+    "country": "Pitcairn Is.",
+    "iso_a3": "PCN",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp45_2100",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Spratly Is.",
     "iso_a3": "-99",
     "value_loss": 0.0,
@@ -6068,26 +6077,17 @@
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Somaliland",
-    "iso_a3": "-99",
+    "country": "Samoa",
+    "iso_a3": "WSM",
     "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp45_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Somalia",
-    "iso_a3": "SOM",
-    "value_loss": 0.0,
-    "national_gdp": 10203000000.0,
+    "national_gdp": 889554711.842341,
     "loss_as_gdp_pct": 0.0
   },
   {
     "scenario": "y_future_rcp45_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Pitcairn Is.",
-    "iso_a3": "PCN",
+    "country": "Somaliland",
+    "iso_a3": "-99",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -8138,720 +8138,747 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Egypt",
-    "iso_a3": "EGY",
-    "value_loss": 1184615857.9123483,
-    "national_gdp": 476747720364.742,
-    "loss_as_gdp_pct": 0.24847855738167823
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Thailand",
-    "iso_a3": "THA",
-    "value_loss": 564594057.3685719,
-    "national_gdp": 495644697587.661,
-    "loss_as_gdp_pct": 0.11391104557690064
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Indonesia",
-    "iso_a3": "IDN",
-    "value_loss": 549389933.3240032,
-    "national_gdp": 1319101183380.15,
-    "loss_as_gdp_pct": 0.041648809071356534
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "China",
-    "iso_a3": "CHN",
-    "value_loss": 380047547.21085244,
-    "national_gdp": 18316765021690.2,
-    "loss_as_gdp_pct": 0.0020748617278259058
+    "country": "Mexico",
+    "iso_a3": "MEX",
+    "value_loss": 1817241309.4652271,
+    "national_gdp": 1466934724293.06,
+    "loss_as_gdp_pct": 0.12388017540050976
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "United States of America",
     "iso_a3": "USA",
-    "value_loss": 362964772.587362,
+    "value_loss": 1433168468.780102,
     "national_gdp": 25604848907611.0,
-    "loss_as_gdp_pct": 0.0014175626417364693
+    "loss_as_gdp_pct": 0.005597254152724545
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Australia",
-    "iso_a3": "AUS",
-    "value_loss": 360266687.33215004,
-    "national_gdp": 1695627535475.8,
-    "loss_as_gdp_pct": 0.021246805668973624
+    "country": "Egypt",
+    "iso_a3": "EGY",
+    "value_loss": 1079192946.78359,
+    "national_gdp": 476747720364.742,
+    "loss_as_gdp_pct": 0.22636562288288228
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Philippines",
-    "iso_a3": "PHL",
-    "value_loss": 249906927.55390507,
-    "national_gdp": 404353369604.631,
-    "loss_as_gdp_pct": 0.061804091752285704
+    "country": "Indonesia",
+    "iso_a3": "IDN",
+    "value_loss": 803941645.6516703,
+    "national_gdp": 1319101183380.15,
+    "loss_as_gdp_pct": 0.060946169693487685
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Mexico",
-    "iso_a3": "MEX",
-    "value_loss": 230142670.5770232,
-    "national_gdp": 1466934724293.06,
-    "loss_as_gdp_pct": 0.015688678355332594
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Malaysia",
-    "iso_a3": "MYS",
-    "value_loss": 216231231.41408983,
-    "national_gdp": 407830525989.553,
-    "loss_as_gdp_pct": 0.05301987409829857
+    "country": "Thailand",
+    "iso_a3": "THA",
+    "value_loss": 516324764.4698799,
+    "national_gdp": 495644697587.661,
+    "loss_as_gdp_pct": 0.10417235713059583
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Japan",
     "iso_a3": "JPN",
-    "value_loss": 206737125.414851,
+    "value_loss": 505511301.22619104,
     "national_gdp": 4262463317796.53,
-    "loss_as_gdp_pct": 0.004850179579298368
+    "loss_as_gdp_pct": 0.011859604729396567
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Maldives",
-    "iso_a3": "MDV",
-    "value_loss": 192466414.8716529,
-    "national_gdp": 6177123352.26211,
-    "loss_as_gdp_pct": 3.1157936129148243
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "India",
-    "iso_a3": "IND",
-    "value_loss": 97094262.36854509,
-    "national_gdp": 3346107287730.93,
-    "loss_as_gdp_pct": 0.002901707985412114
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "United Arab Emirates",
-    "iso_a3": "ARE",
-    "value_loss": 95628446.9871078,
-    "national_gdp": 511403403675.97,
-    "loss_as_gdp_pct": 0.01869921989171955
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Brazil",
-    "iso_a3": "BRA",
-    "value_loss": 83917857.638204,
-    "national_gdp": 1951923832083.87,
-    "loss_as_gdp_pct": 0.004299238333937111
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Honduras",
-    "iso_a3": "HND",
-    "value_loss": 63516925.18231813,
-    "national_gdp": 31426041806.7985,
-    "loss_as_gdp_pct": 0.20211557526973473
+    "country": "Australia",
+    "iso_a3": "AUS",
+    "value_loss": 440560808.54361993,
+    "national_gdp": 1695627535475.8,
+    "loss_as_gdp_pct": 0.02598216880336263
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Bahamas",
     "iso_a3": "BHS",
-    "value_loss": 62081753.00339269,
+    "value_loss": 417339343.47934073,
     "national_gdp": 13896800000.0,
-    "loss_as_gdp_pct": 0.44673416184583997
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Saudi Arabia",
-    "iso_a3": "SAU",
-    "value_loss": 60466070.54236869,
-    "national_gdp": 1239075200000.0,
-    "loss_as_gdp_pct": 0.00487993549885985
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mauritius",
-    "iso_a3": "MUS",
-    "value_loss": 57299976.923830494,
-    "national_gdp": 12936444123.3037,
-    "loss_as_gdp_pct": 0.4429345218645544
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Oman",
-    "iso_a3": "OMN",
-    "value_loss": 54905720.34179102,
-    "national_gdp": 109852795838.752,
-    "loss_as_gdp_pct": 0.04998117701290431
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Guam",
-    "iso_a3": "GUM",
-    "value_loss": 52508620.869762175,
-    "national_gdp": 6910000000.0,
-    "loss_as_gdp_pct": 0.7598932108503932
+    "loss_as_gdp_pct": 3.0031326886717857
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
-    "value_loss": 51723803.77304095,
+    "value_loss": 385737236.469847,
     "national_gdp": 113478087134.8,
-    "loss_as_gdp_pct": 0.045580433261620396
+    "loss_as_gdp_pct": 0.3399222230558327
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Taiwan",
-    "iso_a3": "TWN",
-    "value_loss": 46550425.34145114,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Maldives",
+    "iso_a3": "MDV",
+    "value_loss": 380244236.7320844,
+    "national_gdp": 6177123352.26211,
+    "loss_as_gdp_pct": 6.155684694119571
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Philippines",
+    "iso_a3": "PHL",
+    "value_loss": 352862638.4476509,
+    "national_gdp": 404353369604.631,
+    "loss_as_gdp_pct": 0.08726590773626378
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "China",
+    "iso_a3": "CHN",
+    "value_loss": 349664215.29085803,
+    "national_gdp": 18316765021690.2,
+    "loss_as_gdp_pct": 0.0019089845552792508
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Brazil",
+    "iso_a3": "BRA",
+    "value_loss": 328586099.1181761,
+    "national_gdp": 1951923832083.87,
+    "loss_as_gdp_pct": 0.01683396112682216
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Malaysia",
+    "iso_a3": "MYS",
+    "value_loss": 266013555.70765063,
+    "national_gdp": 407830525989.553,
+    "loss_as_gdp_pct": 0.06522649452544042
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Puerto Rico",
     "iso_a3": "PRI",
-    "value_loss": 45404341.504135154,
+    "value_loss": 240564598.915435,
     "national_gdp": 113843700000.0,
-    "loss_as_gdp_pct": 0.03988305150318828
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cayman Is.",
-    "iso_a3": "CYM",
-    "value_loss": 41030845.6192107,
-    "national_gdp": 6660161212.01997,
-    "loss_as_gdp_pct": 0.6160638506040966
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Fiji",
-    "iso_a3": "FJI",
-    "value_loss": 34413735.94944156,
-    "national_gdp": 4977861885.60316,
-    "loss_as_gdp_pct": 0.6913356927192387
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Panama",
-    "iso_a3": "PAN",
-    "value_loss": 30333572.084294427,
-    "national_gdp": 76479304470.9375,
-    "loss_as_gdp_pct": 0.039662458091288384
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Barbados",
-    "iso_a3": "BRB",
-    "value_loss": 30142267.85977524,
-    "national_gdp": 6884900000.0,
-    "loss_as_gdp_pct": 0.43780255137729296
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cuba",
-    "iso_a3": "CUB",
-    "value_loss": 28919577.007197544,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Costa Rica",
-    "iso_a3": "CRI",
-    "value_loss": 28914561.974534288,
-    "national_gdp": 69243626028.5936,
-    "loss_as_gdp_pct": 0.04175772360995979
+    "loss_as_gdp_pct": 0.21131129690570052
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Jamaica",
     "iso_a3": "JAM",
-    "value_loss": 28251543.419614803,
+    "value_loss": 239844402.8620536,
     "national_gdp": 18813516805.214,
-    "loss_as_gdp_pct": 0.15016620078062776
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tanzania",
-    "iso_a3": "TZA",
-    "value_loss": 27703103.538807336,
-    "national_gdp": 75749121842.9149,
-    "loss_as_gdp_pct": 0.036572177821753205
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "U.S. Virgin Is.",
-    "iso_a3": "VIR",
-    "value_loss": 27635343.752684925,
-    "national_gdp": 4672000000.0,
-    "loss_as_gdp_pct": 0.5915099262132903
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Aruba",
-    "iso_a3": "ABW",
-    "value_loss": 27565155.786235586,
-    "national_gdp": 3324034443.26581,
-    "loss_as_gdp_pct": 0.8292680553319798
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "British Virgin Is.",
-    "iso_a3": "VGB",
-    "value_loss": 26977756.163373657,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "loss_as_gdp_pct": 1.2748515088661299
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Venezuela",
     "iso_a3": "VEN",
-    "value_loss": 24087228.690556455,
+    "value_loss": 224683561.68909818,
     "national_gdp": 89013255584.7499,
-    "loss_as_gdp_pct": 0.027060271565534307
+    "loss_as_gdp_pct": 0.25241584549750123
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Vietnam",
-    "iso_a3": "VNM",
-    "value_loss": 22018201.39743667,
-    "national_gdp": 413445230668.578,
-    "loss_as_gdp_pct": 0.005325542481607846
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sri Lanka",
-    "iso_a3": "LKA",
-    "value_loss": 21317333.469992608,
-    "national_gdp": 74143020262.8076,
-    "loss_as_gdp_pct": 0.02875163891952488
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kenya",
-    "iso_a3": "KEN",
-    "value_loss": 20889211.134638123,
-    "national_gdp": 114448978152.637,
-    "loss_as_gdp_pct": 0.018251985707359347
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Qatar",
-    "iso_a3": "QAT",
-    "value_loss": 20362593.221870996,
-    "national_gdp": 235709340659.341,
-    "loss_as_gdp_pct": 0.008638857147074219
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Bahrain",
-    "iso_a3": "BHR",
-    "value_loss": 19634018.461660255,
-    "national_gdp": 46458191489.3617,
-    "loss_as_gdp_pct": 0.04226169343280652
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Palau",
-    "iso_a3": "PLW",
-    "value_loss": 18580541.965041853,
-    "national_gdp": 243826812.744141,
-    "loss_as_gdp_pct": 7.620385041303597
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Colombia",
-    "iso_a3": "COL",
-    "value_loss": 16877450.96310903,
-    "national_gdp": 345632492851.448,
-    "loss_as_gdp_pct": 0.004883062591676795
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Seychelles",
-    "iso_a3": "SYC",
-    "value_loss": 15052735.384263016,
-    "national_gdp": 2018346588.73752,
-    "loss_as_gdp_pct": 0.7457953687566878
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kuwait",
-    "iso_a3": "KWT",
-    "value_loss": 14777158.229945295,
-    "national_gdp": 183502046693.878,
-    "loss_as_gdp_pct": 0.008052857445561282
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "N. Mariana Is.",
-    "iso_a3": "MNP",
-    "value_loss": 14217966.006671814,
-    "national_gdp": 1096000000.0,
-    "loss_as_gdp_pct": 1.297259672141589
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mozambique",
-    "iso_a3": "MOZ",
-    "value_loss": 11924255.65815067,
-    "national_gdp": 18883528581.3734,
-    "loss_as_gdp_pct": 0.0631463320362312
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Turks and Caicos Is.",
-    "iso_a3": "TCA",
-    "value_loss": 11302497.19280636,
-    "national_gdp": 1434119000.0,
-    "loss_as_gdp_pct": 0.7881143191608477
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Belize",
-    "iso_a3": "BLZ",
-    "value_loss": 10537936.841336805,
-    "national_gdp": 2846604350.0,
-    "loss_as_gdp_pct": 0.3701932388790457
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Vanuatu",
-    "iso_a3": "VUT",
-    "value_loss": 8762210.093358262,
-    "national_gdp": 1055031360.57356,
-    "loss_as_gdp_pct": 0.8305165534221419
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Antigua and Barb.",
-    "iso_a3": "ATG",
-    "value_loss": 7736630.476840239,
-    "national_gdp": 1866566666.66667,
-    "loss_as_gdp_pct": 0.41448455150312824
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St-Martin",
-    "iso_a3": "MAF",
-    "value_loss": 7060942.551427133,
+    "country": "Cuba",
+    "iso_a3": "CUB",
+    "value_loss": 190549072.6627361,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Papua New Guinea",
-    "iso_a3": "PNG",
-    "value_loss": 6492123.344821962,
-    "national_gdp": 31653185952.609,
-    "loss_as_gdp_pct": 0.02051017346102834
+    "country": "U.S. Virgin Is.",
+    "iso_a3": "VIR",
+    "value_loss": 189283562.8964764,
+    "national_gdp": 4672000000.0,
+    "loss_as_gdp_pct": 4.051446123640334
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "India",
+    "iso_a3": "IND",
+    "value_loss": 187733289.6419146,
+    "national_gdp": 3346107287730.93,
+    "loss_as_gdp_pct": 0.0056104982147545165
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Costa Rica",
+    "iso_a3": "CRI",
+    "value_loss": 135953587.90351564,
+    "national_gdp": 69243626028.5936,
+    "loss_as_gdp_pct": 0.19634094241017175
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Sint Maarten",
     "iso_a3": "SXM",
-    "value_loss": 6329628.613765907,
+    "value_loss": 116736000.0,
     "national_gdp": 1592564639.32961,
-    "loss_as_gdp_pct": 0.39744877271859824
+    "loss_as_gdp_pct": 7.330063541354278
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "New Caledonia",
-    "iso_a3": "NCL",
-    "value_loss": 5772825.709159914,
-    "national_gdp": 9623318718.31459,
-    "loss_as_gdp_pct": 0.05998788856668935
+    "country": "Barbados",
+    "iso_a3": "BRB",
+    "value_loss": 115490922.41766775,
+    "national_gdp": 6884900000.0,
+    "loss_as_gdp_pct": 1.6774524309382526
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fr. Polynesia",
-    "iso_a3": "PYF",
-    "value_loss": 5715521.044654401,
-    "national_gdp": 5622688338.06317,
-    "loss_as_gdp_pct": 0.10165103774226278
+    "country": "Honduras",
+    "iso_a3": "HND",
+    "value_loss": 113329816.76102944,
+    "national_gdp": 31426041806.7985,
+    "loss_as_gdp_pct": 0.3606238973961793
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Vietnam",
+    "iso_a3": "VNM",
+    "value_loss": 104447118.42686136,
+    "national_gdp": 413445230668.578,
+    "loss_as_gdp_pct": 0.025262625053858043
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "British Virgin Is.",
+    "iso_a3": "VGB",
+    "value_loss": 95929322.39596513,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "United Arab Emirates",
+    "iso_a3": "ARE",
+    "value_loss": 87363623.76419058,
+    "national_gdp": 511403403675.97,
+    "loss_as_gdp_pct": 0.017083113474845976
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Panama",
+    "iso_a3": "PAN",
+    "value_loss": 82047460.7686655,
+    "national_gdp": 76479304470.9375,
+    "loss_as_gdp_pct": 0.10728060530394067
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Taiwan",
+    "iso_a3": "TWN",
+    "value_loss": 80250409.8641808,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fiji",
+    "iso_a3": "FJI",
+    "value_loss": 78153864.32218148,
+    "national_gdp": 4977861885.60316,
+    "loss_as_gdp_pct": 1.57002878179919
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Bahrain",
+    "iso_a3": "BHR",
+    "value_loss": 59028771.54020103,
+    "national_gdp": 46458191489.3617,
+    "loss_as_gdp_pct": 0.12705783339353152
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Saudi Arabia",
+    "iso_a3": "SAU",
+    "value_loss": 55074926.733193666,
+    "national_gdp": 1239075200000.0,
+    "loss_as_gdp_pct": 0.004444841340799466
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mauritius",
+    "iso_a3": "MUS",
+    "value_loss": 53247100.70861293,
+    "national_gdp": 12936444123.3037,
+    "loss_as_gdp_pct": 0.41160538553785153
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Colombia",
+    "iso_a3": "COL",
+    "value_loss": 50400599.593280174,
+    "national_gdp": 345632492851.448,
+    "loss_as_gdp_pct": 0.014582135833780601
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Guam",
+    "iso_a3": "GUM",
+    "value_loss": 49119865.32831525,
+    "national_gdp": 6910000000.0,
+    "loss_as_gdp_pct": 0.7108518860827098
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Oman",
+    "iso_a3": "OMN",
+    "value_loss": 48841934.123323694,
+    "national_gdp": 109852795838.752,
+    "loss_as_gdp_pct": 0.04446125722190684
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Saint Lucia",
     "iso_a3": "LCA",
-    "value_loss": 5442036.56985711,
+    "value_loss": 46663508.20370091,
     "national_gdp": 2342714814.81481,
-    "loss_as_gdp_pct": 0.23229616065271264
+    "loss_as_gdp_pct": 1.991856111064446
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Trinidad and Tobago",
-    "iso_a3": "TTO",
-    "value_loss": 4726072.408984756,
-    "national_gdp": 28341164301.126,
-    "loss_as_gdp_pct": 0.016675646627534593
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Madagascar",
-    "iso_a3": "MDG",
-    "value_loss": 4294402.110553814,
-    "national_gdp": 15325603272.6097,
-    "loss_as_gdp_pct": 0.028021096684845526
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "France",
-    "iso_a3": "-99",
-    "value_loss": 4108264.1686492725,
+    "country": "St-Martin",
+    "iso_a3": "MAF",
+    "value_loss": 43388614.053213514,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Brunei",
-    "iso_a3": "BRN",
-    "value_loss": 3537489.1957258955,
-    "national_gdp": 16681536466.7183,
-    "loss_as_gdp_pct": 0.02120601542180253
+    "country": "Cayman Is.",
+    "iso_a3": "CYM",
+    "value_loss": 38974329.9288121,
+    "national_gdp": 6660161212.01997,
+    "loss_as_gdp_pct": 0.5851859840640633
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cook Is.",
-    "iso_a3": "COK",
-    "value_loss": 3441007.647319166,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cambodia",
-    "iso_a3": "KHM",
-    "value_loss": 3344276.432228595,
-    "national_gdp": 39994532959.6074,
-    "loss_as_gdp_pct": 0.008361833942669507
+    "country": "Tanzania",
+    "iso_a3": "TZA",
+    "value_loss": 35935864.824857466,
+    "national_gdp": 75749121842.9149,
+    "loss_as_gdp_pct": 0.04744063554872574
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Sudan",
     "iso_a3": "SDN",
-    "value_loss": 3183897.8856862234,
+    "value_loss": 27549392.961395364,
     "national_gdp": 51666875363.0963,
-    "loss_as_gdp_pct": 0.006162358113028762
+    "loss_as_gdp_pct": 0.05332119035220941
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cura\u00e7ao",
-    "iso_a3": "CUW",
-    "value_loss": 3132479.2035426837,
-    "national_gdp": 3075180834.72417,
-    "loss_as_gdp_pct": 0.10186325201339429
+    "country": "Aruba",
+    "iso_a3": "ABW",
+    "value_loss": 26369578.491394356,
+    "national_gdp": 3324034443.26581,
+    "loss_as_gdp_pct": 0.7933003987012444
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Micronesia",
-    "iso_a3": "FSM",
-    "value_loss": 3123456.2925380473,
-    "national_gdp": 415956900.0,
-    "loss_as_gdp_pct": 0.7509086380194793
+    "country": "Belize",
+    "iso_a3": "BLZ",
+    "value_loss": 25287571.056263138,
+    "national_gdp": 2846604350.0,
+    "loss_as_gdp_pct": 0.8883416150285562
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Myanmar",
-    "iso_a3": "MMR",
-    "value_loss": 3116675.2629256197,
-    "national_gdp": 62253049903.28,
-    "loss_as_gdp_pct": 0.005006461960928612
+    "country": "Qatar",
+    "iso_a3": "QAT",
+    "value_loss": 24557423.507721752,
+    "national_gdp": 235709340659.341,
+    "loss_as_gdp_pct": 0.01041851945240192
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Solomon Is.",
-    "iso_a3": "SLB",
-    "value_loss": 3072021.1246604,
-    "national_gdp": 1466670929.62333,
-    "loss_as_gdp_pct": 0.20945537697739433
+    "country": "Turks and Caicos Is.",
+    "iso_a3": "TCA",
+    "value_loss": 24261591.642075133,
+    "national_gdp": 1434119000.0,
+    "loss_as_gdp_pct": 1.6917418737270151
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Singapore",
-    "iso_a3": "SGP",
-    "value_loss": 2943801.2738325903,
-    "national_gdp": 509017841146.557,
-    "loss_as_gdp_pct": 0.0005783296843194555
+    "country": "Vanuatu",
+    "iso_a3": "VUT",
+    "value_loss": 20246462.262510363,
+    "national_gdp": 1055031360.57356,
+    "loss_as_gdp_pct": 1.9190389043510065
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "St. Vin. and Gren.",
-    "iso_a3": "VCT",
-    "value_loss": 2840944.251276169,
-    "national_gdp": 989188888.888889,
-    "loss_as_gdp_pct": 0.28719936942147345
+    "country": "Trinidad and Tobago",
+    "iso_a3": "TTO",
+    "value_loss": 19931314.127030406,
+    "national_gdp": 28341164301.126,
+    "loss_as_gdp_pct": 0.07032637726262549
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Anguilla",
-    "iso_a3": "AIA",
-    "value_loss": 2762426.2615166707,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Kenya",
+    "iso_a3": "KEN",
+    "value_loss": 19316335.753153976,
+    "national_gdp": 114448978152.637,
+    "loss_as_gdp_pct": 0.016877683020806344
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mozambique",
+    "iso_a3": "MOZ",
+    "value_loss": 19134306.915846862,
+    "national_gdp": 18883528581.3734,
+    "loss_as_gdp_pct": 0.10132802687481209
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Sri Lanka",
+    "iso_a3": "LKA",
+    "value_loss": 19102280.893143438,
+    "national_gdp": 74143020262.8076,
+    "loss_as_gdp_pct": 0.02576409866422143
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Netherlands",
     "iso_a3": "NLD",
-    "value_loss": 2422022.9770619855,
+    "value_loss": 18767545.146977574,
     "national_gdp": 1046540797548.64,
-    "loss_as_gdp_pct": 0.00023143130040751396
+    "loss_as_gdp_pct": 0.0017932932180893134
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Grenada",
-    "iso_a3": "GRD",
-    "value_loss": 1925761.5154065653,
-    "national_gdp": 1224007407.40741,
-    "loss_as_gdp_pct": 0.1573325049956644
+    "country": "Palau",
+    "iso_a3": "PLW",
+    "value_loss": 17091368.915317845,
+    "national_gdp": 243826812.744141,
+    "loss_as_gdp_pct": 7.009634716938463
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Iran",
-    "iso_a3": "IRN",
-    "value_loss": 1922068.5243469442,
-    "national_gdp": 422662261525.665,
-    "loss_as_gdp_pct": 0.00045475281313475674
+    "country": "Kuwait",
+    "iso_a3": "KWT",
+    "value_loss": 13841997.358096369,
+    "national_gdp": 183502046693.878,
+    "loss_as_gdp_pct": 0.007543238676344511
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Nicaragua",
-    "iso_a3": "NIC",
-    "value_loss": 1854245.86708361,
-    "national_gdp": 15634572502.2294,
-    "loss_as_gdp_pct": 0.011859907693793387
+    "country": "Seychelles",
+    "iso_a3": "SYC",
+    "value_loss": 13815443.71899985,
+    "national_gdp": 2018346588.73752,
+    "loss_as_gdp_pct": 0.6844931289844248
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Jordan",
-    "iso_a3": "JOR",
-    "value_loss": 1757600.577845607,
-    "national_gdp": 48764963380.2817,
-    "loss_as_gdp_pct": 0.003604228232756757
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tonga",
-    "iso_a3": "TON",
-    "value_loss": 1575199.4642359857,
-    "national_gdp": 556514555.400882,
-    "loss_as_gdp_pct": 0.2830473073792832
+    "country": "N. Mariana Is.",
+    "iso_a3": "MNP",
+    "value_loss": 12903028.898643281,
+    "national_gdp": 1096000000.0,
+    "loss_as_gdp_pct": 1.177283658635336
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "St. Kitts and Nevis",
     "iso_a3": "KNA",
-    "value_loss": 1539936.5461100063,
+    "value_loss": 11096248.071975814,
     "national_gdp": 981429629.62963,
-    "loss_as_gdp_pct": 0.15690748471606106
+    "loss_as_gdp_pct": 1.130620855227623
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "France",
+    "iso_a3": "-99",
+    "value_loss": 10989548.246903462,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Vin. and Gren.",
+    "iso_a3": "VCT",
+    "value_loss": 10857428.288551928,
+    "national_gdp": 989188888.888889,
+    "loss_as_gdp_pct": 1.0976092039152994
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St-Barth\u00e9lemy",
+    "iso_a3": "BLM",
+    "value_loss": 9474000.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Haiti",
     "iso_a3": "HTI",
-    "value_loss": 1324233.7537402515,
+    "value_loss": 9463121.214083057,
     "national_gdp": 20253551920.5516,
-    "loss_as_gdp_pct": 0.006538279107461296
+    "loss_as_gdp_pct": 0.046723267361714844
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Fr. Polynesia",
+    "iso_a3": "PYF",
+    "value_loss": 8997169.503594134,
+    "national_gdp": 5622688338.06317,
+    "loss_as_gdp_pct": 0.16001544034883072
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Papua New Guinea",
+    "iso_a3": "PNG",
+    "value_loss": 8986912.30004245,
+    "national_gdp": 31653185952.609,
+    "loss_as_gdp_pct": 0.028391809638049114
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominica",
     "iso_a3": "DMA",
-    "value_loss": 812220.3086802459,
+    "value_loss": 8316797.947324527,
     "national_gdp": 623062962.962963,
-    "loss_as_gdp_pct": 0.13035926655273314
+    "loss_as_gdp_pct": 1.3348246391944352
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Antigua and Barb.",
+    "iso_a3": "ATG",
+    "value_loss": 7433629.497050194,
+    "national_gdp": 1866566666.66667,
+    "loss_as_gdp_pct": 0.39825148652875225
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cook Is.",
+    "iso_a3": "COK",
+    "value_loss": 7132810.333039794,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cura\u00e7ao",
+    "iso_a3": "CUW",
+    "value_loss": 6388508.760696014,
+    "national_gdp": 3075180834.72417,
+    "loss_as_gdp_pct": 0.2077441654343893
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "New Caledonia",
+    "iso_a3": "NCL",
+    "value_loss": 6249801.7299373485,
+    "national_gdp": 9623318718.31459,
+    "loss_as_gdp_pct": 0.06494434937547124
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Brunei",
+    "iso_a3": "BRN",
+    "value_loss": 5626462.764679553,
+    "national_gdp": 16681536466.7183,
+    "loss_as_gdp_pct": 0.033728684260619715
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Madagascar",
+    "iso_a3": "MDG",
+    "value_loss": 4819904.49772672,
+    "national_gdp": 15325603272.6097,
+    "loss_as_gdp_pct": 0.031450014801968504
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cambodia",
+    "iso_a3": "KHM",
+    "value_loss": 4481781.039375989,
+    "national_gdp": 39994532959.6074,
+    "loss_as_gdp_pct": 0.011205984187644789
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Myanmar",
+    "iso_a3": "MMR",
+    "value_loss": 2948162.199228745,
+    "national_gdp": 62253049903.28,
+    "loss_as_gdp_pct": 0.004735771506471062
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Solomon Is.",
+    "iso_a3": "SLB",
+    "value_loss": 2927561.809218566,
+    "national_gdp": 1466670929.62333,
+    "loss_as_gdp_pct": 0.19960590682535864
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Micronesia",
+    "iso_a3": "FSM",
+    "value_loss": 2913018.725971941,
+    "national_gdp": 415956900.0,
+    "loss_as_gdp_pct": 0.7003174429783328
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Iran",
+    "iso_a3": "IRN",
+    "value_loss": 2841075.599238751,
+    "national_gdp": 422662261525.665,
+    "loss_as_gdp_pct": 0.0006721857752294818
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "South Africa",
+    "iso_a3": "ZAF",
+    "value_loss": 2676000.0,
+    "national_gdp": 407596043067.885,
+    "loss_as_gdp_pct": 0.0006565323794260468
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Singapore",
+    "iso_a3": "SGP",
+    "value_loss": 2670410.9043467604,
+    "national_gdp": 509017841146.557,
+    "loss_as_gdp_pct": 0.0005246202958881932
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Anguilla",
+    "iso_a3": "AIA",
+    "value_loss": 2621192.726751902,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Grenada",
+    "iso_a3": "GRD",
+    "value_loss": 1952400.9894518275,
+    "national_gdp": 1224007407.40741,
+    "loss_as_gdp_pct": 0.15950891944250892
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Nicaragua",
+    "iso_a3": "NIC",
+    "value_loss": 1731443.9199310604,
+    "national_gdp": 15634572502.2294,
+    "loss_as_gdp_pct": 0.011074456430990783
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Jordan",
+    "iso_a3": "JOR",
+    "value_loss": 1588036.464766698,
+    "national_gdp": 48764963380.2817,
+    "loss_as_gdp_pct": 0.0032565111397352686
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Tonga",
+    "iso_a3": "TON",
+    "value_loss": 1511606.8702368753,
+    "national_gdp": 556514555.400882,
+    "loss_as_gdp_pct": 0.2716203656430869
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Montserrat",
+    "iso_a3": "MSR",
+    "value_loss": 745220.0440728907,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Yemen",
     "iso_a3": "YEM",
-    "value_loss": 705363.6759551184,
+    "value_loss": 631607.2570280499,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -8860,52 +8887,34 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Timor-Leste",
     "iso_a3": "TLS",
-    "value_loss": 637359.606316599,
+    "value_loss": 601344.9512518982,
     "national_gdp": 3208599889.00965,
-    "loss_as_gdp_pct": 0.019864103607923612
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St-Barth\u00e9lemy",
-    "iso_a3": "BLM",
-    "value_loss": 538664.7909611088,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "loss_as_gdp_pct": 0.018741662159612746
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Israel",
     "iso_a3": "ISR",
-    "value_loss": 439400.14446140174,
+    "value_loss": 397009.1161916745,
     "national_gdp": 525181008025.57,
-    "loss_as_gdp_pct": 8.366641933860795e-05
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "South Africa",
-    "iso_a3": "ZAF",
-    "value_loss": 315765.75988503254,
-    "national_gdp": 407596043067.885,
-    "loss_as_gdp_pct": 7.747027118034163e-05
+    "loss_as_gdp_pct": 7.559472070100922e-05
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Comoros",
     "iso_a3": "COM",
-    "value_loss": 261216.81539077783,
+    "value_loss": 247695.59505993692,
     "national_gdp": 1222485532.31976,
-    "loss_as_gdp_pct": 0.021367681537719216
+    "loss_as_gdp_pct": 0.020261638155333876
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Coral Sea Is.",
     "iso_a3": "-99",
-    "value_loss": 174879.13089087652,
+    "value_loss": 159653.15793913387,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -8914,25 +8923,16 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Kiribati",
     "iso_a3": "KIR",
-    "value_loss": 148327.22254408323,
+    "value_loss": 133286.344156042,
     "national_gdp": 270040453.254018,
-    "loss_as_gdp_pct": 0.054927778692682304
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Montserrat",
-    "iso_a3": "MSR",
-    "value_loss": 140932.1877198054,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "loss_as_gdp_pct": 0.04935791750825718
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Eritrea",
     "iso_a3": "ERI",
-    "value_loss": 52672.42795677829,
+    "value_loss": 45964.89271670312,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -8941,7 +8941,7 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Niue",
     "iso_a3": "NIU",
-    "value_loss": 32758.914085120283,
+    "value_loss": 31522.842446183447,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -8950,60 +8950,24 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Marshall Is.",
     "iso_a3": "MHL",
-    "value_loss": 26141.715468922775,
+    "value_loss": 23197.4036767857,
     "national_gdp": 258723510.742188,
-    "loss_as_gdp_pct": 0.010104112839970075
+    "loss_as_gdp_pct": 0.00896609805975514
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
     "country": "Djibouti",
     "iso_a3": "DJI",
-    "value_loss": 18163.23847675639,
+    "value_loss": 20440.961388926262,
     "national_gdp": 3562814908.76149,
-    "loss_as_gdp_pct": 0.0005098002265593504
+    "loss_as_gdp_pct": 0.0005737306571458121
   },
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "U.S. Minor Outlying Is.",
-    "iso_a3": "UMI",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "USNB Guantanamo Bay",
+    "country": "Ashmore and Cartier Is.",
     "iso_a3": "-99",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Scarborough Reef",
-    "iso_a3": "-99",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Clipperton I.",
-    "iso_a3": "-99",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Br. Indian Ocean Ter.",
-    "iso_a3": "IOT",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -9020,7 +8984,16 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Ashmore and Cartier Is.",
+    "country": "Br. Indian Ocean Ter.",
+    "iso_a3": "IOT",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Clipperton I.",
     "iso_a3": "-99",
     "value_loss": 0.0,
     "national_gdp": 0,
@@ -9038,6 +9011,24 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
+    "country": "USNB Guantanamo Bay",
+    "iso_a3": "-99",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "U.S. Minor Outlying Is.",
+    "iso_a3": "UMI",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Tuvalu",
     "iso_a3": "TUV",
     "value_loss": 0.0,
@@ -9047,11 +9038,11 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Guatemala",
-    "iso_a3": "GTM",
+    "country": "Scarborough Reef",
+    "iso_a3": "-99",
     "value_loss": 0.0,
-    "national_gdp": 95641446500.6523,
-    "loss_as_gdp_pct": 0.0
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -9060,6 +9051,15 @@
     "iso_a3": "ECU",
     "value_loss": 0.0,
     "national_gdp": 116133121000.0,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Samoa",
+    "iso_a3": "WSM",
+    "value_loss": 0.0,
+    "national_gdp": 889554711.842341,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -9074,10 +9074,10 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Samoa",
-    "iso_a3": "WSM",
+    "country": "Guatemala",
+    "iso_a3": "GTM",
     "value_loss": 0.0,
-    "national_gdp": 889554711.842341,
+    "national_gdp": 95641446500.6523,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -9101,8 +9101,26 @@
   {
     "scenario": "y_future_rcp85_2050",
     "model": "Tipping Point (threshold=10%)",
+    "country": "New Zealand",
+    "iso_a3": "NZL",
+    "value_loss": 0.0,
+    "national_gdp": 249509991440.438,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Spratly Is.",
     "iso_a3": "-99",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2050",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Pitcairn Is.",
+    "iso_a3": "PCN",
     "value_loss": 0.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
@@ -9124,24 +9142,6 @@
     "value_loss": 0.0,
     "national_gdp": 10203000000.0,
     "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "New Zealand",
-    "iso_a3": "NZL",
-    "value_loss": 0.0,
-    "national_gdp": 249509991440.438,
-    "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp85_2050",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Pitcairn Is.",
-    "iso_a3": "PCN",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2050",
@@ -11191,286 +11191,214 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Egypt",
     "iso_a3": "EGY",
-    "value_loss": 3178451752.5974526,
+    "value_loss": 2433616822.818407,
     "national_gdp": 476747720364.742,
-    "loss_as_gdp_pct": 0.6666946934042468
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Indonesia",
-    "iso_a3": "IDN",
-    "value_loss": 1385584772.5680509,
-    "national_gdp": 1319101183380.15,
-    "loss_as_gdp_pct": 0.10504006743573219
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Thailand",
-    "iso_a3": "THA",
-    "value_loss": 1229698108.3638866,
-    "national_gdp": 495644697587.661,
-    "loss_as_gdp_pct": 0.24810072908051214
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Australia",
-    "iso_a3": "AUS",
-    "value_loss": 891286810.7497803,
-    "national_gdp": 1695627535475.8,
-    "loss_as_gdp_pct": 0.05256383209769482
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "China",
-    "iso_a3": "CHN",
-    "value_loss": 806140303.0624837,
-    "national_gdp": 18316765021690.2,
-    "loss_as_gdp_pct": 0.004401106320400327
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "United States of America",
-    "iso_a3": "USA",
-    "value_loss": 796834685.28385,
-    "national_gdp": 25604848907611.0,
-    "loss_as_gdp_pct": 0.0031120460353390024
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Philippines",
-    "iso_a3": "PHL",
-    "value_loss": 623145833.5745058,
-    "national_gdp": 404353369604.631,
-    "loss_as_gdp_pct": 0.1541092223823449
+    "loss_as_gdp_pct": 0.5104621834282788
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Mexico",
     "iso_a3": "MEX",
-    "value_loss": 570959013.6035166,
+    "value_loss": 1864854463.6334863,
     "national_gdp": 1466934724293.06,
-    "loss_as_gdp_pct": 0.038921910031045934
+    "loss_as_gdp_pct": 0.12712593360500007
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Malaysia",
-    "iso_a3": "MYS",
-    "value_loss": 541211939.361924,
-    "national_gdp": 407830525989.553,
-    "loss_as_gdp_pct": 0.1327051078505555
+    "country": "United States of America",
+    "iso_a3": "USA",
+    "value_loss": 1716750139.1223643,
+    "national_gdp": 25604848907611.0,
+    "loss_as_gdp_pct": 0.0067047852745269
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Indonesia",
+    "iso_a3": "IDN",
+    "value_loss": 1636129852.3569741,
+    "national_gdp": 1319101183380.15,
+    "loss_as_gdp_pct": 0.12403368846690362
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Thailand",
+    "iso_a3": "THA",
+    "value_loss": 1150477183.3416085,
+    "national_gdp": 495644697587.661,
+    "loss_as_gdp_pct": 0.23211731890627807
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Australia",
+    "iso_a3": "AUS",
+    "value_loss": 966432134.9297231,
+    "national_gdp": 1695627535475.8,
+    "loss_as_gdp_pct": 0.056995543815495917
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Japan",
     "iso_a3": "JPN",
-    "value_loss": 464910602.6045223,
+    "value_loss": 666020501.2249191,
     "national_gdp": 4262463317796.53,
-    "loss_as_gdp_pct": 0.010907087473654946
+    "loss_as_gdp_pct": 0.0156252488659355
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "China",
+    "iso_a3": "CHN",
+    "value_loss": 662371306.368725,
+    "national_gdp": 18316765021690.2,
+    "loss_as_gdp_pct": 0.0036162024548787052
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Philippines",
+    "iso_a3": "PHL",
+    "value_loss": 660015152.91529,
+    "national_gdp": 404353369604.631,
+    "loss_as_gdp_pct": 0.1632273161370314
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Maldives",
     "iso_a3": "MDV",
-    "value_loss": 449288006.2223962,
+    "value_loss": 650740757.3029367,
     "national_gdp": 6177123352.26211,
-    "loss_as_gdp_pct": 7.273418071825674
+    "loss_as_gdp_pct": 10.534689372272782
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "United Arab Emirates",
-    "iso_a3": "ARE",
-    "value_loss": 244268237.15258798,
-    "national_gdp": 511403403675.97,
-    "loss_as_gdp_pct": 0.04776429632591155
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "India",
-    "iso_a3": "IND",
-    "value_loss": 209958767.1520799,
-    "national_gdp": 3346107287730.93,
-    "loss_as_gdp_pct": 0.006274717129421682
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Brazil",
-    "iso_a3": "BRA",
-    "value_loss": 187797524.31983346,
-    "national_gdp": 1951923832083.87,
-    "loss_as_gdp_pct": 0.0096211502330673
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mauritius",
-    "iso_a3": "MUS",
-    "value_loss": 161490680.16573253,
-    "national_gdp": 12936444123.3037,
-    "loss_as_gdp_pct": 1.248339022891332
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Honduras",
-    "iso_a3": "HND",
-    "value_loss": 146672827.78944367,
-    "national_gdp": 31426041806.7985,
-    "loss_as_gdp_pct": 0.46672383589114125
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Saudi Arabia",
-    "iso_a3": "SAU",
-    "value_loss": 142410241.44638312,
-    "national_gdp": 1239075200000.0,
-    "loss_as_gdp_pct": 0.011493268644742717
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Taiwan",
-    "iso_a3": "TWN",
-    "value_loss": 127052010.98313825,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Oman",
-    "iso_a3": "OMN",
-    "value_loss": 125926949.53610958,
-    "national_gdp": 109852795838.752,
-    "loss_as_gdp_pct": 0.11463244842757768
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Puerto Rico",
-    "iso_a3": "PRI",
-    "value_loss": 123815369.46391061,
-    "national_gdp": 113843700000.0,
-    "loss_as_gdp_pct": 0.10875908764728362
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Guam",
-    "iso_a3": "GUM",
-    "value_loss": 122151711.23980041,
-    "national_gdp": 6910000000.0,
-    "loss_as_gdp_pct": 1.7677526952214242
+    "country": "Malaysia",
+    "iso_a3": "MYS",
+    "value_loss": 555845091.4482251,
+    "national_gdp": 407830525989.553,
+    "loss_as_gdp_pct": 0.136293155128477
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Bahamas",
     "iso_a3": "BHS",
-    "value_loss": 118985261.51518092,
+    "value_loss": 466785430.3533795,
     "national_gdp": 13896800000.0,
-    "loss_as_gdp_pct": 0.8562061878646948
+    "loss_as_gdp_pct": 3.358941845269267
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Brazil",
+    "iso_a3": "BRA",
+    "value_loss": 439792631.7593414,
+    "national_gdp": 1951923832083.87,
+    "loss_as_gdp_pct": 0.022531239412647557
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominican Rep.",
     "iso_a3": "DOM",
-    "value_loss": 112306964.76833105,
+    "value_loss": 433794325.9961313,
     "national_gdp": 113478087134.8,
-    "loss_as_gdp_pct": 0.09896797487864085
+    "loss_as_gdp_pct": 0.38227144724499046
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Aruba",
-    "iso_a3": "ABW",
-    "value_loss": 87554131.06364787,
-    "national_gdp": 3324034443.26581,
-    "loss_as_gdp_pct": 2.6339718362733735
+    "country": "Honduras",
+    "iso_a3": "HND",
+    "value_loss": 319599044.5066874,
+    "national_gdp": 31426041806.7985,
+    "loss_as_gdp_pct": 1.0169879059905897
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fiji",
-    "iso_a3": "FJI",
-    "value_loss": 81928345.45992899,
-    "national_gdp": 4977861885.60316,
-    "loss_as_gdp_pct": 1.6458541306033414
+    "country": "Puerto Rico",
+    "iso_a3": "PRI",
+    "value_loss": 295530716.6625388,
+    "national_gdp": 113843700000.0,
+    "loss_as_gdp_pct": 0.2595933869529353
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Cayman Is.",
-    "iso_a3": "CYM",
-    "value_loss": 78977835.32890177,
-    "national_gdp": 6660161212.01997,
-    "loss_as_gdp_pct": 1.1858246792339802
+    "country": "Guam",
+    "iso_a3": "GUM",
+    "value_loss": 295433382.71394163,
+    "national_gdp": 6910000000.0,
+    "loss_as_gdp_pct": 4.27544692784286
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Jamaica",
     "iso_a3": "JAM",
-    "value_loss": 72036994.44303738,
+    "value_loss": 282587998.1715353,
     "national_gdp": 18813516805.214,
-    "loss_as_gdp_pct": 0.3829002051496983
+    "loss_as_gdp_pct": 1.5020477090876414
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Venezuela",
+    "iso_a3": "VEN",
+    "value_loss": 275593478.20291215,
+    "national_gdp": 89013255584.7499,
+    "loss_as_gdp_pct": 0.3096094805121676
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "India",
+    "iso_a3": "IND",
+    "value_loss": 253765811.24519852,
+    "national_gdp": 3346107287730.93,
+    "loss_as_gdp_pct": 0.007583911375934475
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "United Arab Emirates",
+    "iso_a3": "ARE",
+    "value_loss": 249363887.95750362,
+    "national_gdp": 511403403675.97,
+    "loss_as_gdp_pct": 0.04876070166234227
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "U.S. Virgin Is.",
     "iso_a3": "VIR",
-    "value_loss": 69465515.53559741,
+    "value_loss": 224315903.85515606,
     "national_gdp": 4672000000.0,
-    "loss_as_gdp_pct": 1.4868475071831637
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tanzania",
-    "iso_a3": "TZA",
-    "value_loss": 68146066.88692297,
-    "national_gdp": 75749121842.9149,
-    "loss_as_gdp_pct": 0.0899628473954341
+    "loss_as_gdp_pct": 4.801282188680567
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Cuba",
     "iso_a3": "CUB",
-    "value_loss": 63815916.12141175,
+    "value_loss": 200708362.8159912,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Panama",
-    "iso_a3": "PAN",
-    "value_loss": 61707029.27697521,
-    "national_gdp": 76479304470.9375,
-    "loss_as_gdp_pct": 0.08068461095958863
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "British Virgin Is.",
-    "iso_a3": "VGB",
-    "value_loss": 59198068.08649625,
+    "country": "Taiwan",
+    "iso_a3": "TWN",
+    "value_loss": 147776997.25544718,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -11479,241 +11407,304 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Barbados",
     "iso_a3": "BRB",
-    "value_loss": 57845125.534651555,
+    "value_loss": 142503183.34146923,
     "national_gdp": 6884900000.0,
-    "loss_as_gdp_pct": 0.8401737938772031
+    "loss_as_gdp_pct": 2.069793073849573
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Costa Rica",
     "iso_a3": "CRI",
-    "value_loss": 53765412.10839296,
+    "value_loss": 140660146.39999864,
     "national_gdp": 69243626028.5936,
-    "loss_as_gdp_pct": 0.07764673110300574
+    "loss_as_gdp_pct": 0.20313804239817562
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Venezuela",
-    "iso_a3": "VEN",
-    "value_loss": 50308491.34597209,
-    "national_gdp": 89013255584.7499,
-    "loss_as_gdp_pct": 0.056517977031042485
+    "country": "Mauritius",
+    "iso_a3": "MUS",
+    "value_loss": 127956466.963853,
+    "national_gdp": 12936444123.3037,
+    "loss_as_gdp_pct": 0.9891162188329042
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Qatar",
-    "iso_a3": "QAT",
-    "value_loss": 49773678.40913681,
-    "national_gdp": 235709340659.341,
-    "loss_as_gdp_pct": 0.021116548996279377
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sri Lanka",
-    "iso_a3": "LKA",
-    "value_loss": 48816385.55840059,
-    "national_gdp": 74143020262.8076,
-    "loss_as_gdp_pct": 0.0658408375938367
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kuwait",
-    "iso_a3": "KWT",
-    "value_loss": 45684453.01127468,
-    "national_gdp": 183502046693.878,
-    "loss_as_gdp_pct": 0.024895881999336202
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Palau",
-    "iso_a3": "PLW",
-    "value_loss": 44839632.076343834,
-    "national_gdp": 243826812.744141,
-    "loss_as_gdp_pct": 18.389951282099634
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Colombia",
-    "iso_a3": "COL",
-    "value_loss": 43211831.71228026,
-    "national_gdp": 345632492851.448,
-    "loss_as_gdp_pct": 0.012502248083154784
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Vietnam",
-    "iso_a3": "VNM",
-    "value_loss": 42706162.53207173,
-    "national_gdp": 413445230668.578,
-    "loss_as_gdp_pct": 0.010329339744229735
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Kenya",
-    "iso_a3": "KEN",
-    "value_loss": 42073086.623649694,
-    "national_gdp": 114448978152.637,
-    "loss_as_gdp_pct": 0.036761434923025825
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Bahrain",
-    "iso_a3": "BHR",
-    "value_loss": 41373376.38660984,
-    "national_gdp": 46458191489.3617,
-    "loss_as_gdp_pct": 0.0890550730888519
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Seychelles",
-    "iso_a3": "SYC",
-    "value_loss": 38590845.984882355,
-    "national_gdp": 2018346588.73752,
-    "loss_as_gdp_pct": 1.9120029335011788
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "N. Mariana Is.",
-    "iso_a3": "MNP",
-    "value_loss": 32844630.365499638,
-    "national_gdp": 1096000000.0,
-    "loss_as_gdp_pct": 2.996772843567485
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Mozambique",
-    "iso_a3": "MOZ",
-    "value_loss": 28497765.392330628,
-    "national_gdp": 18883528581.3734,
-    "loss_as_gdp_pct": 0.150913349004278
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Turks and Caicos Is.",
-    "iso_a3": "TCA",
-    "value_loss": 25636140.56233104,
-    "national_gdp": 1434119000.0,
-    "loss_as_gdp_pct": 1.7875880985002666
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Belize",
-    "iso_a3": "BLZ",
-    "value_loss": 22900967.26369843,
-    "national_gdp": 2846604350.0,
-    "loss_as_gdp_pct": 0.8045012389480269
+    "country": "Fiji",
+    "iso_a3": "FJI",
+    "value_loss": 127832093.97531314,
+    "national_gdp": 4977861885.60316,
+    "loss_as_gdp_pct": 2.5680120684952255
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Sint Maarten",
     "iso_a3": "SXM",
-    "value_loss": 20225855.29789973,
+    "value_loss": 116736000.0,
     "national_gdp": 1592564639.32961,
-    "loss_as_gdp_pct": 1.2700178566324192
+    "loss_as_gdp_pct": 7.330063541354278
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Vanuatu",
-    "iso_a3": "VUT",
-    "value_loss": 19868485.189052157,
-    "national_gdp": 1055031360.57356,
-    "loss_as_gdp_pct": 1.8832127585525802
+    "country": "Saudi Arabia",
+    "iso_a3": "SAU",
+    "value_loss": 113521247.14181691,
+    "national_gdp": 1239075200000.0,
+    "loss_as_gdp_pct": 0.009161772194441219
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Antigua and Barb.",
-    "iso_a3": "ATG",
-    "value_loss": 16630514.394100836,
-    "national_gdp": 1866566666.66667,
-    "loss_as_gdp_pct": 0.8909681444059935
+    "country": "Vietnam",
+    "iso_a3": "VNM",
+    "value_loss": 112761596.82456717,
+    "national_gdp": 413445230668.578,
+    "loss_as_gdp_pct": 0.027273647985301838
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "St-Martin",
-    "iso_a3": "MAF",
-    "value_loss": 15719039.5708596,
+    "country": "British Virgin Is.",
+    "iso_a3": "VGB",
+    "value_loss": 112449577.89322624,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Papua New Guinea",
-    "iso_a3": "PNG",
-    "value_loss": 14933355.004708251,
-    "national_gdp": 31653185952.609,
-    "loss_as_gdp_pct": 0.047178047186360324
+    "country": "Qatar",
+    "iso_a3": "QAT",
+    "value_loss": 108066000.00000001,
+    "national_gdp": 235709340659.341,
+    "loss_as_gdp_pct": 0.045847143646370145
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "New Caledonia",
-    "iso_a3": "NCL",
-    "value_loss": 13153115.289358532,
-    "national_gdp": 9623318718.31459,
-    "loss_as_gdp_pct": 0.13667961827270897
+    "country": "Tanzania",
+    "iso_a3": "TZA",
+    "value_loss": 106033578.27829248,
+    "national_gdp": 75749121842.9149,
+    "loss_as_gdp_pct": 0.1399799439235482
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Panama",
+    "iso_a3": "PAN",
+    "value_loss": 102392912.5888044,
+    "national_gdp": 76479304470.9375,
+    "loss_as_gdp_pct": 0.13388316394497835
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Oman",
+    "iso_a3": "OMN",
+    "value_loss": 96467893.23937851,
+    "national_gdp": 109852795838.752,
+    "loss_as_gdp_pct": 0.0878156013261414
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St-Martin",
+    "iso_a3": "MAF",
+    "value_loss": 89337000.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Bahrain",
+    "iso_a3": "BHR",
+    "value_loss": 78792377.41108193,
+    "national_gdp": 46458191489.3617,
+    "loss_as_gdp_pct": 0.16959846021798827
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Turks and Caicos Is.",
+    "iso_a3": "TCA",
+    "value_loss": 76301103.70346867,
+    "national_gdp": 1434119000.0,
+    "loss_as_gdp_pct": 5.320416485903099
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Colombia",
+    "iso_a3": "COL",
+    "value_loss": 74283392.07819,
+    "national_gdp": 345632492851.448,
+    "loss_as_gdp_pct": 0.021492016408919293
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Aruba",
+    "iso_a3": "ABW",
+    "value_loss": 73262813.60031193,
+    "national_gdp": 3324034443.26581,
+    "loss_as_gdp_pct": 2.2040329259745097
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Kenya",
+    "iso_a3": "KEN",
+    "value_loss": 73048274.26524426,
+    "national_gdp": 114448978152.637,
+    "loss_as_gdp_pct": 0.06382606069913711
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Palau",
+    "iso_a3": "PLW",
+    "value_loss": 71887983.20568728,
+    "national_gdp": 243826812.744141,
+    "loss_as_gdp_pct": 29.483214908412364
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cayman Is.",
+    "iso_a3": "CYM",
+    "value_loss": 70394097.98688541,
+    "national_gdp": 6660161212.01997,
+    "loss_as_gdp_pct": 1.0569428538732846
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Antigua and Barb.",
+    "iso_a3": "ATG",
+    "value_loss": 66043000.0,
+    "national_gdp": 1866566666.66667,
+    "loss_as_gdp_pct": 3.5382074039680633
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Saint Lucia",
     "iso_a3": "LCA",
-    "value_loss": 12759630.03775812,
+    "value_loss": 48075104.264509834,
     "national_gdp": 2342714814.81481,
-    "loss_as_gdp_pct": 0.5446514427223085
+    "loss_as_gdp_pct": 2.052110822900573
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Madagascar",
-    "iso_a3": "MDG",
-    "value_loss": 12652565.185303524,
-    "national_gdp": 15325603272.6097,
-    "loss_as_gdp_pct": 0.08255834997318835
+    "country": "Belize",
+    "iso_a3": "BLZ",
+    "value_loss": 46366369.64281433,
+    "national_gdp": 2846604350.0,
+    "loss_as_gdp_pct": 1.6288308434157466
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fr. Polynesia",
-    "iso_a3": "PYF",
-    "value_loss": 12610481.23831064,
-    "national_gdp": 5622688338.06317,
-    "loss_as_gdp_pct": 0.22427850309509653
+    "country": "Kuwait",
+    "iso_a3": "KWT",
+    "value_loss": 38365857.12243326,
+    "national_gdp": 183502046693.878,
+    "loss_as_gdp_pct": 0.020907590849074287
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Trinidad and Tobago",
-    "iso_a3": "TTO",
-    "value_loss": 12320648.80350602,
-    "national_gdp": 28341164301.126,
-    "loss_as_gdp_pct": 0.04347262756250462
+    "country": "Sri Lanka",
+    "iso_a3": "LKA",
+    "value_loss": 37355447.388266936,
+    "national_gdp": 74143020262.8076,
+    "loss_as_gdp_pct": 0.050382958848798835
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Mozambique",
+    "iso_a3": "MOZ",
+    "value_loss": 30846995.368011665,
+    "national_gdp": 18883528581.3734,
+    "loss_as_gdp_pct": 0.16335397928986087
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Seychelles",
+    "iso_a3": "SYC",
+    "value_loss": 30313068.914286956,
+    "national_gdp": 2018346588.73752,
+    "loss_as_gdp_pct": 1.5018762923788944
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "France",
     "iso_a3": "-99",
-    "value_loss": 12307737.931675758,
+    "value_loss": 28894219.048751224,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Sudan",
+    "iso_a3": "SDN",
+    "value_loss": 27827133.631529644,
+    "national_gdp": 51666875363.0963,
+    "loss_as_gdp_pct": 0.05385875076820597
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Vanuatu",
+    "iso_a3": "VUT",
+    "value_loss": 27662465.60643575,
+    "national_gdp": 1055031360.57356,
+    "loss_as_gdp_pct": 2.621956715238991
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Trinidad and Tobago",
+    "iso_a3": "TTO",
+    "value_loss": 26535854.39083644,
+    "national_gdp": 28341164301.126,
+    "loss_as_gdp_pct": 0.09363007852779769
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "N. Mariana Is.",
+    "iso_a3": "MNP",
+    "value_loss": 26104207.095783316,
+    "national_gdp": 1096000000.0,
+    "loss_as_gdp_pct": 2.3817707204181855
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Netherlands",
+    "iso_a3": "NLD",
+    "value_loss": 19702937.016875133,
+    "national_gdp": 1046540797548.64,
+    "loss_as_gdp_pct": 0.0018826726165884996
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Anguilla",
+    "iso_a3": "AIA",
+    "value_loss": 19685000.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -11722,241 +11713,223 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Brunei",
     "iso_a3": "BRN",
-    "value_loss": 10985925.602761937,
+    "value_loss": 17223458.243958194,
     "national_gdp": 16681536466.7183,
-    "loss_as_gdp_pct": 0.06585679697239039
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cook Is.",
-    "iso_a3": "COK",
-    "value_loss": 8503020.91881438,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Vin. and Gren.",
-    "iso_a3": "VCT",
-    "value_loss": 7960990.2003995115,
-    "national_gdp": 989188888.888889,
-    "loss_as_gdp_pct": 0.8047998001010436
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Solomon Is.",
-    "iso_a3": "SLB",
-    "value_loss": 7396003.387619386,
-    "national_gdp": 1466670929.62333,
-    "loss_as_gdp_pct": 0.5042714925507404
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Singapore",
-    "iso_a3": "SGP",
-    "value_loss": 7129182.560435976,
-    "national_gdp": 509017841146.557,
-    "loss_as_gdp_pct": 0.0014005761653417827
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cura\u00e7ao",
-    "iso_a3": "CUW",
-    "value_loss": 7085393.443828332,
-    "national_gdp": 3075180834.72417,
-    "loss_as_gdp_pct": 0.23040574927567992
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Cambodia",
-    "iso_a3": "KHM",
-    "value_loss": 7001067.7942262925,
-    "national_gdp": 39994532959.6074,
-    "loss_as_gdp_pct": 0.017505062007592494
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Micronesia",
-    "iso_a3": "FSM",
-    "value_loss": 6881039.155389207,
-    "national_gdp": 415956900.0,
-    "loss_as_gdp_pct": 1.6542673424552419
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Myanmar",
-    "iso_a3": "MMR",
-    "value_loss": 6744404.828325479,
-    "national_gdp": 62253049903.28,
-    "loss_as_gdp_pct": 0.01083385446785978
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Sudan",
-    "iso_a3": "SDN",
-    "value_loss": 6211359.506510391,
-    "national_gdp": 51666875363.0963,
-    "loss_as_gdp_pct": 0.012021937581592037
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Tonga",
-    "iso_a3": "TON",
-    "value_loss": 5951750.719757023,
-    "national_gdp": 556514555.400882,
-    "loss_as_gdp_pct": 1.0694690124447355
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Iran",
-    "iso_a3": "IRN",
-    "value_loss": 5462896.361229889,
-    "national_gdp": 422662261525.665,
-    "loss_as_gdp_pct": 0.00129249683695694
+    "loss_as_gdp_pct": 0.10324863227269919
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Grenada",
     "iso_a3": "GRD",
-    "value_loss": 5076276.231987679,
+    "value_loss": 15865769.028949337,
     "national_gdp": 1224007407.40741,
-    "loss_as_gdp_pct": 0.41472594048591777
+    "loss_as_gdp_pct": 1.2962151154423878
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Anguilla",
-    "iso_a3": "AIA",
-    "value_loss": 4931034.561599371,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Micronesia",
+    "iso_a3": "FSM",
+    "value_loss": 15773926.374878976,
+    "national_gdp": 415956900.0,
+    "loss_as_gdp_pct": 3.7922021187481145
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Netherlands",
-    "iso_a3": "NLD",
-    "value_loss": 4782391.607991434,
-    "national_gdp": 1046540797548.64,
-    "loss_as_gdp_pct": 0.0004569713497260161
+    "country": "Papua New Guinea",
+    "iso_a3": "PNG",
+    "value_loss": 14938240.081768114,
+    "national_gdp": 31653185952.609,
+    "loss_as_gdp_pct": 0.04719348031548412
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Jordan",
-    "iso_a3": "JOR",
-    "value_loss": 4574330.573684249,
-    "national_gdp": 48764963380.2817,
-    "loss_as_gdp_pct": 0.009380362983177994
+    "country": "St. Vin. and Gren.",
+    "iso_a3": "VCT",
+    "value_loss": 14606104.11095845,
+    "national_gdp": 989188888.888889,
+    "loss_as_gdp_pct": 1.4765738146699994
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Nicaragua",
-    "iso_a3": "NIC",
-    "value_loss": 3847880.0749539174,
-    "national_gdp": 15634572502.2294,
-    "loss_as_gdp_pct": 0.024611354575926087
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "St. Kitts and Nevis",
-    "iso_a3": "KNA",
-    "value_loss": 3771708.171696593,
-    "national_gdp": 981429629.62963,
-    "loss_as_gdp_pct": 0.3843075507227098
+    "country": "Fr. Polynesia",
+    "iso_a3": "PYF",
+    "value_loss": 13980086.821335146,
+    "national_gdp": 5622688338.06317,
+    "loss_as_gdp_pct": 0.24863705723641127
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Haiti",
     "iso_a3": "HTI",
-    "value_loss": 3210307.6771181487,
+    "value_loss": 12929709.83578584,
     "national_gdp": 20253551920.5516,
-    "loss_as_gdp_pct": 0.015850590996143242
+    "loss_as_gdp_pct": 0.06383922132031497
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "St. Kitts and Nevis",
+    "iso_a3": "KNA",
+    "value_loss": 11979448.478634793,
+    "national_gdp": 981429629.62963,
+    "loss_as_gdp_pct": 1.2206120660077866
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cambodia",
+    "iso_a3": "KHM",
+    "value_loss": 11978442.699646186,
+    "national_gdp": 39994532959.6074,
+    "loss_as_gdp_pct": 0.029950200222975103
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "New Caledonia",
+    "iso_a3": "NCL",
+    "value_loss": 11737194.484394552,
+    "national_gdp": 9623318718.31459,
+    "loss_as_gdp_pct": 0.12196618264400769
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Madagascar",
+    "iso_a3": "MDG",
+    "value_loss": 11485913.714251725,
+    "national_gdp": 15325603272.6097,
+    "loss_as_gdp_pct": 0.0749459157329202
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Cook Is.",
+    "iso_a3": "COK",
+    "value_loss": 10285006.657747786,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Dominica",
     "iso_a3": "DMA",
-    "value_loss": 2461454.760260058,
+    "value_loss": 9855580.258219993,
     "national_gdp": 623062962.962963,
-    "loss_as_gdp_pct": 0.3950571461597815
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Timor-Leste",
-    "iso_a3": "TLS",
-    "value_loss": 1782520.739346296,
-    "national_gdp": 3208599889.00965,
-    "loss_as_gdp_pct": 0.05555447238691016
+    "loss_as_gdp_pct": 1.5817952348430384
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "St-Barth\u00e9lemy",
     "iso_a3": "BLM",
-    "value_loss": 1731717.900881543,
+    "value_loss": 9474000.0,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Yemen",
-    "iso_a3": "YEM",
-    "value_loss": 1534364.6877665753,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
+    "country": "Cura\u00e7ao",
+    "iso_a3": "CUW",
+    "value_loss": 9103886.560653154,
+    "national_gdp": 3075180834.72417,
+    "loss_as_gdp_pct": 0.2960439418018723
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Israel",
-    "iso_a3": "ISR",
-    "value_loss": 1143582.6434210623,
-    "national_gdp": 525181008025.57,
-    "loss_as_gdp_pct": 0.0002177501901145259
+    "country": "Solomon Is.",
+    "iso_a3": "SLB",
+    "value_loss": 6389893.021428279,
+    "national_gdp": 1466670929.62333,
+    "loss_as_gdp_pct": 0.43567325787723415
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Comoros",
-    "iso_a3": "COM",
-    "value_loss": 938266.8013196863,
-    "national_gdp": 1222485532.31976,
-    "loss_as_gdp_pct": 0.07675074890573577
+    "country": "Myanmar",
+    "iso_a3": "MMR",
+    "value_loss": 5713878.865558356,
+    "national_gdp": 62253049903.28,
+    "loss_as_gdp_pct": 0.009178472178368409
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Singapore",
+    "iso_a3": "SGP",
+    "value_loss": 5522010.843233646,
+    "national_gdp": 509017841146.557,
+    "loss_as_gdp_pct": 0.0010848364039255242
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Iran",
+    "iso_a3": "IRN",
+    "value_loss": 5367308.353229259,
+    "national_gdp": 422662261525.665,
+    "loss_as_gdp_pct": 0.0012698811419441915
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Tonga",
+    "iso_a3": "TON",
+    "value_loss": 5235224.777580967,
+    "national_gdp": 556514555.400882,
+    "loss_as_gdp_pct": 0.9407165952397784
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Jordan",
+    "iso_a3": "JOR",
+    "value_loss": 3441538.6532331626,
+    "national_gdp": 48764963380.2817,
+    "loss_as_gdp_pct": 0.007057400261731278
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Nicaragua",
+    "iso_a3": "NIC",
+    "value_loss": 3289408.6780667137,
+    "national_gdp": 15634572502.2294,
+    "loss_as_gdp_pct": 0.021039326003941986
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Timor-Leste",
+    "iso_a3": "TLS",
+    "value_loss": 2901022.3538582716,
+    "national_gdp": 3208599889.00965,
+    "loss_as_gdp_pct": 0.09041396416533837
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "South Africa",
     "iso_a3": "ZAF",
-    "value_loss": 530443.2398887614,
+    "value_loss": 2676000.0,
     "national_gdp": 407596043067.885,
-    "loss_as_gdp_pct": 0.00013013944784552687
+    "loss_as_gdp_pct": 0.0006565323794260468
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Coral Sea Is.",
-    "iso_a3": "-99",
-    "value_loss": 406720.33744418464,
+    "country": "Yemen",
+    "iso_a3": "YEM",
+    "value_loss": 1845900.655413529,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -11965,7 +11938,34 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Montserrat",
     "iso_a3": "MSR",
-    "value_loss": 398824.2993207652,
+    "value_loss": 1176689.6439905786,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Israel",
+    "iso_a3": "ISR",
+    "value_loss": 860384.6633082906,
+    "national_gdp": 525181008025.57,
+    "loss_as_gdp_pct": 0.0001638263094362316
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Comoros",
+    "iso_a3": "COM",
+    "value_loss": 743434.5549152012,
+    "national_gdp": 1222485532.31976,
+    "loss_as_gdp_pct": 0.06081336222478454
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Coral Sea Is.",
+    "iso_a3": "-99",
+    "value_loss": 322819.7856044574,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -11974,16 +11974,16 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Kiribati",
     "iso_a3": "KIR",
-    "value_loss": 367127.87702880637,
+    "value_loss": 276611.05409416155,
     "national_gdp": 270040453.254018,
-    "loss_as_gdp_pct": 0.13595291838866136
+    "loss_as_gdp_pct": 0.1024331913092898
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
     "country": "Niue",
     "iso_a3": "NIU",
-    "value_loss": 130453.62434270672,
+    "value_loss": 106361.99593268431,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
@@ -11992,27 +11992,27 @@
     "model": "Tipping Point (threshold=10%)",
     "country": "Eritrea",
     "iso_a3": "ERI",
-    "value_loss": 105425.15216692546,
+    "value_loss": 79396.95193929653,
     "national_gdp": 0,
     "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Marshall Is.",
-    "iso_a3": "MHL",
-    "value_loss": 49623.76004560222,
-    "national_gdp": 258723510.742188,
-    "loss_as_gdp_pct": 0.01918022830752755
+    "country": "Djibouti",
+    "iso_a3": "DJI",
+    "value_loss": 39560.68260083325,
+    "national_gdp": 3562814908.76149,
+    "loss_as_gdp_pct": 0.0011103771487973645
   },
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Djibouti",
-    "iso_a3": "DJI",
-    "value_loss": 41164.57473299776,
-    "national_gdp": 3562814908.76149,
-    "loss_as_gdp_pct": 0.0011553947029852147
+    "country": "Marshall Is.",
+    "iso_a3": "MHL",
+    "value_loss": 39118.076722942926,
+    "national_gdp": 258723510.742188,
+    "loss_as_gdp_pct": 0.01511964514192264
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12098,11 +12098,11 @@
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Guatemala",
-    "iso_a3": "GTM",
+    "country": "Fr. S. Antarctic Lands",
+    "iso_a3": "ATF",
     "value_loss": 0.0,
-    "national_gdp": 95641446500.6523,
-    "loss_as_gdp_pct": 0.0
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",
@@ -12116,19 +12116,19 @@
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
-    "country": "Fr. S. Antarctic Lands",
-    "iso_a3": "ATF",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
     "country": "Samoa",
     "iso_a3": "WSM",
     "value_loss": 0.0,
     "national_gdp": 889554711.842341,
+    "loss_as_gdp_pct": 0.0
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
+    "country": "Guatemala",
+    "iso_a3": "GTM",
+    "value_loss": 0.0,
+    "national_gdp": 95641446500.6523,
     "loss_as_gdp_pct": 0.0
   },
   {
@@ -12170,6 +12170,15 @@
   {
     "scenario": "y_future_rcp85_2100",
     "model": "Tipping Point (threshold=10%)",
+    "country": "Pitcairn Is.",
+    "iso_a3": "PCN",
+    "value_loss": 0.0,
+    "national_gdp": 0,
+    "loss_as_gdp_pct": 0
+  },
+  {
+    "scenario": "y_future_rcp85_2100",
+    "model": "Tipping Point (threshold=10%)",
     "country": "Somaliland",
     "iso_a3": "-99",
     "value_loss": 0.0,
@@ -12184,15 +12193,6 @@
     "value_loss": 0.0,
     "national_gdp": 10203000000.0,
     "loss_as_gdp_pct": 0.0
-  },
-  {
-    "scenario": "y_future_rcp85_2100",
-    "model": "Tipping Point (threshold=10%)",
-    "country": "Pitcairn Is.",
-    "iso_a3": "PCN",
-    "value_loss": 0.0,
-    "national_gdp": 0,
-    "loss_as_gdp_pct": 0
   },
   {
     "scenario": "y_future_rcp85_2100",

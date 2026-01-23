@@ -15,10 +15,15 @@ import plotly.graph_objects as go
 from matplotlib.patches import Patch
 
 from src import utils
-from src.plots import plot_utils
+from src.plots import plot_config, plot_utils
 
 from .analysis import AnalysisResults, DepreciationResult
-from .depreciation_models import DepreciationModel
+from .depreciation_models import (
+    CompoundModel,
+    DepreciationModel,
+    LinearModel,
+    TippingPointModel,
+)
 
 # =============================================================================
 # STYLE CONFIGURATION
@@ -205,14 +210,16 @@ def sort_key(item):
 
 
 def plot_model_comparison(
-    models: List[DepreciationModel] = None,
-    value: float = 100.0,
-    delta_cc_range: np.ndarray = None,
-    ax: plt.Axes = None,
+    models: List[DepreciationModel] = [
+        LinearModel(),
+        CompoundModel(),
+        TippingPointModel(),
+    ],
+    original_cc_values: list[float] = [0.1, 0.3, 0.5],
     save_path: Path = None,
-) -> plt.Figure:
+) -> tuple[plt.Figure, plt.Figure, plt.Figure]:
     """
-    Plot comparison of depreciation models.
+    Plot comparison of depreciation models by plotting their value loss curves as a function of coral cover change.
 
     Shows how different models translate coral cover change to value loss.
 
@@ -234,40 +241,290 @@ def plot_model_comparison(
     Figure
         Matplotlib figure.
     """
-    from .depreciation_models import CompoundModel, LinearModel
+    from .depreciation_models import TippingPointModel
 
-    if models is None:
-        # models = [LinearModel(), CompoundModel(), TippingPointModel()]
-        models = [LinearModel(), CompoundModel()]
+    # Ensure save_path directory exists
+    if save_path:
+        save_path = Path(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
 
+    # Ensure save_path directory exists
+    if save_path:
+        save_path = Path(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
+
+    for m in models:
+        # Sanitize model name for filename (remove special characters)
+        save_name = utils.sanitize_filename(m.name)
+
+        if isinstance(m, TippingPointModel):
+            plot_tipping_point_model(
+                tipping_point_model=m,
+                original_cc_values=original_cc_values,
+                save_path=save_path / f"{save_name}.png" if save_path else None,
+            )
+        else:
+            plot_non_tipping_point_model(
+                non_tipping_point_model=m,
+                save_path=save_path / f"{save_name}.png" if save_path else None,
+            )
+
+    # if delta_cc_range is None:
+    #     delta_cc_range = np.linspace(0, -1.0, 101)  # 0 to -100pp
+
+    # if ax is None:
+    #     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
+    # else:
+    #     fig = ax.figure
+
+    # # Convert to percentage points for display
+    # x_values = delta_cc_range * 100  # Now in percentage points
+
+    # for model in models:
+    #     # Handle tipping point model which requires original_cc
+    #     if model.model_type == "tipping_point":
+    #         # Use default original_cc for comparison plots
+    #         threshold = getattr(model, "threshold_cc", 0.1)
+    #         remaining = model.calculate(
+    #             delta_cc_range, value, original_cc=0.5, threshold=threshold
+    #         )
+    #     else:
+    #         remaining = model.calculate(delta_cc_range, value)
+    #     loss_pct = 100 * (value - remaining) / value
+    #     ax.plot(np.abs(x_values), loss_pct, label=model.name, linewidth=2)
+
+    # ax.set_xlabel("Coral Cover Decrease (percentage points)", fontsize=12)
+    # ax.set_ylabel("Value Loss (%)", fontsize=12)
+    # ax.set_title("Depreciation Model Comparison", fontsize=14)
+    # ax.legend(loc="upper left")
+    # ax.grid(True, alpha=0.3)
+    # ax.set_xlim(0, 100)
+    # ax.set_ylim(0, 100)
+
+    # plt.tight_layout()
+
+    # if save_path:
+    #     fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    #     print(f"Saved: {save_path}")
+
+    # return fig
+
+
+def plot_non_tipping_point_model(
+    non_tipping_point_model: DepreciationModel,
+    value: float = 100.0,
+    delta_cc_range: np.ndarray = None,
+    ax: plt.Axes = None,
+    save_path: Path = None,
+) -> plt.Figure:
+    """
+    Plot the value loss curve of a non-tipping point model as a function of coral cover change.
+
+    Parameters
+    ----------
+    non_tipping_point_model: DepreciationModel
+        Non-tipping point model to plot.
+    value: float
+        Initial coral cover value.
+    delta_cc_range: np.ndarray
+        Range of coral cover changes to plot. Default is 0 to -100pp.
+    ax: plt.Axes
+        Matplotlib axes to plot on.
+    save_path: Path
+        Save path.
+
+    Returns
+    -------
+    Figure
+    """
     if delta_cc_range is None:
-        delta_cc_range = np.linspace(0, -1.0, 101)  # 0 to -100pp
+        delta_cc_range = np.linspace(
+            0, -1.0, 1000
+        )  # 0 to -100pp, high resolution for smoothness
 
+    # Set up figure and axis
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
     else:
         fig = ax.figure
 
-    # Convert to percentage points for display
-    x_values = delta_cc_range * 100  # Now in percentage points
+    # Choose color from a perceptually uniform colormap for visual clarity
+    color = plot_config.MODEL_COLORS[non_tipping_point_model.model_type]
 
-    for model in models:
-        remaining = model.calculate(delta_cc_range, value)
-        loss_pct = 100 * (value - remaining) / value
-        ax.plot(np.abs(x_values), loss_pct, label=model.name, linewidth=2)
+    # Calculate value loss
+    ys = non_tipping_point_model.calculate(delta_cc_range, value)
+    cc_pct = delta_cc_range * 100  # percentage points
 
-    ax.set_xlabel("Coral Cover Decrease (percentage points)", fontsize=12)
-    ax.set_ylabel("Value Loss (%)", fontsize=12)
-    ax.set_title("Depreciation Model Comparison", fontsize=14)
-    ax.legend(loc="upper left")
+    # Plot the curve
+    ax.plot(
+        cc_pct,
+        ys,
+        color=color,
+        linewidth=3,
+        alpha=0.95,
+    )
+
+    ax.set_xlabel(
+        "Coral Cover Decrease (percentage points)",
+        fontsize=plot_config.PAPER_CONFIG.label_fontsize,
+    )
+    ax.set_ylabel(
+        "Remaining Value (%)", fontsize=plot_config.PAPER_CONFIG.label_fontsize
+    )
+    # ax.set_title(f"{non_tipping_point_model.name} Value Loss Curve", fontsize=14)
     ax.grid(True, alpha=0.3)
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
+    ax.set_xlim(-45, ax.get_xlim()[1])
+
+    ax.tick_params(axis="x", labelsize=plot_config.PAPER_CONFIG.tick_fontsize)
+    ax.tick_params(axis="y", labelsize=plot_config.PAPER_CONFIG.tick_fontsize)
 
     plt.tight_layout()
 
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
+        print(f"Saved: {save_path}")
+
+    return fig
+
+
+def plot_tipping_point_model(
+    tipping_point_model: DepreciationModel,
+    value: float = 100.0,
+    original_cc_values: list[float] = [0.1, 0.3, 0.5],
+    ax: plt.Axes = None,
+    save_path: Path = None,
+) -> plt.Figure:
+    """
+    Plot the value loss curve of a tipping point model as a function of coral cover change for different initial coral cover values.
+
+    Parameters
+    ----------
+    tipping_point_model: TippingPointModel
+        Tipping point model to plot.
+    value: float
+        Initial coral cover value.
+    delta_cc_range: np.ndarray
+        Range of coral cover changes to plot.
+    ax: plt.Axes
+        Matplotlib axes to plot on.
+    save_path: Path
+        Save path.
+
+    Returns
+    -------
+    Figure
+    """
+
+    cc = np.linspace(
+        0, -1, 1000
+    )  # cc as proportion change (e.g., 0 to -1 == 0% to -100%)
+
+    # Set up figure and axis (use provided ax if available)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=300)
+    else:
+        fig = ax.figure
+
+    # get three reds from the Reds colormap
+    reds = plt.cm.Reds(np.linspace(0.3, 1, len(original_cc_values)))[::-1]
+
+    curve_width = 3
+    for i, (marker_style, og_cc) in enumerate(zip(["X", "o", "s"], original_cc_values)):
+        ys = tipping_point_model.calculate(cc, value, original_cc=og_cc)
+        cc_pct = cc * 100  # display as percent, e.g., 0 to -100
+        # Find the tipping index: where value drops to zero (tipping point is crossed)
+        tipped = (
+            ys == 0
+        )  # N.B. this only finds a fall to zero, not a sudden large change: TODO: update this to allow dropping to a proportion of original value
+        if np.any(tipped):
+            tip_idx = np.argmax(tipped)
+            # Plot pre-tipping section (values > 0)
+            ax.plot(
+                cc_pct[:tip_idx],
+                ys[:tip_idx],
+                alpha=1,
+                color=reds[i],
+                zorder=-i,
+                lw=curve_width,
+            )
+            # Plot post-tipping section (values == 0)
+            ax.plot(
+                cc_pct[tip_idx + 1 :],
+                ys[tip_idx + 1 :],
+                # color=ax.lines[-1].get_color(),
+                color=reds[i],
+                alpha=1,
+            )
+            # Plot post-tipping section (values == 0)
+            ax.plot(
+                cc_pct[tip_idx + 1 :],
+                ys[tip_idx + 1 :],
+                # color=ax.lines[-1].get_color(),
+                color=reds[i],
+                alpha=1,
+                zorder=i,
+            )
+            # Plot an arrow connecting pre-tip and post-tip value
+            ax.annotate(
+                "",
+                xy=(cc_pct[tip_idx - 1], ys[tip_idx + 1] + 2),
+                xytext=(cc_pct[tip_idx - 1], ys[tip_idx - 1] - 2),
+                arrowprops=dict(
+                    arrowstyle="->", color="black", lw=1, shrinkA=4, shrinkB=4
+                ),
+                annotation_clip=False,
+            )
+            # Mark tipping point
+            ax.scatter(
+                cc_pct[tip_idx - 1],
+                ys[tip_idx - 1],
+                marker=marker_style,
+                color=reds[i],
+                zorder=10,
+                label=f"{og_cc * 100:.0f}%",
+                s=80,
+                lw=0.5,
+                edgecolor="black",
+            )
+            ax.scatter(
+                cc_pct[tip_idx - 1],
+                ys[tip_idx],
+                marker=marker_style,
+                color=reds[i],
+                zorder=10,
+                s=80,
+                lw=0.5,
+                edgecolor="black",
+            )
+        else:
+            # No tipping point encountered, just plot the whole line
+            print(f"No tipping point encountered for {og_cc * 100:.0f}%")
+            ax.plot(cc_pct, ys, label=f"{og_cc * 100:.0f}%", alpha=0.8)
+
+    ax.legend(
+        title="Initial coral cover",
+        title_fontproperties={"weight": "bold"},
+        loc="upper center",
+    )
+
+    [ax.axhline(val, color="lightgray", zorder=0, lw=0.8) for val in [0, value]]
+
+    ax.set_xlim(-45, ax.get_xlim()[1])
+    ax.set_xlabel(
+        "Coral Cover Decrease (percentage points)",
+        fontsize=plot_config.PAPER_CONFIG.label_fontsize,
+    )
+    ax.set_ylabel(
+        "Remaining value (%)", fontsize=plot_config.PAPER_CONFIG.label_fontsize
+    )
+    ax.grid(alpha=0.25, which="both", axis="both")
+    ax.tick_params(axis="x", labelsize=plot_config.PAPER_CONFIG.tick_fontsize)
+    ax.tick_params(axis="y", labelsize=plot_config.PAPER_CONFIG.tick_fontsize)
+
+    plt.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"Saved: {save_path}")
 
     return fig
@@ -802,7 +1059,15 @@ def plot_model_comparison_interactive(
     fig = go.Figure()
 
     for model in models:
-        remaining = model.calculate(delta_cc_range, value)
+        # Handle tipping point model which requires original_cc
+        if model.model_type == "tipping_point":
+            # Use default original_cc for comparison plots
+            threshold = getattr(model, "threshold_cc", 0.1)
+            remaining = model.calculate(
+                delta_cc_range, value, original_cc=0.5, threshold=threshold
+            )
+        else:
+            remaining = model.calculate(delta_cc_range, value)
         loss_pct = 100 * (value - remaining) / value
 
         fig.add_trace(
@@ -1291,7 +1556,6 @@ def plot_tourism_value_bins_map(
 def plot_spatial_distribution(
     gdf,
     plot_column: str = "bin_global",
-    bbox: tuple = None,
     title: str = None,
     save_path: Path = None,
     fig: plt.Figure = None,
@@ -1301,7 +1565,7 @@ def plot_spatial_distribution(
     vmin: float = None,
     vmax: float = None,
     logarithmic_cbar: bool = False,
-    config: "SpatialPlotConfig" = None,
+    config: "SpatialPlotConfig" = None,  # noqa
     central_longitude: float = None,
     extent: tuple = None,
     show_scalebar: bool = False,
@@ -1315,8 +1579,6 @@ def plot_spatial_distribution(
         Data with values to plot.
     plot_column : str
         Column containing values to plot.
-    bbox : tuple, optional
-        Bounding box (minx, miny, maxx, maxy) to zoom to. Deprecated: use extent in config.
     title : str, optional
         Plot title. Overrides config.title if provided.
     save_path : Path, optional
@@ -1348,7 +1610,7 @@ def plot_spatial_distribution(
         Figure and axes objects.
     """
     import matplotlib.cm as cm
-    from matplotlib.colors import LogNorm, Normalize
+    from matplotlib.colors import Normalize
     from shapely.affinity import scale, translate
 
     from src.plots import plot_utils
@@ -1431,7 +1693,7 @@ def plot_spatial_distribution(
         gdf_plot["geometry"] = gdf_plot.geometry.apply(scale_from_centroid)
 
     # Get colormap
-    cmap = plt.get_cmap(config.cmap)
+    base_cmap = plt.get_cmap(config.cmap)
 
     # Get transform for plotting
     plot_transform = config.get_projection()
@@ -1440,20 +1702,45 @@ def plot_spatial_distribution(
     vmin_val = gdf_plot[plot_column].min() if config.vmin is None else config.vmin
     vmax_val = gdf_plot[plot_column].max() if config.vmax is None else config.vmax
 
+    # Threshold below which values are shown as grey
+    grey_threshold = 10.0
+
     if config.logarithmic_cbar:
-        if vmin_val <= 0:
-            print("Warning: vmin is less than or equal to 0, setting vmin to 1e-10")
-            vmin_val = 1e-10
-            # snap values less than vmin_val to vmin_val
-            gdf_plot[plot_column] = gdf_plot[plot_column].clip(lower=vmin_val)
-        print("Using logarithmic colorbar")
-        norm = LogNorm(vmin=vmin_val, vmax=vmax_val)
+        # Create custom colormap: grey for values < threshold, then logarithmic
+        from matplotlib.colors import Normalize
+
+        # Ensure vmin is at least 0 for the linear portion
+        if vmin_val < 0:
+            vmin_val = 0.0
+
+        # Clip values to ensure they're in valid range
+        gdf_plot[plot_column] = gdf_plot[plot_column].clip(
+            lower=vmin_val, upper=vmax_val
+        )
+
+        # Create threshold logarithmic colormap and normalization
+        cmap = plot_utils.create_threshold_log_colormap(
+            base_cmap, threshold=grey_threshold, grey_fraction=0.1
+        )
+        norm = plot_utils.ThresholdLogNorm(
+            threshold=grey_threshold,
+            vmin=vmin_val,
+            vmax=vmax_val,
+            grey_fraction=0.1,
+        )
+
+        print(
+            f"Using threshold logarithmic colorbar: grey for values < {grey_threshold}, log scale for >= {grey_threshold}"
+        )
     else:
         print(f"vmin_val: {vmin_val:.3e}, vmax_val: {vmax_val:.3e}")
         norm = Normalize(vmin=vmin_val, vmax=vmax_val)
+        cmap = base_cmap
 
     # Plot
-    gdf_plot.plot(
+    # order the gdf by plot_column (ascending) such that low values are plotted first
+
+    gdf_plot.sort_values(by=plot_column, ascending=True).plot(
         ax=ax,
         column=plot_column,
         cmap=cmap,
@@ -1467,7 +1754,7 @@ def plot_spatial_distribution(
     # Colorbar
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    fig.colorbar(
+    cbar = fig.colorbar(
         sm,
         ax=ax,
         label=plot_column,
@@ -1475,6 +1762,28 @@ def plot_spatial_distribution(
         pad=config.cbar_pad,
         aspect=config.cbar_aspect,
     )
+
+    # For threshold logarithmic colorbars, set custom tick locations
+    if config.logarithmic_cbar and isinstance(norm, plot_utils.ThresholdLogNorm):
+        # Create tick locations only for logarithmic portion (no ticks in grey section)
+        grey_threshold = 10.0
+
+        if vmax_val > grey_threshold:
+            # Generate ticks at powers of 10 (10^1, 10^2, 10^3, etc.)
+            log_min = int(
+                np.ceil(np.log10(grey_threshold))
+            )  # First power of 10 >= threshold
+            log_max = int(np.floor(np.log10(vmax_val)))  # Last power of 10 <= vmax
+
+            # Generate ticks at regular intervals (every power of 10)
+            exponents = np.arange(log_min, log_max + 1)
+            log_ticks = 10.0**exponents
+
+            # Format as just "10^{exponent}" without mantissa
+            tick_labels = [f"10$^{{{int(exp)}}}$" for exp in exponents]
+
+            cbar.set_ticks(log_ticks)
+            cbar.set_ticklabels(tick_labels)
 
     # Labels and title
     title_text = (
@@ -1495,6 +1804,7 @@ def plot_spatial_distribution(
             ax=ax,
             length=config.scalebar_length,
             location=config.scalebar_location,
+            loc=config.scalebar_loc,
             units=config.scalebar_units,
             segments=config.scalebar_segments,
             linewidth=config.scalebar_linewidth,
@@ -1524,7 +1834,7 @@ def plot_spatial_distribution_interactive(
     plot_column: str = "bin_global",
     bbox: tuple = None,
     save_path: Path = None,
-) -> "folium.Map":
+) -> "folium.Map":  # noqa
     """
     Create an interactive map showing the spatial distribution of a column in a GeoDataFrame,
     using folium for high-resolution, interactive mapping.
@@ -1984,7 +2294,7 @@ def plot_coral_cover_trajectories(
     ax.set_title("Projected Coral Cover Trajectories", fontsize=14, fontweight="bold")
     ax.legend(loc="lower left", fontsize=10)
     ax.grid(True, alpha=0.3)
-    ax.set_xlim(left=2017)
+    ax.set_xlim(left=2013)
 
     plt.tight_layout()
 
@@ -2068,7 +2378,7 @@ def plot_annual_value_trajectories(
     )
     ax.legend(loc="lower left", fontsize=10)
     ax.grid(True, alpha=0.3)
-    ax.set_xlim(left=2017)
+    ax.set_xlim(left=2013)
 
     plt.tight_layout()
 
@@ -2086,6 +2396,11 @@ def plot_cumulative_loss_trajectories(
     """
     Plot cumulative economic losses over time.
 
+    Simplified version that groups by model and scenario:
+    - Color = RCP scenario (blue for RCP45, red for RCP85) - matches scenario comparison chart
+    - Linestyle = Model (solid for Linear, dashed for Compound, dotted for Tipping Point)
+    - Uses linear interpolation only (simplified)
+
     Parameters
     ----------
     results : dict
@@ -2099,47 +2414,74 @@ def plot_cumulative_loss_trajectories(
     """
     fig, ax = plt.subplots(figsize=(12, 7))
 
-    scenario_colors = {
-        "RCP45": "#3498db",
-        "RCP85": "#e74c3c",
-        "rcp45": "#3498db",
-        "rcp85": "#e74c3c",
+    # Model linestyles (matching scenario comparison chart conceptually)
+    model_linestyles = {
+        "Linear": "-",  # Solid (matches no hatch)
+        "Compound": "--",  # Dashed (matches /// hatch)
+        "Tipping Point": ":",  # Dotted (matches ... hatch)
     }
-    method_styles = {"linear": "-", "exponential": "--"}
 
+    # RCP colors (matching scenario comparison chart)
+    rcp_colors = {
+        "RCP45": COLOURS["rcp45"],  # Blue
+        "RCP85": COLOURS["rcp85"],  # Red
+        "rcp45": COLOURS["rcp45"],
+        "rcp85": COLOURS["rcp85"],
+    }
+
+    # Parse and group results by (rcp, model, interpolation)
+    grouped_results = {}
     for key, result in results.items():
         traj = result.trajectory
-        scenario = traj.scenario.upper() if len(traj.scenario) <= 5 else traj.scenario
+        rcp, year, model_type = parse_scenario(traj.scenario, result.model.name)
 
-        color = "#7f8c8d"
-        for sc, c in scenario_colors.items():
-            if sc.lower() in key.lower():
-                color = c
-                break
+        # Use linear interpolation only for simplicity (or prefer linear if both exist)
+        interp = traj.interpolation_method
+        group_key = (rcp.upper(), model_type, interp)
 
-        style = method_styles.get(traj.interpolation_method, "-")
-        label = f"{scenario} ({traj.interpolation_method.title()})"
+        # Prefer linear interpolation if both exist
+        if group_key not in grouped_results or interp == "linear":
+            grouped_results[group_key] = result
+
+    # Plot each group
+    for (rcp, model_type, interp), result in sorted(grouped_results.items()):
+        traj = result.trajectory
+
+        # Get color and linestyle
+        color = rcp_colors.get(rcp, COLOURS["neutral"])
+        linestyle = model_linestyles.get(model_type, "-")
+
+        # Create label
+        label = f"{RCP_LABELS.get(rcp, rcp)} - {model_type}"
 
         ax.plot(
             traj.years,
             result.cumulative_losses / 1e12,
-            style,
+            linestyle=linestyle,
             color=color,
-            linewidth=2,
+            linewidth=2.5,
             label=label,
-            alpha=0.8,
+            alpha=0.85,
         )
 
-    ax.set_xlabel("Year", fontsize=12)
-    ax.set_ylabel("Cumulative Loss ($ Trillion)", fontsize=12)
+    ax.set_xlabel("Year", fontsize=13)
+    ax.set_ylabel("Cumulative Loss ($ Trillion)", fontsize=13)
     ax.set_title(
-        "Cumulative Economic Losses Over Time\n(Running total of annual losses)",
-        fontsize=14,
+        "Cumulative Economic Losses Over Time",
+        fontsize=15,
         fontweight="bold",
     )
-    ax.legend(loc="upper left", fontsize=10)
-    ax.grid(True, alpha=0.3)
-    ax.set_xlim(left=2017)
+
+    # Create legend with model and scenario groupings
+    ax.legend(
+        loc="upper left",
+        fontsize=11,
+        framealpha=0.95,
+        ncol=1,
+    )
+
+    ax.grid(True, alpha=0.3, linestyle="--")
+    ax.set_xlim(left=2013)
     ax.set_ylim(bottom=0)
 
     plt.tight_layout()
@@ -2154,9 +2496,11 @@ def plot_cumulative_loss_trajectories(
 def plot_annual_loss_trajectories(
     results: dict,
     save_path: Path = None,
+    show_components: bool = True,
 ) -> plt.Figure:
     """
-    Plot annual loss rate trajectories over time.
+    Plot annual loss rate trajectories over time, with explicit separation of
+    value lost vs opportunity cost.
 
     Parameters
     ----------
@@ -2164,12 +2508,19 @@ def plot_annual_loss_trajectories(
         Mapping of scenario names to CumulativeImpactResult.
     save_path : Path, optional
         Save path.
+    show_components : bool, default True
+        If True, show value lost and opportunity cost separately (stacked area or separate lines).
+        If False, show only total annual loss.
 
     Returns
     -------
     Figure
     """
-    fig, ax = plt.subplots(figsize=(12, 7))
+    if show_components:
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+    else:
+        fig, ax1 = plt.subplots(figsize=(12, 7))
+        ax2 = None
 
     scenario_colors = {
         "RCP45": "#3498db",
@@ -2192,7 +2543,8 @@ def plot_annual_loss_trajectories(
         style = method_styles.get(traj.interpolation_method, "-")
         label = f"{scenario} ({traj.interpolation_method.title()})"
 
-        ax.plot(
+        # Plot total annual loss on first axis
+        ax1.plot(
             traj.years,
             result.annual_losses / 1e9,
             style,
@@ -2202,17 +2554,55 @@ def plot_annual_loss_trajectories(
             alpha=0.8,
         )
 
-    ax.set_xlabel("Year", fontsize=12)
-    ax.set_ylabel("Annual Loss ($ Billion/year)", fontsize=12)
-    ax.set_title(
-        "Annual Economic Loss Rate Over Time\n(Loss compared to baseline each year)",
+        # If showing components, plot value lost and opportunity cost separately
+        if show_components and ax2 is not None:
+            # Value lost (decreases over time as less value remains)
+            ax2.plot(
+                traj.years,
+                result.annual_value_lost / 1e9,
+                style,
+                color=color,
+                linewidth=2,
+                label=f"{label} - Value Lost",
+                alpha=0.7,
+                linestyle="-",
+            )
+            # Opportunity cost (stays high after collapse)
+            ax2.plot(
+                traj.years,
+                result.annual_opportunity_cost / 1e9,
+                style,
+                color=color,
+                linewidth=2,
+                label=f"{label} - Opportunity Cost",
+                alpha=0.7,
+                linestyle=":",
+            )
+
+    ax1.set_ylabel("Total Annual Loss ($ Billion/year)", fontsize=12)
+    ax1.set_title(
+        "Annual Economic Loss Over Time",
         fontsize=14,
         fontweight="bold",
     )
-    ax.legend(loc="upper left", fontsize=10)
-    ax.grid(True, alpha=0.3)
-    ax.set_xlim(left=2017)
-    ax.set_ylim(bottom=0)
+    ax1.legend(loc="upper left", fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xlim(left=2013)
+    ax1.set_ylim(bottom=0)
+
+    if show_components and ax2 is not None:
+        ax2.set_xlabel("Year", fontsize=12)
+        ax2.set_ylabel("Loss Components ($ Billion/year)", fontsize=12)
+        ax2.set_title(
+            "Loss Components: Value Lost (solid) vs Opportunity Cost (dotted)",
+            fontsize=12,
+            fontweight="bold",
+        )
+        ax2.legend(loc="upper left", fontsize=9, ncol=2)
+        ax2.grid(True, alpha=0.3)
+        ax2.set_ylim(bottom=0)
+    else:
+        ax1.set_xlabel("Year", fontsize=12)
 
     plt.tight_layout()
 
