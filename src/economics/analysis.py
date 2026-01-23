@@ -276,7 +276,43 @@ def calculate_depreciation(
     coral_change = result_gdf[change_column].fillna(0)
 
     # Calculate remaining value using model
-    remaining_value = model.calculate(coral_change, original_value)
+    # TippingPointModel requires additional parameters (original_cc, threshold)
+    if isinstance(model, type) and model.__name__ == "TippingPointModel":
+        # Handle if model is a class (shouldn't happen, but be safe)
+        model = model()
+
+    if model.model_type == "tipping_point":
+        # Find baseline coral cover column
+        baseline_cover_col = None
+        for col in [
+            "nearest_average_coral_cover",
+            "average_coral_cover",
+            "nearest_y_new",
+        ]:
+            if col in result_gdf.columns:
+                baseline_cover_col = col
+                break
+
+        if baseline_cover_col is None:
+            warnings.warn(
+                "TippingPointModel requires baseline coral cover, but no suitable column found. "
+                "Using default original_cc=0.5. Expected columns: "
+                "'nearest_average_coral_cover', 'average_coral_cover', or 'nearest_y_new'"
+            )
+            original_cc = np.full_like(coral_change, 0.5)
+        else:
+            original_cc = result_gdf[baseline_cover_col].fillna(0.5).values
+
+        # Use model's threshold_cc attribute, or default to 0.1
+        threshold = getattr(model, "threshold_cc", 0.1)
+
+        # Calculate with tipping point model parameters
+        remaining_value = model.calculate(
+            coral_change, original_value, original_cc=original_cc, threshold=threshold
+        )
+    else:
+        # Standard models (Linear, Compound, CoastalProtection) use simple signature
+        remaining_value = model.calculate(coral_change, original_value)
 
     # Store results
     result_gdf["original_value"] = original_value
@@ -512,7 +548,16 @@ def validate_depreciation_formula(model: DepreciationModel) -> None:
 
     print("\n   Test cases:")
     for delta_cc, value, desc in test_cases:
-        remaining = model.calculate(delta_cc, value)
+        # Handle tipping point model which requires original_cc
+        if model.model_type == "tipping_point":
+            threshold = getattr(model, "threshold_cc", 0.1)
+            # Use a reasonable default original_cc for testing
+            original_cc = 0.5 if delta_cc >= 0 else 0.5 + abs(delta_cc)
+            remaining = model.calculate(
+                delta_cc, value, original_cc=original_cc, threshold=threshold
+            )
+        else:
+            remaining = model.calculate(delta_cc, value)
         loss = value - remaining
         loss_pct = 100 * loss / value if value > 0 else 0
         print(
