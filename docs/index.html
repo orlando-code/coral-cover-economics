@@ -117,6 +117,66 @@
             color: white;
         }
         
+        /* Mobile menu button */
+        .nav-menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            z-index: 1001;
+        }
+        
+        .nav-menu-toggle span {
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+        
+        .nav-menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        
+        .nav-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .nav-menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+        
+        /* Mobile menu */
+        .nav-mobile-menu {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: rgba(10, 15, 26, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 999;
+            padding: 1rem;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+        
+        .nav-mobile-menu.active {
+            display: flex;
+        }
+        
+        .nav-mobile-menu .nav-link {
+            width: 100%;
+            padding: 1rem;
+            text-align: left;
+        }
+        
         /* Main content */
         .main {
             padding-top: 80px;
@@ -459,21 +519,149 @@
         
         /* Responsive */
         @media (max-width: 768px) {
+            .nav {
+                padding: 0 1rem;
+            }
+            
+            .nav-inner {
+                height: 56px;
+            }
+            
             .nav-links {
                 display: none;
             }
             
-            .hero h1 {
-                font-size: 1.75rem;
+            .nav-menu-toggle {
+                display: flex;
+            }
+            
+            .nav-brand-text {
+                font-size: 0.95rem;
+            }
+            
+            .main {
+                padding-top: 56px;
             }
             
             .container {
                 padding: 1rem;
             }
             
+            .hero {
+                padding: 2rem 0 3rem;
+            }
+            
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.25rem;
+            }
+            
+            .stat-value {
+                font-size: 1.75rem;
+            }
+            
+            .chart-section {
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            
             .chart-header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .chart-title {
+                font-size: 1.1rem;
+            }
+            
+            .controls {
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            select, .btn {
+                width: 100%;
+            }
+            
+            .toggle-group {
+                width: 100%;
+                justify-content: stretch;
+            }
+            
+            .toggle-btn {
+                flex: 1;
+            }
+            
+            #map-container {
+                height: 400px;
+            }
+            
+            .data-table {
+                font-size: 0.8rem;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem 0.75rem;
+                white-space: nowrap;
+            }
+            
+            .legend {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .nav-brand-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 2rem;
+            }
+            
+            .hero h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            #map-container {
+                height: 300px;
+            }
+            
+            /* Side-by-side charts stack on mobile */
+            .chart-section > div[style*="flex-direction: row"] {
+                flex-direction: column !important;
+            }
+            
+            .chart-section > div[style*="flex-direction: row"] > div {
+                width: 100% !important;
+                max-width: 100% !important;
             }
         }
     </style>
@@ -492,6 +680,20 @@
             </div>
 
             <div class="nav-links">
+                <a class="nav-link active" data-page="overview">Overview</a>
+                <a class="nav-link" data-page="map">Map</a>
+                <a class="nav-link" data-page="trajectories">Trajectories</a>
+                <a class="nav-link" data-page="gdp">Country-level Impact</a>
+                <a class="nav-link" data-page="models">Models</a>
+            </div>
+            
+            <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="nav-mobile-menu" id="nav-mobile-menu">
                 <a class="nav-link active" data-page="overview">Overview</a>
                 <a class="nav-link" data-page="map">Map</a>
                 <a class="nav-link" data-page="trajectories">Trajectories</a>
@@ -960,9 +1162,35 @@
         }
         
         function setupNavigation() {
+            const menuToggle = document.getElementById('nav-menu-toggle');
+            const mobileMenu = document.getElementById('nav-mobile-menu');
+            
+            // Toggle mobile menu
+            if (menuToggle && mobileMenu) {
+                menuToggle.addEventListener('click', () => {
+                    menuToggle.classList.toggle('active');
+                    mobileMenu.classList.toggle('active');
+                });
+                
+                // Close mobile menu when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!menuToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+                        menuToggle.classList.remove('active');
+                        mobileMenu.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Handle navigation clicks
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', (e) => {
                     const page = e.target.dataset.page;
+                    
+                    // Close mobile menu
+                    if (menuToggle && mobileMenu) {
+                        menuToggle.classList.remove('active');
+                        mobileMenu.classList.remove('active');
+                    }
                     
                     // Update nav
                     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
