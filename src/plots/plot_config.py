@@ -60,6 +60,13 @@ class PlotConfig:
 class SpatialPlotConfig(PlotConfig):
     """Configuration for spatial plots with map projections."""
 
+    label_fontsize: int = 12
+    title_fontsize: int = 14
+    tick_fontsize: int = 10
+    save_dpi: int = 300
+    save_format: str = "png"
+    tight_layout: bool = True
+
     # Map projection settings
     central_longitude: Optional[float] = None
     central_latitude: Optional[float] = None
@@ -88,7 +95,12 @@ class SpatialPlotConfig(PlotConfig):
     vmin: Optional[float] = None
     vmax: Optional[float] = None
     logarithmic_cbar: bool = False
-
+    cmap_name: str = (
+        "turbo"  # Can be "turbo", "life aquatic", or any matplotlib colormap name
+    )
+    cbar_pad: float = 0.1
+    cbar_title: Optional[str] = None
+    cbar_shrink: float = 1.0
     # Coordinate transformation for central_longitude
     transform_coords: bool = (
         True  # Whether to transform coords when central_longitude is set
@@ -146,6 +158,30 @@ class SpatialPlotConfig(PlotConfig):
 
         return self.extent
 
+    def get_colormap(self):
+        """
+        Get the colormap based on cmap_name or cmap field.
+
+        If cmap_name is "life aquatic", returns the continuous Wes Anderson colormap.
+        Otherwise, returns the standard matplotlib colormap name.
+
+        Returns:
+            str or LinearSegmentedColormap: Colormap name (str) or continuous Wes Anderson colormap
+        """
+        from src.plots import plot_utils
+
+        # Check cmap_name first (SpatialPlotConfig specific)
+        if hasattr(self, "cmap_name") and self.cmap_name.lower() == "life aquatic":
+            # Return continuous Wes Anderson colormap with 256 colors
+            return plot_utils.get_wa_colormap(n_colours=256, continuous=True)
+
+        # Check cmap field (from PlotConfig base class)
+        if self.cmap.lower() == "life aquatic":
+            return plot_utils.get_wa_colormap(n_colours=256, continuous=True)
+
+        # Use cmap_name if available, otherwise fall back to cmap
+        return getattr(self, "cmap_name", self.cmap)
+
     def copy(self) -> "SpatialPlotConfig":
         """Create a copy of this config."""
         return SpatialPlotConfig(**self.__dict__)
@@ -183,6 +219,7 @@ PAPER_SPATIAL_CONFIG = SpatialPlotConfig(
 # Global extent presets (x0, x1, y0, y1) in degrees
 EXTENT_PRESETS = {
     "global": (-180, 180, -90, 90),
+    "global_reef": (-180, 180, -40, 40),
     "pacific": (100, 260, -40, 40),
     "atlantic": (-80, 20, -40, 50),
     "indian": (20, 150, -40, 30),
@@ -193,6 +230,7 @@ EXTENT_PRESETS = {
     "florida": (-85, -60, 10, 30),
     "florida_focus": (-85, -70, 20, 27),
     "florida_focus_zoom": (-83.5, -80, 24, 25),
+    "red_sea": (32, 42, 20, 30),
 }
 
 
@@ -201,3 +239,6 @@ MODEL_COLORS = {
     "compound": "#3A9AB2",
     "tipping_point": "#F11B00",
 }
+
+
+# countries mapping
