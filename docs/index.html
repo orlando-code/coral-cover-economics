@@ -1076,6 +1076,8 @@
         let siteLayer = null;
         let choroplethLayer = null;
         let countryBoundaries = null;
+        let renderTimeout = null;  // For debouncing
+        let isRendering = false;  // Prevent concurrent renders
         
         const DATA_PATH = 'exported_data/';
         
@@ -1235,26 +1237,38 @@
             });
             
             // Map controls
-            document.getElementById('map-scenario').addEventListener('change', loadSiteData);
-            document.getElementById('map-model').addEventListener('change', loadSiteData);
+            // Debounce filter changes to avoid excessive re-renders
+            const debouncedLoadSiteData = () => {
+                clearTimeout(renderTimeout);
+                renderTimeout = setTimeout(() => {
+                    loadSiteData();
+                }, 200);  // 200ms debounce
+            };
+            
+            document.getElementById('map-scenario').addEventListener('change', debouncedLoadSiteData);
+            document.getElementById('map-model').addEventListener('change', debouncedLoadSiteData);
             document.getElementById('map-metric').addEventListener('change', () => {
-                // Re-render sites and choropleth with new metric
-                if (currentSiteGeojson) {
-                    // Preserve current map view when changing metric
-                    let currentView = null;
-                    if (map) {
-                        currentView = {
-                            center: map.getCenter(),
-                            zoom: map.getZoom()
-                        };
+                // Debounce metric changes
+                clearTimeout(renderTimeout);
+                renderTimeout = setTimeout(() => {
+                    // Re-render sites and choropleth with new metric
+                    if (currentSiteGeojson) {
+                        // Preserve current map view when changing metric
+                        let currentView = null;
+                        if (map) {
+                            currentView = {
+                                center: map.getCenter(),
+                                zoom: map.getZoom()
+                            };
+                        }
+                        const scenario = document.getElementById('map-scenario').value;
+                        const isCumulative = scenario.startsWith('cumulative_');
+                        renderSites(currentSiteGeojson, isCumulative, currentView);
                     }
-                    const scenario = document.getElementById('map-scenario').value;
-                    const isCumulative = scenario.startsWith('cumulative_');
-                    renderSites(currentSiteGeojson, isCumulative, currentView);
-                }
-                if (document.getElementById('map-choropleth-toggle').checked) {
-                    renderChoropleth();
-                }
+                    if (document.getElementById('map-choropleth-toggle').checked) {
+                        renderChoropleth();
+                    }
+                }, 150);
             });
             document.getElementById('map-choropleth-toggle').addEventListener('change', toggleChoropleth);
             
@@ -2219,7 +2233,11 @@
         // ============================================================
         
         function initializeMap() {
-            map = L.map('map').setView([0, 0], 2);
+            // Use canvas renderer for better performance with many polygons
+            map = L.map('map', {
+                preferCanvas: true,  // Use canvas renderer instead of SVG for better performance
+                zoomControl: true
+            }).setView([0, 0], 2);
             
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap, &copy; CARTO',
@@ -2232,6 +2250,23 @@
             // Initialize legend with default settings (annual loss %, non-cumulative)
             const defaultScale = getColorScale(false, 'loss_percent');
             updateMapLegend(defaultScale, false);
+            
+            // Re-render on zoom/move for viewport-based rendering
+            let zoomMoveTimeout = null;
+            map.on('zoomend moveend', () => {
+                if (currentSiteGeojson && !isRendering) {
+                    clearTimeout(zoomMoveTimeout);
+                    zoomMoveTimeout = setTimeout(() => {
+                        const scenario = document.getElementById('map-scenario')?.value;
+                        const isCumulative = scenario?.startsWith('cumulative_');
+                        const currentView = {
+                            center: map.getCenter(),
+                            zoom: map.getZoom()
+                        };
+                        renderSites(currentSiteGeojson, isCumulative, currentView);
+                    }, 300);  // Debounce zoom/move events
+                }
+            });
             
             // Load country boundaries (using Natural Earth via CDN)
             loadCountryBoundaries();
@@ -2417,17 +2452,107 @@
             legendEl.innerHTML = html;
         }
         
+        // Simple geometry simplification function (only at very low zoom levels)
+        function simplifyGeometry(geometry, tolerance = 0.0001) {
+            // Only simplify if tolerance is very high (low zoom), otherwise return original
+            if (tolerance < 0.0005) {
+                return geometry;  // Don't simplify at normal zoom levels
+            }
+            
+            if (!geometry || !geometry.coordinates) return geometry;
+            
+            function simplifyRing(ring, tol) {
+                if (ring.length <= 2) return ring;
+                const simplified = [ring[0]];
+                for (let i = 1; i < ring.length - 1; i++) {
+                    const prev = ring[i - 1];
+                    const curr = ring[i];
+                    const next = ring[i + 1];
+                    // Simple distance check - keep point if it's far enough from line
+                    const dx1 = curr[0] - prev[0];
+                    const dy1 = curr[1] - prev[1];
+                    const dx2 = next[0] - prev[0];
+                    const dy2 = next[1] - prev[1];
+                    const cross = Math.abs(dx1 * dy2 - dx2 * dy1);
+                    if (cross > tol) {
+                        simplified.push(curr);
+                    }
+                }
+                simplified.push(ring[ring.length - 1]);
+                return simplified;
+            }
+            
+            if (geometry.type === 'Polygon') {
+                return {
+                    type: 'Polygon',
+                    coordinates: geometry.coordinates.map(ring => simplifyRing(ring, tolerance))
+                };
+            } else if (geometry.type === 'MultiPolygon') {
+                return {
+                    type: 'MultiPolygon',
+                    coordinates: geometry.coordinates.map(polygon => 
+                        polygon.map(ring => simplifyRing(ring, tolerance))
+                    )
+                };
+            }
+            return geometry;
+        }
+        
+        // Filter features by viewport bounds
+        function filterFeaturesByViewport(geojson, mapBounds) {
+            if (!mapBounds) return geojson;
+            
+            const filteredFeatures = geojson.features.filter(feature => {
+                if (!feature.geometry || !feature.geometry.coordinates) return false;
+                
+                // Get bounding box of feature
+                let minLon = Infinity, maxLon = -Infinity;
+                let minLat = Infinity, maxLat = -Infinity;
+                
+                function processCoords(coords) {
+                    if (Array.isArray(coords[0])) {
+                        coords.forEach(processCoords);
+                    } else {
+                        const [lon, lat] = coords;
+                        minLon = Math.min(minLon, lon);
+                        maxLon = Math.max(maxLon, lon);
+                        minLat = Math.min(minLat, lat);
+                        maxLat = Math.max(maxLat, lat);
+                    }
+                }
+                
+                processCoords(feature.geometry.coordinates);
+                
+                // Check if feature intersects with viewport (with padding for edge cases)
+                return !(maxLon < mapBounds.getWest() || minLon > mapBounds.getEast() ||
+                         maxLat < mapBounds.getSouth() || minLat > mapBounds.getNorth());
+            });
+            
+            return {
+                type: 'FeatureCollection',
+                features: filteredFeatures
+            };
+        }
+        
         function renderSites(geojson, isCumulative = false, preserveView = null) {
             if (!geojson || !geojson.features || geojson.features.length === 0) {
                 console.warn('No features to render');
                 siteLayer.clearLayers();
+                isRendering = false;
                 return;
             }
             
             if (!map || !siteLayer) {
                 console.error('Map or siteLayer not initialized');
+                isRendering = false;
                 return;
             }
+            
+            // Prevent concurrent renders
+            if (isRendering) {
+                return;
+            }
+            isRendering = true;
             
             siteLayer.clearLayers();
             currentSiteGeojson = geojson;
@@ -2438,6 +2563,15 @@
             
             // Update legend
             updateMapLegend(scale, showChoropleth);
+            
+            // Get current zoom level
+            const zoom = map.getZoom();
+            
+            // Filter features by viewport (only render visible features)
+            const mapBounds = map.getBounds();
+            const filteredGeoJSON = filterFeaturesByViewport(geojson, mapBounds);
+            
+            console.log(`Filtered ${geojson.features.length} features to ${filteredGeoJSON.features.length} visible features`);
             
             // Format values for popup
             const formatMoney = (val) => {
@@ -2471,7 +2605,7 @@
                 return {
                     fillColor: fillColor,
                     color: '#1a2332',
-                    weight: 1,
+                    weight: zoom < 5 ? 0.5 : 1,  // Thinner lines at low zoom
                     opacity: 0.9,
                     fillOpacity: 0.7
                 };
@@ -2496,36 +2630,42 @@
                 layer.bindPopup(popupContent);
             };
             
-            // Render all features using a single L.geoJSON call (more efficient)
-            try {
-                const geoJsonLayer = L.geoJSON(geojson, {
-                    style: styleFunction,
-                    onEachFeature: onEachFeature
-                });
-                
-                // Count layers added
-                let layerCount = 0;
-                geoJsonLayer.eachLayer(function(layer) {
-                    siteLayer.addLayer(layer);
-                    layerCount++;
-                });
-                
-                console.log(`✓ Added ${layerCount} layers to map`);
-                
-                // Only fit bounds on initial load, otherwise preserve current view
-                if (layerCount > 0) {
-                    if (preserveView) {
-                        // Restore the previous view
-                        map.setView(preserveView.center, preserveView.zoom);
-                        console.log(`✓ Preserved map view (zoom: ${preserveView.zoom})`);
-                    } else {
+            // Only simplify at very low zoom levels (zoom < 3) to preserve shape quality
+            // Use filtered GeoJSON directly without simplification for normal zoom levels
+            const simplifiedGeoJSON = zoom < 3 ? {
+                type: 'FeatureCollection',
+                features: filteredGeoJSON.features.map(feature => ({
+                    ...feature,
+                    geometry: simplifyGeometry(feature.geometry, 0.001)  // Only at very low zoom
+                }))
+            } : filteredGeoJSON;
+            
+            // Render features using requestAnimationFrame for smooth rendering
+            requestAnimationFrame(() => {
+                try {
+                    const geoJsonLayer = L.geoJSON(simplifiedGeoJSON, {
+                        style: styleFunction,
+                        onEachFeature: onEachFeature
+                    });
+                    
+                    // Batch add layers
+                    let layerCount = 0;
+                    geoJsonLayer.eachLayer(function(layer) {
+                        siteLayer.addLayer(layer);
+                        layerCount++;
+                    });
+                    
+                    console.log(`✓ Added ${layerCount} layers to map (simplified, zoom: ${zoom})`);
+                    
+                    // Only fit bounds on initial load, otherwise preserve current view
+                    if (layerCount > 0 && !preserveView) {
                         // Initial load: fit bounds to show all polygons
                         try {
-                            const bounds = geoJsonLayer.getBounds();
+                            const bounds = L.geoJSON(geojson).getBounds();
                             if (bounds && bounds.isValid()) {
                                 map.fitBounds(bounds, { 
                                     padding: [50, 50],
-                                    maxZoom: 10  // Don't zoom in too much
+                                    maxZoom: 10
                                 });
                                 console.log(`✓ Map bounds set to show all polygons`);
                             } else {
@@ -2536,24 +2676,20 @@
                             console.warn('Error setting map bounds:', boundsError);
                             map.setView([0, 0], 2);
                         }
+                    } else if (preserveView) {
+                        map.setView(preserveView.center, preserveView.zoom);
                     }
+                    
+                    // Update choropleth if it's enabled
+                    if (showChoropleth) {
+                        renderChoropleth();
+                    }
+                } catch (error) {
+                    console.error('Error rendering sites:', error);
+                } finally {
+                    isRendering = false;
                 }
-                
-                console.log(`✓ Rendered ${geojson.features.length} sites (${isCumulative ? 'cumulative' : 'annual'}, metric: ${metric})`);
-            } catch (error) {
-                console.error('Error rendering sites:', error);
-                console.error('Error stack:', error.stack);
-                console.error('GeoJSON structure:', {
-                    type: geojson.type,
-                    featuresCount: geojson.features?.length,
-                    firstFeature: geojson.features?.[0]
-                });
-            }
-            
-            // Update choropleth if it's enabled
-            if (showChoropleth) {
-                renderChoropleth();
-            }
+            });
         }
 
         function toggleChoropleth() {
