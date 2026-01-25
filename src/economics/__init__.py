@@ -58,6 +58,7 @@ from .plotting import (
     plot_coral_cover_trajectories,
     plot_country_losses,
     plot_cumulative_loss_trajectories,
+    plot_cumulative_loss_scenario_comparison,
     plot_gdp_impact_scenario_comparison,
     plot_gdp_percentage_bar,
     plot_gdp_percentage_choropleth,
@@ -123,6 +124,7 @@ __all__ = [
     "plot_annual_value_trajectories",
     "plot_annual_loss_trajectories",
     "plot_cumulative_loss_trajectories",
+    "plot_cumulative_loss_scenario_comparison",
     "plot_trajectory_comparison_interactive",
     # Cumulative impact
     "TrajectoryPoint",
