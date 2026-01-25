@@ -91,7 +91,8 @@ def format_geo_axes(
     ax: plt.Axes,
     extent: Optional[tuple | list] = None,
     crs: Optional[ccrs.CRS] = None,
-    landmass_zorder: int = -1,
+    landmass_zorder: int = 1000,
+    ocean_zorder: int = -2,
     config: Optional[SpatialPlotConfig] = None,
 ) -> plt.Axes:
     """Format the geographical axes object.
@@ -123,7 +124,7 @@ def format_geo_axes(
             )
         if config.show_ocean:
             ax.add_feature(
-                cfeature.OCEAN, alpha=config.ocean_alpha, zorder=landmass_zorder
+                cfeature.OCEAN, alpha=config.ocean_alpha, zorder=ocean_zorder
             )
         if config.show_coastline:
             ax.add_feature(
@@ -195,8 +196,8 @@ WA_COLORMAP = [
 
 
 def get_wa_colormap(
-    n_colours: int = 5, index: int = None
-) -> mcolors.ListedColormap | str:
+    n_colours: int = 5, index: int = None, continuous: bool = False
+) -> mcolors.ListedColormap | mcolors.LinearSegmentedColormap | str:
     """
     Get the Wes Anderson (Life Aquatic) colormap with n_colours equally spaced colors,
     or a specific color by index.
@@ -207,14 +208,18 @@ def get_wa_colormap(
         index (int, optional): If provided, return a single color at this index
             from the full colormap. Index 0 is the first color, -1 is the last.
             Can use negative indexing.
+        continuous (bool): If True, return a continuous LinearSegmentedColormap
+            that smoothly interpolates between all colors. Default is False.
 
     Returns:
-        ListedColormap or str: If index is None, returns a ListedColormap with
-            n_colours equally spaced colors. If index is provided, returns a
-            single color as a hex string.
+        ListedColormap, LinearSegmentedColormap, or str: If index is None and continuous=False,
+            returns a ListedColormap with n_colours equally spaced colors.
+            If index is None and continuous=True, returns a continuous LinearSegmentedColormap.
+            If index is provided, returns a single color as a hex string.
 
     Examples:
-        >>> cmap = get_wa_colormap(5)  # Get 5 equally spaced colors
+        >>> cmap = get_wa_colormap(5)  # Get 5 equally spaced colors (discrete)
+        >>> cmap = get_wa_colormap(256, continuous=True)  # Get continuous colormap
         >>> mid_color = get_wa_colormap(index=5)  # Get the 6th color (mid-point)
         >>> mid_color = get_wa_colormap(index=len(WA_COLORMAP)//2)  # True mid-point
         >>> last_color = get_wa_colormap(index=-1)  # Last color
@@ -231,6 +236,13 @@ def get_wa_colormap(
     # Return colormap with n_colours equally spaced colors
     if n_colours <= 0:
         raise ValueError("n_colours must be positive")
+
+    if continuous:
+        # Return a continuous LinearSegmentedColormap that interpolates smoothly
+        # between all colors in WA_COLORMAP
+        return mcolors.LinearSegmentedColormap.from_list(
+            "wa_colormap_continuous", WA_COLORMAP, N=n_colours
+        )
 
     if n_colours >= len(WA_COLORMAP):
         # If requesting more or equal colors than available, return all
@@ -1009,3 +1021,23 @@ def create_threshold_log_colormap(base_cmap, threshold=10.0, grey_fraction=0.1):
     # Combine: grey first, then colors
     combined_colors = np.vstack([grey_colors, color_colors])
     return ListedColormap(combined_colors)
+
+
+def limit_line_length(line: str, line_lim: int = 20) -> str:
+    """If string is longer than line_lim, insert a newline at nearest-to-over whitespace until there are no non-broken strings which are longer than line_lim"""
+    line_len = len(line)
+
+    if line_len < line_lim:
+        return line
+
+    # find the nearest whitespace to the line_lim
+    whitespace_idx = line[:line_lim].rfind(" ")
+    if whitespace_idx == -1:
+        return line
+
+    # insert a newline at the whitespace
+    return (
+        line[:whitespace_idx]
+        + "\n"
+        + limit_line_length(line[whitespace_idx + 1 :], line_lim)
+    )

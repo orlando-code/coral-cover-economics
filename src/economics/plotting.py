@@ -9,15 +9,20 @@ from pathlib import Path
 from typing import Dict, List
 
 import cartopy.crs as ccrs
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
+from matplotlib.colors import Normalize
 from matplotlib.patches import Patch
 
 from src import utils
 from src.plots import plot_config, plot_utils
 
 from .analysis import AnalysisResults, DepreciationResult
+from .cumulative_impact import CumulativeImpactResult
 from .depreciation_models import (
     CompoundModel,
     DepreciationModel,
@@ -604,6 +609,314 @@ def plot_country_losses(
     return fig
 
 
+def plot_country_losses_flexible(
+    result: DepreciationResult = None,
+    cumulative_result: CumulativeImpactResult = None,
+    by_country_df: pd.DataFrame = None,
+    gdp_data: pd.DataFrame = None,
+    top_n: int = 20,
+    title: str = None,
+    colourbar_title: str = None,
+    figsize: tuple[float, float] = (10, 6),
+    metric: str = "value_loss",
+    color_mode: str = "reef_loss_pct",
+    is_cumulative: bool = False,
+    scenario: str = None,
+    model_name: str = None,
+    annotate: bool = True,
+    ax: plt.Axes = None,
+    save_path: Path = None,
+) -> plt.Figure:
+    """
+    Flexible horizontal bar chart of country losses with configurable metrics and color modes.
+
+    Based on the interactive country chart in docs/index.html, this function supports:
+    - Multiple x-axis metrics: value_loss, reef_loss_pct, gdp_pct
+    - Multiple color modes: value_loss, reef_loss_pct, gdp_pct
+    - Both annual (DepreciationResult) and cumulative (CumulativeImpactResult) data
+
+    Parameters
+    ----------
+    result : DepreciationResult, optional
+        Annual analysis result. Required if cumulative_result and by_country_df are None.
+    cumulative_result : CumulativeImpactResult, optional
+        Cumulative analysis result. Required if result and by_country_df are None.
+    by_country_df : DataFrame, optional
+        Pre-aggregated country data. Must have columns: country, value_loss or cumulative_loss,
+        loss_fraction or cumulative_loss_fraction. If provided, overrides result/cumulative_result.
+    gdp_data : DataFrame, optional
+        GDP data with columns 'iso_a3' and 'gdp'. Required for gdp_pct metric/color_mode.
+    top_n : int, default 20
+        Number of top countries to show. Use 'all' or None to show all.
+    metric : str, default 'value_loss'
+        X-axis metric: 'value_loss', 'reef_loss_pct', or 'gdp_pct'.
+    color_mode : str, default 'reef_loss_pct'
+        Color mapping: 'value_loss', 'reef_loss_pct', or 'gdp_pct'.
+    is_cumulative : bool, default False
+        Whether data is cumulative (affects field names).
+    scenario : str, optional
+        Scenario name for title. Auto-detected from result if not provided.
+    model_name : str, optional
+        Model name for title. Auto-detected from result if not provided.
+    ax : Axes, optional
+        Matplotlib axes.
+    save_path : Path, optional
+        Save path.
+
+    Returns
+    -------
+    Figure
+    """
+    from matplotlib.colors import Normalize
+
+    # Determine data source
+    if by_country_df is not None:
+        df = by_country_df.copy()
+        if scenario is None:
+            scenario = "Unknown Scenario"
+        if model_name is None:
+            model_name = "Unknown Model"
+    elif cumulative_result is not None:
+        # For cumulative, we need to reconstruct by_country from the cumulative result
+        # This is a simplified version - in practice, cumulative results may need
+        # to be aggregated differently
+        warnings.warn(
+            "Direct CumulativeImpactResult plotting not fully implemented. "
+            "Use by_country_df with cumulative data instead."
+        )
+        return None
+    elif result is not None:
+        df = result.by_country.copy()
+        if scenario is None:
+            scenario = result.scenario
+        if model_name is None:
+            model_name = result.model.name
+    else:
+        raise ValueError(
+            "Must provide either result, cumulative_result, or by_country_df"
+        )
+
+    # Get country column
+    country_col = "country" if "country" in df.columns else df.columns[0]
+
+    # Determine field names based on cumulative vs annual
+    if is_cumulative:
+        loss_key = "cumulative_loss"
+        fraction_key = "cumulative_loss_fraction"
+    else:
+        loss_key = "value_loss"
+        fraction_key = "loss_fraction"
+
+    # Get ISO codes for GDP calculations
+    iso_col = None
+    if gdp_data is not None and (metric == "gdp_pct" or color_mode == "gdp_pct"):
+        if "iso_a3" in df.columns:
+            iso_col = "iso_a3"
+        elif result is not None and "iso_a3" in result.gdf.columns:
+            country_col_name = result._get_country_column()
+            iso_map = result.gdf.groupby(country_col_name)["iso_a3"].first()
+            df["iso_a3"] = df[country_col].map(iso_map)
+            iso_col = "iso_a3"
+        else:
+            warnings.warn("Cannot find ISO codes for GDP calculations")
+            gdp_data = None
+
+    # Calculate GDP percentages if needed
+    if gdp_data is not None and iso_col is not None:
+        gdp_map = gdp_data.set_index("iso_a3")["gdp"]
+        df["national_gdp"] = df[iso_col].map(gdp_map)
+        if loss_key in df.columns:
+            df["loss_as_gdp_pct"] = 100 * df[loss_key] / df["national_gdp"]
+
+    # Sort by selected metric
+    if metric == "value_loss":
+        sort_key = loss_key
+        df = df.sort_values(by=sort_key, ascending=False)
+    elif metric == "reef_loss_pct":
+        sort_key = fraction_key
+        df = df.sort_values(by=sort_key, ascending=False)
+    elif metric == "gdp_pct":
+        if "loss_as_gdp_pct" in df.columns:
+            df = df.sort_values(by="loss_as_gdp_pct", ascending=False)
+        else:
+            # Fallback to fraction
+            sort_key = fraction_key
+            df = df.sort_values(by=sort_key, ascending=False)
+    else:
+        # Default to value_loss
+        sort_key = loss_key
+        df = df.sort_values(by=sort_key, ascending=False)
+
+    # Apply limit
+    if top_n is not None and top_n != "all":
+        df = df.head(top_n)
+
+    # Prepare x-axis data and text formatting functions
+    def format_value_millions(v):
+        return f"${v:.1f}M"
+
+    def format_percentage(v):
+        return f"{v:.1f}%"
+
+    def format_gdp_percentage(v):
+        return f"{v:.2f}%"
+
+    if metric == "value_loss":
+        x_data = df[loss_key].values / 1e6  # Convert to millions
+        x_title = (
+            "Cumulative Loss ($ Million)" if is_cumulative else "Value Loss ($ Million)"
+        )
+        text_values = x_data
+        text_format = format_value_millions
+    elif metric == "reef_loss_pct":
+        x_data = df[fraction_key].values * 100  # Convert to percentage
+        x_title = (
+            "Cumulative Loss Fraction (%)" if is_cumulative else "Loss Fraction (%)"
+        )
+        text_values = x_data
+        text_format = format_percentage
+    elif metric == "gdp_pct":
+        if "loss_as_gdp_pct" in df.columns:
+            x_data = df["loss_as_gdp_pct"].values
+            x_title = "Loss as % of National GDP"
+            text_values = x_data
+            text_format = format_gdp_percentage
+        else:
+            # Fallback
+            x_data = df[fraction_key].values * 100
+            x_title = "Loss Fraction (%)"
+            text_values = x_data
+            text_format = format_percentage
+    else:
+        x_data = df[loss_key].values / 1e6
+        x_title = "Value Loss ($ Million)"
+        text_values = x_data
+        text_format = format_value_millions
+
+    # Prepare color data
+    if color_mode == "gdp_pct":
+        if "loss_as_gdp_pct" in df.columns:
+            color_values = df["loss_as_gdp_pct"].values
+            colourbar_title = "% GDP"
+        else:
+            # Fallback to fraction
+            color_values = df[fraction_key].values * 100
+            print(color_values)
+            colourbar_title = (
+                "Loss %"
+                if not is_cumulative
+                else "Cumulative Loss %"
+                if colourbar_title is None
+                else colourbar_title
+            )
+    elif color_mode == "value_loss":
+        color_values = df[loss_key].values / 1e6  # Convert to millions
+        colourbar_title = (
+            "Cumulative Loss ($M)"
+            if is_cumulative
+            else "Value Loss ($M)"
+            if colourbar_title is None
+            else colourbar_title
+        )
+    else:  # reef_loss_pct (default)
+        color_values = df[fraction_key].values * 100
+        colourbar_title = (
+            "Cumulative Loss %"
+            if is_cumulative
+            else "Loss %"
+            if colourbar_title is None
+            else colourbar_title
+        )
+
+    # Create figure
+    n_countries = len(df)
+    if ax is None:
+        fig, ax = plt.subplots(
+            figsize=(10, max(6, n_countries * 0.3)) if figsize is None else figsize,
+            dpi=300,
+        )
+    else:
+        fig = ax.figure
+
+    # Create colormap (matching interactive version: green -> yellow -> orange -> red)
+    colorscale = [[0, "#22c55e"], [0.25, "#eab308"], [0.5, "#E3B710"], [1, "#F11B00"]]
+    cmap = mcolors.LinearSegmentedColormap.from_list(
+        "custom", [(pos, color) for pos, color in colorscale]
+    )
+
+    # Normalize color values
+    if len(color_values) > 0 and color_values.max() > color_values.min():
+        norm = Normalize(vmin=color_values.min(), vmax=color_values.max())
+    else:
+        norm = Normalize(vmin=0, vmax=1)
+
+    # Get colors for each bar
+    bar_colors = [cmap(norm(v)) for v in color_values]
+
+    # Reverse for horizontal bar (top country at top)
+    countries = df[country_col].values[::-1]
+    x_data = x_data[::-1]
+    bar_colors = bar_colors[::-1]
+    text_values = text_values[::-1]
+
+    # Plot bars
+    bars = ax.barh(countries, x_data, color=bar_colors, alpha=0.8, edgecolor="none")
+    ylabels = [plot_utils.limit_line_length(country) for country in countries]
+    ax.set_yticklabels(ylabels)
+    # Add text labels
+    if annotate:
+        for bar, text_val in zip(bars, text_values):
+            width = bar.get_width()
+            ax.text(
+                width - 0.12 * ax.get_xlim()[1],
+                bar.get_y() + bar.get_height() / 2,
+                text_format(text_val),
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+                color="white",
+            )
+
+    # Add colorbar
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(
+        sm,
+        ax=ax,
+        pad=0.02,
+    )
+    cbar.set_label(
+        colourbar_title,
+        size=plot_config.PAPER_SPATIAL_CONFIG.label_fontsize,
+        labelpad=10,
+    )
+    # update colorbar label fontsize
+    cbar.ax.tick_params(labelsize=plot_config.PAPER_SPATIAL_CONFIG.tick_fontsize)
+    # Formatting
+    ax.set_xlabel(x_title, fontsize=plot_config.PAPER_SPATIAL_CONFIG.label_fontsize)
+    title_suffix = " (Cumulative)" if is_cumulative else ""
+    # set x tick labels fontsize
+    ax.tick_params(
+        axis="both", labelsize=plot_config.PAPER_SPATIAL_CONFIG.tick_fontsize
+    )
+    ax.set_title(
+        f"Top {n_countries} Countries by {metric.replace('_', ' ').title()}{title_suffix}\n"
+        f"{scenario} | {model_name}"
+        if not title
+        else title,
+        fontsize=plot_config.PAPER_SPATIAL_CONFIG.title_fontsize,
+    )
+    ax.grid(True, axis="x", alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"Saved: {save_path}")
+
+    return fig
+
+
 def plot_scenario_comparison(
     results: AnalysisResults,
     value_type: str = None,
@@ -631,7 +944,6 @@ def plot_scenario_comparison(
     -------
     Figure
     """
-    import matplotlib.colors as mcolors
 
     cfg = SCENARIO_COMPARISON_CONFIG
 
@@ -955,11 +1267,11 @@ def plot_choropleth_interactive(
     # Prepare display values
     if value_column == "loss_fraction":
         z_values = by_country[value_column] * 100
-        colorbar_title = "Loss (%)"
+        colourbar_title = "Loss (%)"
         hover_format = _format_percent
     else:
         z_values = by_country[value_column]
-        colorbar_title = "Value Loss ($)"
+        colourbar_title = "Value Loss ($)"
         hover_format = format_currency
 
     # Apply log scale if requested
@@ -996,12 +1308,12 @@ def plot_choropleth_interactive(
             hovertemplate="%{text}<extra></extra>",
             colorscale="Reds",
             colorbar=dict(
-                title=colorbar_title,
+                title=colourbar_title,
                 tickvals=tick_vals,
                 ticktext=tick_text,
             )
             if tick_vals
-            else dict(title=colorbar_title),
+            else dict(title=colourbar_title),
         )
     )
 
@@ -1469,7 +1781,7 @@ def plot_tourism_value_bins_map(
     Figure
     """
     import matplotlib.cm as cm
-    from matplotlib.colors import ListedColormap, Normalize
+    from matplotlib.colors import ListedColormap
 
     # Price bin labels
     prices_key = [
@@ -1568,6 +1880,10 @@ def plot_spatial_distribution(
     config: "SpatialPlotConfig" = None,  # noqa
     central_longitude: float = None,
     extent: tuple = None,
+    cbar_title: str = None,
+    cbar_pad: float = 0.1,
+    cbar_aspect: float = 50,
+    cbar_orientation: str = "horizontal",
     show_scalebar: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
     """
@@ -1610,7 +1926,6 @@ def plot_spatial_distribution(
         Figure and axes objects.
     """
     import matplotlib.cm as cm
-    from matplotlib.colors import Normalize
     from shapely.affinity import scale, translate
 
     from src.plots import plot_utils
@@ -1650,15 +1965,39 @@ def plot_spatial_distribution(
     # Format axes
     plot_utils.format_geo_axes(ax, config=config)
 
-    # # This works and sorts out the colourmap issue (at least, it shows the variety of colours and adjusts the colourbar)
-    # if bbox:
-    #     from shapely.geometry import box
-
-    #     bbox_geom = box(*bbox)
-    #     gdf_plot = gdf[gdf.geometry.intersects(bbox_geom)].copy()
-    # else:
-    #     gdf_plot = gdf.copy()
     gdf_plot = gdf.copy()
+
+    # Detect geometry type
+    # Check the most common geometry type in the GeoDataFrame
+
+    geom_types = gdf_plot.geom_type.value_counts()
+
+    is_points = geom_types.get("Point", 0) > 0
+    is_polygons = (
+        geom_types.get("Polygon", 0) > 0 or geom_types.get("MultiPolygon", 0) > 0
+    )
+
+    # Determine primary geometry type
+    if is_points and not is_polygons:
+        geometry_type = "Point"
+    elif is_polygons and not is_points:
+        geometry_type = "Polygon"
+    elif is_points and is_polygons:
+        # Mixed types - use the most common
+        if geom_types.get("Point", 0) > geom_types.get("Polygon", 0) + geom_types.get(
+            "MultiPolygon", 0
+        ):
+            geometry_type = "Point"
+        else:
+            geometry_type = "Polygon"
+    else:
+        # Default to polygon if unknown
+        geometry_type = "Polygon"
+        warnings.warn(
+            f"Unknown geometry types: {geom_types.to_dict()}. Defaulting to polygon plotting."
+        )
+
+    print(f"Detected geometry type: {geometry_type}")
 
     # Transform coordinates if central_longitude is set
     if config.central_longitude is not None and config.transform_coords:
@@ -1666,8 +2005,8 @@ def plot_spatial_distribution(
             gdf_plot, config.central_longitude
         )
 
-    # Apply explode factor if specified
-    if config.explode_factor != 1.0:
+    # Apply explode factor if specified (only for polygons)
+    if config.explode_factor != 1.0 and geometry_type == "Polygon":
 
         def scale_from_centroid(geom):
             """Scale geometry from its centroid by explode_factor"""
@@ -1691,12 +2030,36 @@ def plot_spatial_distribution(
             return geom_final
 
         gdf_plot["geometry"] = gdf_plot.geometry.apply(scale_from_centroid)
+    elif config.explode_factor != 1.0 and geometry_type == "Point":
+        warnings.warn("explode_factor is not applicable to Point geometries. Ignoring.")
 
     # Get colormap
-    base_cmap = plt.get_cmap(config.cmap)
+    # Use the config's get_colormap method which handles "life aquatic"
+    colormap_result = config.get_colormap()
+
+    # Check if it's already a Colormap (Wes Anderson - can be ListedColormap or LinearSegmentedColormap)
+    # or a string (matplotlib name)
+    if isinstance(colormap_result, mcolors.Colormap):
+        base_cmap = colormap_result
+    else:
+        # It's a string, use standard matplotlib colormap
+        base_cmap = plt.get_cmap(colormap_result)
 
     # Get transform for plotting
-    plot_transform = config.get_projection()
+    # The transform tells Cartopy what CRS the INPUT data is in.
+    # GeoDataFrame data is typically in WGS84 (EPSG:4326), so we use PlateCarree()
+    # (without central_longitude offset) as the data transform.
+    # The projection (with central_longitude) is already set on the axes.
+    if gdf_plot.crs is not None and gdf_plot.crs.to_epsg() == 4326:
+        # Data is in WGS84, use standard PlateCarree for transform
+        plot_transform = ccrs.PlateCarree()
+    elif gdf_plot.crs is not None:
+        # For other CRS, try to create appropriate transform
+        # Fall back to PlateCarree if unknown
+        plot_transform = ccrs.PlateCarree()
+    else:
+        # No CRS defined, assume WGS84
+        plot_transform = ccrs.PlateCarree()
 
     # Colorbar normalization
     vmin_val = gdf_plot[plot_column].min() if config.vmin is None else config.vmin
@@ -1733,23 +2096,48 @@ def plot_spatial_distribution(
             f"Using threshold logarithmic colorbar: grey for values < {grey_threshold}, log scale for >= {grey_threshold}"
         )
     else:
+        from matplotlib.colors import Normalize
+
         print(f"vmin_val: {vmin_val:.3e}, vmax_val: {vmax_val:.3e}")
         norm = Normalize(vmin=vmin_val, vmax=vmax_val)
         cmap = base_cmap
 
-    # Plot
-    # order the gdf by plot_column (ascending) such that low values are plotted first
+    # Plot based on geometry type
+    gdf_plot_sorted = gdf_plot.sort_values(by=plot_column, ascending=True)
 
-    gdf_plot.sort_values(by=plot_column, ascending=True).plot(
-        ax=ax,
-        column=plot_column,
-        cmap=cmap,
-        legend=False,
-        linewidth=config.edgewidth,
-        edgecolor=config.edgecolor,
-        transform=plot_transform,
-        norm=norm,
-    )
+    if geometry_type == "Point":
+        # Extract coordinates for points
+        points = gdf_plot_sorted.geometry
+        x_coords = [p.x for p in points]
+        y_coords = [p.y for p in points]
+        values = gdf_plot_sorted[plot_column].values
+        # Plot points with scatter
+        ax.scatter(
+            x_coords,
+            y_coords,
+            c=values,
+            cmap=cmap,
+            norm=norm,
+            s=50,  # Marker size
+            alpha=0.7,
+            edgecolors="none",
+            # transform=plot_transform,
+            zorder=100,  # Points on top
+        )
+    else:
+        # Plot polygons using existing method
+        # Order by plot_column (descending) such that high values are plotted first
+        # This ensures that when polygons are exploded and overlap, higher values appear on top
+        gdf_plot_sorted.plot(
+            ax=ax,
+            column=plot_column,
+            cmap=cmap,
+            legend=False,
+            linewidth=config.edgewidth,
+            edgecolor=config.edgecolor,
+            transform=plot_transform,
+            norm=norm,
+        )
 
     # Colorbar
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -1757,10 +2145,11 @@ def plot_spatial_distribution(
     cbar = fig.colorbar(
         sm,
         ax=ax,
-        label=plot_column,
+        label=plot_column if config.cbar_title is None else config.cbar_title,
         orientation=config.cbar_orientation,
         pad=config.cbar_pad,
         aspect=config.cbar_aspect,
+        shrink=config.cbar_shrink,
     )
 
     # For threshold logarithmic colorbars, set custom tick locations
@@ -2758,14 +3147,290 @@ def plot_trajectory_comparison_interactive(
     return fig
 
 
+def plot_cumulative_loss_scenario_comparison(
+    trajectories_json_path: Path = None,
+    title: str = None,
+    figsize: tuple[float, float] = (10, 6),
+    save_path: Path = None,
+) -> plt.Figure:
+    """
+    Plot cumulative loss comparison by model and scenario.
+
+    Creates a horizontal bar chart with:
+    - Three clusters (one per model: Linear, Compound, Tipping Point)
+    - Each cluster has 2 bars side-by-side (RCP4.5 and RCP8.5)
+    - Each bar has 2100 (background, lighter) and 2050 (overlay, darker) overlaid
+
+    Parameters
+    ----------
+    trajectories_json_path : Path, optional
+        Path to trajectories.json file. If None, uses default location:
+        docs/exported_data/trajectories.json
+    title : str, optional
+        Plot title. If None, uses default title.
+    figsize : tuple[float, float], optional
+        Figure size.
+    save_path : Path, optional
+        Save path.
+
+    Returns
+    -------
+    Figure
+    """
+    import json
+
+    import matplotlib.colors as mcolors
+
+    cfg = SCENARIO_COMPARISON_CONFIG
+
+    # Load trajectories.json
+    if trajectories_json_path is None:
+        from src import config
+
+        trajectories_json_path = (
+            config.repo_dir / "docs" / "exported_data" / "trajectories.json"
+        )
+
+    trajectories_json_path = Path(trajectories_json_path)
+
+    if not trajectories_json_path.exists():
+        raise FileNotFoundError(
+            f"Trajectories file not found: {trajectories_json_path}"
+        )
+
+    with open(trajectories_json_path, "r") as f:
+        trajectories = json.load(f)
+
+    print(f"Loaded {len(trajectories)} trajectories from {trajectories_json_path}")
+
+    # Parse results into structured format: {(rcp, model, year): cumulative_loss}
+    scenario_dict = {}
+
+    for traj in trajectories:
+        # Extract RCP from scenario field
+        scenario = traj.get("scenario", "").lower()
+        rcp = None
+        if "rcp45" in scenario or "45" in scenario:
+            rcp = "RCP45"
+        elif "rcp85" in scenario or "85" in scenario:
+            rcp = "RCP85"
+
+        if rcp is None:
+            # Fallback: try to extract from key
+            key = traj.get("key", "")
+            if "rcp45" in key.lower() or "rcp_45" in key.lower():
+                rcp = "RCP45"
+            elif "rcp85" in key.lower() or "rcp_85" in key.lower():
+                rcp = "RCP85"
+
+        # Extract model type from model field
+        model_name = traj.get("model", "")
+        if "linear" in model_name.lower() and "compound" not in model_name.lower():
+            model_type = "Linear"
+        elif "compound" in model_name.lower():
+            model_type = "Compound"
+        elif "tipping" in model_name.lower():
+            model_type = "Tipping Point"
+        else:
+            model_type = "Unknown"
+
+        # Extract cumulative losses for 2050 and 2100
+        years = np.array(traj.get("years", []))
+        cumulative_losses = np.array(
+            traj.get("cumulative_loss", [])
+        )  # Already in trillions
+
+        if len(years) == 0 or len(cumulative_losses) == 0:
+            continue
+
+        for target_year in [2050, 2100]:
+            if target_year in years:
+                idx = np.where(years == target_year)[0]
+                if len(idx) > 0:
+                    scenario_dict[(rcp, model_type, str(target_year))] = (
+                        cumulative_losses[idx[0]]
+                    )
+
+    if len(scenario_dict) == 0:
+        warnings.warn("No cumulative results found for plotting")
+        return None
+
+    # Organize data: {model: {rcp: {year: loss}}}
+    # model_order = cfg["model_order"]
+    model_order = ["Tipping Point", "Compound", "Linear"]
+    rcp_order = cfg["rcp_order"]
+
+    data = {model: {rcp: {} for rcp in rcp_order} for model in model_order}
+
+    for (rcp, model, year), loss in scenario_dict.items():
+        if rcp in rcp_order and model in model_order:
+            data[model][rcp][year] = loss  # Already in trillions from trajectories.json
+
+    # Create figure
+    fig, ax = plt.subplots(
+        figsize=figsize,
+        dpi=cfg["figure"]["dpi"],
+    )
+
+    # Calculate positions
+    # Use thicker bars and closer spacing
+    bar_width = 0.3  # Thicker than default (was 0.15)
+    n_models = len(model_order)
+    y_pos = np.arange(n_models) * 1.0  # Closer spacing (was country_spacing = 1.4)
+
+    # Offsets for RCP bars within each model cluster (closer together)
+    rcp_cluster_gap = 2 * bar_width  # Closer together (was 4 * bar_width)
+    rcp_offsets = {
+        "RCP45": +rcp_cluster_gap / 3.5,
+        "RCP85": -rcp_cluster_gap / 3.5,
+    }
+
+    # Draw bars
+    for i, model in enumerate(model_order):
+        y_base = y_pos[i]
+
+        for rcp in rcp_order:
+            y_val = y_base + rcp_offsets[rcp]
+            color = COLOURS[rcp.lower()]
+
+            # Draw 2100 bar (background, lighter) - no hatching
+            loss_2100 = data[model][rcp].get("2100", 0)
+            ax.barh(
+                y_val,
+                loss_2100,
+                height=bar_width,
+                color=mcolors.to_rgba(color, cfg["bar_alphas"]["2100"]),
+                edgecolor="none",
+                linewidth=0,
+                zorder=1,
+            )
+
+            # Draw 2050 bar (overlay, darker) - no hatching
+            loss_2050 = data[model][rcp].get("2050", 0)
+            ax.barh(
+                y_val,
+                loss_2050,
+                height=bar_width,
+                color=mcolors.to_rgba(color, cfg["bar_alphas"]["2050"]),
+                edgecolor="none",
+                linewidth=0,
+                zorder=3,
+            )
+
+    # Create legends
+    legend_cfg = cfg["legend"]
+
+    # Scenario legend (RCP colors + year indicators)
+    scenario_handles = [
+        Patch(facecolor=get_scenario_color(rcp), edgecolor="none") for rcp in rcp_order
+    ]
+    scenario_handles.extend(
+        [
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2100"]),
+            Patch(facecolor="grey", alpha=cfg["bar_alphas"]["2050"]),
+        ]
+    )
+    scenario_labels = [RCP_LABELS[rcp] for rcp in rcp_order] + [
+        "2100 (background)",
+        "2050 (overlay)",
+    ]
+
+    # Model legend (colors to distinguish models - no hatching)
+    model_handles = []
+    model_colors = {
+        "Linear": "#3498db",  # Blue
+        "Compound": "#e74c3c",  # Red
+        "Tipping Point": "#9b59b6",  # Purple
+    }
+    for model in model_order:
+        model_color = model_colors.get(model, "grey")
+        model_handles.append(Patch(facecolor=model_color, edgecolor="black", alpha=0.7))
+
+    # Place the legend centered below the plot
+    legend1 = ax.legend(
+        scenario_handles,
+        scenario_labels,
+        loc="lower center",
+        bbox_to_anchor=(0.86, 0.22),  # Position below the plot (in axes coordinates)0.5
+        # ncol=2,
+        fontsize=legend_cfg["fontsize"],
+        title="Scenario",
+        frameon=False,
+        title_fontproperties={"weight": "bold", "size": legend_cfg["title_fontsize"]},
+    )
+
+    ax.add_artist(legend1)
+
+    # Draw vertical lines between model clusters
+    cluster_half_height = (
+        abs(rcp_offsets["RCP45"] - rcp_offsets["RCP85"]) / 2 + bar_width / 2
+    )
+
+    for y in y_pos:
+        ax.vlines(
+            x=0,
+            ymin=y - cluster_half_height,
+            ymax=y + cluster_half_height,
+            color=cfg["vline"]["color"],
+            linewidth=cfg["vline"]["linewidth"],
+            alpha=cfg["vline"]["alpha"],
+            zorder=4,
+        )
+
+    # Axis formatting
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(model_order, fontsize=cfg["axis"]["ylabel_fontsize"])
+    ax.set_xlabel(
+        "Cumulative Loss ($ Trillion)", fontsize=cfg["axis"]["xlabel_fontsize"]
+    )
+
+    # Grid
+    grid_cfg = cfg["grid"]
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(0.5))  # 0.5 trillion intervals
+    ax.grid(
+        True,
+        axis="x",
+        linestyle=":",
+        alpha=grid_cfg["minor_alpha"],
+        which="minor",
+        zorder=0,
+    )
+    ax.grid(True, axis="x", linestyle=":", alpha=grid_cfg["major_alpha"])
+
+    # Spines and ticks
+    ax.tick_params(axis="y", length=0)
+    for sp in ["top", "right", "left"]:
+        ax.spines[sp].set_visible(False)
+    ax.tick_params(axis="y", which="major", pad=cfg["axis"]["y_tick_pad"])
+
+    # Set title (use provided title or default)
+    if title is not None:
+        ax.set_title(title, fontsize=15, fontweight="bold")
+    else:
+        ax.set_title(
+            "Cumulative Economic Losses by Model and Scenario",
+            fontsize=15,
+            fontweight="bold",
+        )
+
+    # Adjust layout to accommodate legend below the plot
+    # Reserve space at the bottom for the legend
+    plt.subplots_adjust(bottom=0.25)  # Increase bottom margin to show legend
+    plt.tight_layout(rect=[0, 0.25, 1, 1])  # Ensure legend space is preserved
+
+    if save_path:
+        fig.savefig(save_path, dpi=cfg["figure"]["save_dpi"], bbox_inches="tight")
+        print(f"Saved: {save_path}")
+
+    return fig
+
+
 def plot_gdp_impact_scenario_comparison(
     results,
     gdp_data,
     top_n: int = 15,
     save_path: Path = None,
 ) -> plt.Figure:
-    import matplotlib.colors as mcolors
-
     cfg = SCENARIO_COMPARISON_CONFIG
 
     # --- Extract results ---
