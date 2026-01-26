@@ -1,6 +1,8 @@
 # Coral Cover Economics
 
-A Python package for analyzing the economic impacts of coral reef degradation under climate change scenarios. This project combines hierarchical Bayesian beta regression modeling of coral cover (from Sully et al.) with economic valuation to project tourism revenue losses as reefs decline.
+A Python package for analysing the economic impacts of coral reef degradation under climate change scenarios. This project combines hierarchical Bayesian beta regression modeling of coral cover (from Sully et al. (2022) with economic valuation to project tourism revenue losses as reefs decline.
+
+Visualised the results [here](https://orlando-code.github.io/coral-cover-economics/). 
 
 ## What It Does
 
@@ -112,11 +114,11 @@ Edit `CONFIG` in `src/economics/run_economic_analysis.py` to customize:
 
 See `requirements.txt` for full list.
 
-## Citation
+## References
 
-If you use this code, please cite:
-
-Sully et al. - "Present and future bright and dark spots for coral reefs through climate change"
+Chen et al. (2014) - "Evaluating the economic damage of climate change on global coral reefs"
+Spalding et al. (2017) – "Mapping the global value and distribution of coral reef tourism"
+Sully et al. (2022) - "Present and future bright and dark spots for coral reefs through climate change"
 
 ## Notes
 
