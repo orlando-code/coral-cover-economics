@@ -860,35 +860,11 @@
                 <div class="chart-section">
                     <div class="chart-header">
                         <div>
-                            <h2 class="chart-title">Annual Loss - Value Lost</h2>
-                            <p class="chart-subtitle">Year-over-year decline in economic value (decreases as less value remains)</p>
-                        </div>
-                    </div>
-                    <div id="annual-loss-chart" style="height: 350px;"></div>
-                </div>
-                
-                <div class="chart-section">
-                    <div class="chart-header">
-                        <div>
                             <h2 class="chart-title">Cumulative Losses</h2>
                             <p class="chart-subtitle">Cumulative sum of opportunity cost (baseline revenue lost after collapse)</p>
                         </div>
                     </div>
                     <div id="cumulative-chart" style="height: 350px;"></div>
-                </div>
-                
-                <div class="chart-section">
-                    <div class="chart-header">
-                        <div>
-                            <h2 class="chart-title">Annual Loss Components</h2>
-                            <p class="chart-subtitle">Value lost (year-over-year decline) vs opportunity cost (baseline revenue lost after collapse)</p>
-                        </div>
-                    </div>
-                    <div id="loss-components-chart" style="height: 400px;"></div>
-                    <p class="chart-note" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic;">
-                        <strong>Value Lost</strong> (solid lines): The year-over-year decline in economic value as coral cover decreases. This decreases over time as less value remains.<br>
-                        <strong>Opportunity Cost</strong> (dotted lines): The baseline revenue opportunity lost each year after a reef collapses (value reaches zero). This stays constant at the baseline value.
-                    </p>
                 </div>
             </section>
             
@@ -1515,12 +1491,16 @@
             const interpolation = document.getElementById('traj-interpolation').value;
             const modelFilter = document.getElementById('traj-model').value;
             
-            const colors = { 'rcp45': '#3A9AB2', 'rcp85': '#F11B00' };
-            const dashes = { 'linear': 'solid', 'exponential': 'dash' };
-            const modelColors = {
-                'Tipping Point': '#F11B00',
-                'Compound': '#E3B710', 
-                'Linear': '#3A9AB2',
+            // Color = RCP scenario (blue for RCP45, red for RCP85) - matching scenario comparison chart
+            const rcpColors = {
+                'rcp45': '#3498db',  // Blue
+                'rcp85': '#e74c3c',  // Red
+            };
+            // Linestyle = Model (solid for Linear, dashed for Compound, dotted for Tipping Point)
+            const modelLineStyles = {
+                'Linear': 'solid',
+                'Compound': 'dash',
+                'Tipping Point': 'dot',
             };
             
             // For coral cover, we only need unique scenario+interpolation combos (not per model)
@@ -1543,7 +1523,7 @@
                 name: `${t.scenario.toUpperCase()}`,
                 mode: 'lines',
                 line: { 
-                    color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
+                    color: rcpColors[t.scenario.toLowerCase()] || '#94a3b8', 
                     width: 3 
                 }
             }));
@@ -1564,37 +1544,23 @@
             }
             
             // Annual value chart - distinguish by model and scenario
+            // Color = RCP scenario, Linestyle = Model
             const valueTraces = economicFiltered.map(t => {
-                const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                const modelShort = t.model.includes('Linear') && !t.model.includes('Compound') && !t.model.includes('Tipping') ? 'Linear' : 
+                                   t.model.includes('Compound') && !t.model.includes('Tipping') ? 'Compound' : 'Tipping Point';
+                const scenario = t.scenario.toLowerCase();
+                const color = rcpColors[scenario] || '#94a3b8';
+                const dash = modelLineStyles[modelShort] || 'solid';
+                
                 return {
                     x: t.years,
                     y: t.annual_value,
                     name: `${t.scenario.toUpperCase()} - ${modelShort}`,
                     mode: 'lines',
                     line: { 
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
-                        dash: t.model.includes('Linear') ? 'solid' : 
-                              t.model.includes('Compound') ? 'dash' : 'dot',
-                        width: 2 
-                    }
-                };
-            });
-            
-            // Annual loss chart - show value lost each year (not total annual loss)
-            const annualLossTraces = economicFiltered.map(t => {
-                const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
-                return {
-                    x: t.years,
-                    y: t.annual_value_lost || t.annual_loss || [], // fallback for old data
-                    name: `${t.scenario.toUpperCase()} - ${modelShort}`,
-                    mode: 'lines',
-                    line: { 
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
-                        dash: t.model.includes('Linear') ? 'solid' : 
-                              t.model.includes('Compound') ? 'dash' : 'dot',
-                        width: 2 
+                        color: color,
+                        dash: dash,
+                        width: 2.5 
                     }
                 };
             });
@@ -1606,22 +1572,13 @@
                 yaxis: { gridcolor: '#334155', title: 'Annual Value ($ Billion)' },
                 legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
-            }, {responsive: true});
-            
-            // Annual loss chart - show value lost each year (not total annual loss)
-            Plotly.newPlot('annual-loss-chart', annualLossTraces, {
-                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { color: '#94a3b8', family: 'Instrument Sans' },
-                xaxis: { gridcolor: '#334155', title: 'Year' },
-                yaxis: { gridcolor: '#334155', title: 'Annual Loss - Value Lost ($ Billion/year)' },
-                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
-                margin: { t: 20, r: 20, b: 60, l: 60 }
-            }, {responsive: true});
+            }, {responsive: true            });
             
             // Cumulative loss chart - cumulative sum of opportunity cost
+            // Color = RCP scenario, Linestyle = Model
             const cumulativeTraces = economicFiltered.map(t => {
-                const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
+                const modelShort = t.model.includes('Linear') && !t.model.includes('Compound') && !t.model.includes('Tipping') ? 'Linear' : 
+                                   t.model.includes('Compound') && !t.model.includes('Tipping') ? 'Compound' : 'Tipping Point';
                 
                 // Calculate cumulative sum of opportunity cost
                 const oppCost = t.annual_opportunity_cost || [];
@@ -1633,16 +1590,19 @@
                     })
                     : (t.cumulative_loss || []); // Fallback for old data
                 
+                const scenario = t.scenario.toLowerCase();
+                const color = rcpColors[scenario] || '#94a3b8';
+                const dash = modelLineStyles[modelShort] || 'solid';
+                
                 return {
                     x: t.years,
                     y: cumulativeOppCost,
                     name: `${t.scenario.toUpperCase()} - ${modelShort}`,
                     mode: 'lines',
                     line: { 
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
-                        dash: t.model.includes('Linear') ? 'solid' : 
-                              t.model.includes('Compound') ? 'dash' : 'dot',
-                        width: 2 
+                        color: color,
+                        dash: dash,
+                        width: 2.5 
                     }
                 };
             });
@@ -1652,51 +1612,6 @@
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 xaxis: { gridcolor: '#334155', title: 'Year' },
                 yaxis: { gridcolor: '#334155', title: 'Cumulative Loss ($ Trillion)' },
-                legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
-                margin: { t: 20, r: 20, b: 60, l: 60 }
-            }, {responsive: true});
-            
-            // Loss components chart - show value lost vs opportunity cost
-            const lossComponentsTraces = [];
-            economicFiltered.forEach(t => {
-                const modelShort = t.model.includes('Linear') ? 'Linear' : 
-                                   t.model.includes('Compound') ? 'Compound' : 'Tipping';
-                
-                // Value lost (solid lines)
-                lossComponentsTraces.push({
-                    x: t.years,
-                    y: t.annual_value_lost || t.annual_loss || [], // fallback for old data
-                    name: `${t.scenario.toUpperCase()} - ${modelShort} (Value Lost)`,
-                    mode: 'lines',
-                    line: { 
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
-                        dash: t.model.includes('Linear') ? 'solid' : 
-                              t.model.includes('Compound') ? 'dash' : 'dot',
-                        width: 2 
-                    },
-                    legendgroup: `${t.scenario}_${modelShort}`,
-                });
-                
-                // Opportunity cost (dotted lines)
-                lossComponentsTraces.push({
-                    x: t.years,
-                    y: t.annual_opportunity_cost || [], // fallback for old data
-                    name: `${t.scenario.toUpperCase()} - ${modelShort} (Opportunity Cost)`,
-                    mode: 'lines',
-                    line: { 
-                        color: colors[t.scenario.toLowerCase()] || '#94a3b8', 
-                        dash: 'dot',
-                        width: 2 
-                    },
-                    legendgroup: `${t.scenario}_${modelShort}`,
-                });
-            });
-            
-            Plotly.newPlot('loss-components-chart', lossComponentsTraces, {
-                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                font: { color: '#94a3b8', family: 'Instrument Sans' },
-                xaxis: { gridcolor: '#334155', title: 'Year' },
-                yaxis: { gridcolor: '#334155', title: 'Loss ($ Billion/year)' },
                 legend: { orientation: 'h', y: -0.15, font: { size: 10 } },
                 margin: { t: 20, r: 20, b: 60, l: 60 }
             }, {responsive: true});
