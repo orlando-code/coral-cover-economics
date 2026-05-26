@@ -49,15 +49,18 @@ from src.economics.cumulative_impact import (
     summarize_cumulative_impacts,
 )
 from src.economics.data_loader import (
+    ECONOMIC_DATASETS,
     align_coral_to_economic_data,
-    compute_country_aggregations,
+    compute_combined_country_aggregations,
+    compute_dataset_country_aggregations,
     load_coral_cover_data,
+    load_economic_value_datasets,
     load_gdp_data,
-    load_tourism_data,
 )
 from src.economics.plotting import (
     generate_figure_set,
     generate_verification_plots,
+    plot_composite_economic_layers,
     plot_annual_loss_trajectories,
     plot_annual_value_trajectories,
     plot_coral_cover_trajectories,
@@ -89,7 +92,7 @@ CONFIG = {
         "tipping_point": {"threshold_cc": 0.10, "post_threshold_loss": 1.0},
     },
     # Value types to analyze
-    "value_types": ["tourism"],  # Add "shoreline_protection" and fisheries when ready
+    "value_types": ["tourism", "fisheries", "coastal_protection"],
     # Spatial alignment
     "max_distance_deg": 5.0,  # Maximum distance for coral-economic matching
     # Output
@@ -195,11 +198,6 @@ def step_load_data(verbose: bool = True):
     # Coral cover projections
     coral_data = load_coral_cover_data(verbose=verbose)  # checked
 
-    # Economic value data
-    tourism_data = load_tourism_data(
-        apply_correction=True, validate=verbose
-    )  # in progress, not matching with implementation
-
     # GDP data for computing tourism as % of GDP
     try:
         gdp_data = load_gdp_data()
@@ -207,24 +205,32 @@ def step_load_data(verbose: bool = True):
         warnings.warn("GDP data not found, skipping GDP percentage calculations")
         gdp_data = None
 
-    # Compute country aggregations for verification plots
-    by_country = compute_country_aggregations(
-        tourism_data.gdf,
-        value_column=tourism_data.value_column,
-        gdp_data=gdp_data,
+    # Economic value data
+    economic_data = load_economic_value_datasets(
+        value_types=CONFIG["value_types"],
+        validate=verbose,
         verbose=verbose,
     )
 
-    # TODO: Add shoreline protection when value mapping is available
-    # protection_data = load_shoreline_protection_data()
+    # Compute country aggregations for verification plots and summaries
+    by_country_by_dataset = compute_dataset_country_aggregations(
+        economic_data, gdp_data=gdp_data, verbose=verbose
+    )
+    combined_by_country = compute_combined_country_aggregations(
+        economic_data, gdp_data=gdp_data, verbose=verbose
+    )
 
-    return {
+    data = {
         "coral": coral_data,
-        "tourism": tourism_data,
         "gdp": gdp_data,
-        "by_country": by_country,
-        # "protection": protection_data,
+        "economic": economic_data,
+        "by_country_by_dataset": by_country_by_dataset,
+        "combined_by_country": combined_by_country,
     }
+    data.update(economic_data)
+    if "tourism" in by_country_by_dataset:
+        data["by_country"] = by_country_by_dataset["tourism"]
+    return data
 
 
 def step_align_data(data: dict, verbose: bool = True):
@@ -236,28 +242,24 @@ def step_align_data(data: dict, verbose: bool = True):
 
     aligned = {}
 
-    # Align coral cover to tourism
-    if "tourism" in data:
-        aligned["tourism"] = align_coral_to_economic_data(
+    for value_type, economic_data in data.get("economic", {}).items():
+        aligned[value_type] = align_coral_to_economic_data(
             coral_data=data["coral"],
-            economic_data=data["tourism"],
+            economic_data=economic_data,
             max_distance_deg=CONFIG["max_distance_deg"],
             verbose=verbose,
         )
 
         # Validate alignment
-        validation = validate_alignment(aligned["tourism"], CONFIG["max_distance_deg"])
+        validation = validate_alignment(aligned[value_type], CONFIG["max_distance_deg"])
         if verbose:
+            label = ECONOMIC_DATASETS[value_type].display_name
             print(
-                f"\n  Tourism alignment: {validation['pct_within_threshold']:.1f}% within threshold"
+                f"\n  {label} alignment: {validation['pct_within_threshold']:.1f}% within threshold"
             )
             print(
                 f"  Distance stats: mean={validation['distance_stats']['mean']:.2f}°, max={validation['distance_stats']['max']:.2f}°"
             )
-
-    # TODO: Align coral cover to protection data
-    # if "protection" in data:
-    #     aligned["protection"] = align_coral_to_economic_data(...)
 
     return aligned
 
@@ -278,6 +280,23 @@ def step_validate_models(verbose: bool = True):
     return models
 
 
+def _value_column_for(value_type: str, gdf) -> str:
+    """Resolve the configured value column for an aligned economic layer."""
+    configured = ECONOMIC_DATASETS.get(value_type)
+    candidates = [
+        gdf.attrs.get("value_column"),
+        configured.value_column if configured else None,
+        "approx_price_corrected",
+        "approx_price",
+        "catch_revenue",
+        "gdp_spared_pt",
+    ]
+    for col in candidates:
+        if col and col in gdf.columns:
+            return col
+    raise KeyError(f"No value column found for {value_type}")
+
+
 def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
     """Step 4: Run depreciation analysis."""
     if verbose:
@@ -294,15 +313,7 @@ def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
 
         gdf = aligned_data[value_type]
 
-        # Determine value column
-        if value_type == "tourism":
-            value_col = (
-                "approx_price_corrected"
-                if "approx_price_corrected" in gdf.columns
-                else "approx_price"
-            )
-        else:
-            value_col = "gdp_spared_value"
+        value_col = _value_column_for(value_type, gdf)
 
         for scenario in CONFIG["scenarios"]:
             # Column names are lowercase
@@ -419,14 +430,9 @@ def step_cumulative_impact(
                 )
             continue
 
-        # Get value column
-        value_col = (
-            "approx_price_corrected"
-            if "approx_price_corrected" in gdf.columns
-            else "approx_price"
-        )
-
-        if value_col not in gdf.columns:
+        try:
+            value_col = _value_column_for(value_type, gdf)
+        except KeyError:
             if verbose:
                 print(f"\n  ⚠️  {value_type.title()}: No value column found, skipping")
             continue
@@ -532,6 +538,50 @@ def step_cumulative_impact(
     return all_cumulative
 
 
+def build_combined_result_country_table(results: AnalysisResults):
+    """Aggregate model/scenario outputs across all value layers by country."""
+    import pandas as pd
+
+    rows = []
+    for _, result in results.results.items():
+        by_country = result.by_country.copy()
+        country_col = (
+            "country" if "country" in by_country.columns else by_country.columns[0]
+        )
+        if "iso_a3" not in by_country.columns and "iso_a3" in result.gdf.columns:
+            iso_map = result.gdf.groupby(result._get_country_column())["iso_a3"].first()
+            by_country["iso_a3"] = by_country[country_col].map(iso_map)
+
+        for _, row in by_country.iterrows():
+            rows.append(
+                {
+                    "scenario": result.scenario,
+                    "model": result.model.name,
+                    "country": row.get(country_col, ""),
+                    "iso_a3": row.get("iso_a3", ""),
+                    "value_type": result.value_type,
+                    "original_value": row.get("original_value", 0),
+                    "remaining_value": row.get("remaining_value", 0),
+                    "value_loss": row.get("value_loss", 0),
+                }
+            )
+
+    if not rows:
+        return pd.DataFrame()
+
+    long_df = pd.DataFrame(rows)
+    return (
+        long_df.groupby(["scenario", "model", "country", "iso_a3"], dropna=False)
+        .agg(
+            composite_original_value=("original_value", "sum"),
+            composite_remaining_value=("remaining_value", "sum"),
+            composite_value_loss=("value_loss", "sum"),
+            n_datasets=("value_type", "nunique"),
+        )
+        .reset_index()
+    )
+
+
 def step_generate_outputs(
     results: AnalysisResults,
     cumulative_results: dict = None,
@@ -596,6 +646,16 @@ def step_generate_outputs(
             tourism_gdf=data["tourism"].gdf,
             by_country_df=data["by_country"],
             output_dir=subdirs["verification"],
+        )
+
+    if data and data.get("economic"):
+        if verbose:
+            print("\n  🗺️  Generating composite economic layer maps...")
+        plot_composite_economic_layers(
+            data["economic"],
+            output_dir=subdirs["verification"],
+            static_filename="verification_composite_economic_layers.png",
+            interactive_filename="verification_composite_economic_layers.html",
         )
 
     # -------------------------------------------------------------------------
@@ -767,6 +827,23 @@ def step_generate_outputs(
         safe_key = utils.sanitize_filename(key)
         by_country.to_csv(
             subdirs["summary"] / f"{safe_key}_by_country.csv", index=False
+        )
+
+    if data:
+        if "combined_by_country" in data and data["combined_by_country"] is not None:
+            data["combined_by_country"].to_csv(
+                subdirs["summary"] / "combined_input_by_country.csv"
+            )
+        if "by_country_by_dataset" in data:
+            for dataset_key, table in data["by_country_by_dataset"].items():
+                table.to_csv(
+                    subdirs["summary"] / f"{dataset_key}_input_by_country.csv"
+                )
+
+    combined_results = build_combined_result_country_table(results)
+    if not combined_results.empty:
+        combined_results.to_csv(
+            subdirs["summary"] / "combined_results_by_country.csv", index=False
         )
 
     # -------------------------------------------------------------------------
