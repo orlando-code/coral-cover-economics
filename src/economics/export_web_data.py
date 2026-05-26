@@ -36,6 +36,7 @@ def export_country_results(
         for _, row in by_country.iterrows():
             all_countries.append(
                 {
+                    "value_type": result.value_type,
                     "scenario": result.scenario,
                     "model": result.model.name,
                     "country": row.get("country", row.iloc[0]),
@@ -61,29 +62,27 @@ def export_cumulative_country_results(
     """Export cumulative country-level results to JSON."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create lookup for cumulative results
-    # Key format: "tourism_rcp45_linear_Linear (3.81%/pp)"
+    # Create lookup for cumulative results by dataset, scenario, year, and model.
     cumulative_lookup = {}
-    for key, cum_result in cumulative_results.items():
-        parts = key.split("_")
-        if len(parts) >= 2:
-            scenario = parts[1].lower()  # e.g., "rcp45"
-            model_name = cum_result.model.name
-            years = cum_result.years
+    for _, cum_result in cumulative_results.items():
+        interpolation = cum_result.trajectory.interpolation_method
+        if interpolation != "linear":
+            continue
+        scenario = cum_result.trajectory.scenario.lower()
+        model_name = cum_result.model.name
+        years = cum_result.years
 
-            # Use linear interpolation for consistency (or could use both)
-            interpolation = parts[2] if len(parts) > 2 else "linear"
-            if interpolation != "linear":
-                continue  # Only use linear for now
-
-            for target_year in [2050, 2100]:
-                if target_year in years:
-                    idx = np.where(years == target_year)[0]
-                    if len(idx) > 0:
-                        lookup_key = f"{scenario}_{target_year}_{model_name}"
-                        cumulative_lookup[lookup_key] = cum_result.cumulative_losses[
-                            idx[0]
-                        ]
+        for target_year in [2050, 2100]:
+            if target_year in years:
+                idx = np.where(years == target_year)[0]
+                if len(idx) > 0:
+                    lookup_key = (
+                        cum_result.value_type,
+                        scenario,
+                        target_year,
+                        model_name,
+                    )
+                    cumulative_lookup[lookup_key] = cum_result.cumulative_losses[idx[0]]
 
     all_countries = []
 
@@ -103,7 +102,7 @@ def export_cumulative_country_results(
         model_name = result.model.name
 
         # Get cumulative loss for this scenario/model/year
-        lookup_key = f"{rcp}_{year}_{model_name}"
+        lookup_key = (result.value_type, rcp, year, model_name)
         total_cumulative = cumulative_lookup.get(lookup_key, None)
 
         for _, row in by_country.iterrows():
@@ -128,6 +127,7 @@ def export_cumulative_country_results(
 
             all_countries.append(
                 {
+                    "value_type": result.value_type,
                     "scenario": f"cumulative_{rcp}_{year}",
                     "model": result.model.name,
                     "country": row.get("country", row.iloc[0]),
@@ -166,29 +166,27 @@ def export_cumulative_site_results(
 
     features_by_scenario = {}
 
-    # Create lookup for cumulative results by scenario+model+year
-    # Key format: "tourism_rcp45_linear_Linear (3.81%/pp)"
+    # Create lookup for cumulative results by dataset, scenario, model, and year.
     cumulative_lookup = {}
-    for key, cum_result in cumulative_results.items():
-        parts = key.split("_")
-        if len(parts) >= 2:
-            scenario = parts[1].lower()  # e.g., "rcp45"
-            model_name = cum_result.model.name
-            interpolation = parts[2] if len(parts) > 2 else "linear"
+    for _, cum_result in cumulative_results.items():
+        interpolation = cum_result.trajectory.interpolation_method
+        if interpolation != "linear":
+            continue
 
-            # Only use linear interpolation for consistency
-            if interpolation != "linear":
-                continue
-
-            years = cum_result.years
-            for target_year in [2050, 2100]:
-                if target_year in years:
-                    idx = np.where(years == target_year)[0]
-                    if len(idx) > 0:
-                        lookup_key = f"{scenario}_{target_year}_{model_name}"
-                        cumulative_lookup[lookup_key] = cum_result.cumulative_losses[
-                            idx[0]
-                        ]
+        scenario = cum_result.trajectory.scenario.lower()
+        model_name = cum_result.model.name
+        years = cum_result.years
+        for target_year in [2050, 2100]:
+            if target_year in years:
+                idx = np.where(years == target_year)[0]
+                if len(idx) > 0:
+                    lookup_key = (
+                        cum_result.value_type,
+                        scenario,
+                        target_year,
+                        model_name,
+                    )
+                    cumulative_lookup[lookup_key] = cum_result.cumulative_losses[idx[0]]
 
     for key, result in results.results.items():
         gdf = result.gdf.copy()
@@ -207,7 +205,7 @@ def export_cumulative_site_results(
         model_name = result.model.name
 
         # Get cumulative loss for this scenario/model/year
-        lookup_key = f"{rcp}_{year}_{model_name}"
+        lookup_key = (result.value_type, rcp, year, model_name)
         total_cumulative = cumulative_lookup.get(lookup_key, None)
 
         # Convert to WGS84 (keep original polygon geometries)
@@ -246,6 +244,7 @@ def export_cumulative_site_results(
                     "geometry": geom_dict,
                     "properties": {
                         "country": str(row.get("country", "")),
+                        "value_type": result.value_type,
                         "original_value": float(row.get("original_value", 0)),
                         "cumulative_loss": float(site_cumulative_loss),
                         "cumulative_loss_fraction": float(site_cumulative_fraction),
@@ -257,7 +256,9 @@ def export_cumulative_site_results(
             )
 
         scenario_key = (
-            f"cumulative_{rcp}_{year}_{result.model.name}".replace(" ", "_")
+            f"{result.value_type}_cumulative_{rcp}_{year}_{result.model.name}".replace(
+                " ", "_"
+            )
             .replace("/", "_")
             .replace("%", "pct")
             .replace("(", "")
@@ -266,6 +267,7 @@ def export_cumulative_site_results(
 
         features_by_scenario[scenario_key] = {
             "type": "FeatureCollection",
+            "value_type": result.value_type,
             "scenario": f"cumulative_{rcp}_{year}",
             "model": result.model.name,
             "features": features,
@@ -327,6 +329,7 @@ def export_site_results(
                     "geometry": geom_dict,
                     "properties": {
                         "country": str(row.get("country", "")),
+                        "value_type": result.value_type,
                         "original_value": float(row.get("original_value", 0)),
                         "remaining_value": float(row.get("remaining_value", 0)),
                         "value_loss": float(row.get("value_loss", 0)),
@@ -337,7 +340,9 @@ def export_site_results(
             )
 
         scenario_key = (
-            f"{result.scenario}_{result.model.name}".replace(" ", "_")
+            f"{result.value_type}_{result.scenario}_{result.model.name}".replace(
+                " ", "_"
+            )
             .replace("/", "_")
             .replace("%", "pct")
             .replace("(", "")
@@ -346,6 +351,7 @@ def export_site_results(
 
         features_by_scenario[scenario_key] = {
             "type": "FeatureCollection",
+            "value_type": result.value_type,
             "scenario": result.scenario,
             "model": result.model.name,
             "features": features,
@@ -380,6 +386,7 @@ def export_trajectory_data(
         trajectories.append(
             {
                 "key": key,
+                "value_type": result.value_type,
                 "scenario": traj.scenario,
                 "interpolation": traj.interpolation_method,
                 "model": result.model.name,
@@ -426,6 +433,7 @@ def export_summary_stats(
         summary["snapshot_results"].append(
             {
                 "scenario": result.scenario,
+                "value_type": result.value_type,
                 "model": result.model.name,
                 "original_value_billions": result.total_original_value / 1e9,
                 "remaining_value_billions": result.total_remaining_value / 1e9,
@@ -440,6 +448,7 @@ def export_summary_stats(
         summary["cumulative_results"].append(
             {
                 "key": key,
+                "value_type": result.value_type,
                 "scenario": traj.scenario,
                 "interpolation": traj.interpolation_method,
                 "model": result.model.name,
@@ -551,6 +560,7 @@ def export_gdp_impact(
             gdp_impacts.append(
                 {
                     "scenario": result.scenario,
+                    "value_type": result.value_type,
                     "model": result.model.name,
                     "country": country,
                     "iso_a3": iso,
