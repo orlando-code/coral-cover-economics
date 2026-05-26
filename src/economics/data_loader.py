@@ -11,7 +11,7 @@ This module provides functions to:
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import geopandas as gpd
 import numpy as np
@@ -55,7 +55,9 @@ class EconomicValueData:
 
     gdf: gpd.GeoDataFrame
     value_column: str
-    value_type: str  # "tourism" or "shoreline_protection"
+    value_type: str
+    display_name: str = ""
+    units: str = ""
 
     @property
     def n_sites(self) -> int:
@@ -64,6 +66,46 @@ class EconomicValueData:
     @property
     def total_value(self) -> float:
         return self.gdf[self.value_column].sum()
+
+
+@dataclass(frozen=True)
+class EconomicDatasetConfig:
+    """Configuration for one economic value layer."""
+
+    key: str
+    display_name: str
+    value_column: str
+    units: str
+    geometry: str
+    cache_filename: str
+
+
+ECONOMIC_DATASETS: Dict[str, EconomicDatasetConfig] = {
+    "tourism": EconomicDatasetConfig(
+        key="tourism",
+        display_name="Reef tourism",
+        value_column="approx_price_corrected",
+        units="USD/year",
+        geometry="polygon",
+        cache_filename="reef_tourism.parquet",
+    ),
+    "fisheries": EconomicDatasetConfig(
+        key="fisheries",
+        display_name="Reef fisheries",
+        value_column="catch_revenue",
+        units="USD/year",
+        geometry="point",
+        cache_filename="reef_fisheries.parquet",
+    ),
+    "coastal_protection": EconomicDatasetConfig(
+        key="coastal_protection",
+        display_name="Coastal protection",
+        value_column="gdp_spared_pt",
+        units="USD spared",
+        geometry="point",
+        cache_filename="reef_coastal_protection.parquet",
+    ),
+}
 
 
 # =============================================================================
@@ -208,6 +250,86 @@ def _report_coral_cover_data(
 
 
 # =============================================================================
+# ECONOMIC VALUE DATA
+# =============================================================================
+
+
+def _processed_economics_dir() -> Path:
+    return config.economics_data_dir / "processed"
+
+
+def _cache_path(dataset_key: str, cache_path: Optional[Path] = None) -> Path:
+    if cache_path is not None:
+        return Path(cache_path)
+    return _processed_economics_dir() / ECONOMIC_DATASETS[dataset_key].cache_filename
+
+
+def _load_cached_economic_data(
+    dataset_key: str,
+    cache_path: Optional[Path],
+    *,
+    verbose: bool,
+) -> Optional[EconomicValueData]:
+    path = _cache_path(dataset_key, cache_path)
+    if not path.exists():
+        return None
+
+    gdf = gpd.read_parquet(path)
+    spec = ECONOMIC_DATASETS[dataset_key]
+    if verbose:
+        print(f"✓ Loaded cached {spec.display_name}: {len(gdf):,} features")
+    return _make_economic_value_data(gdf, spec)
+
+
+def _write_economic_cache(
+    gdf: gpd.GeoDataFrame,
+    dataset_key: str,
+    cache_path: Optional[Path],
+    *,
+    verbose: bool,
+) -> None:
+    path = _cache_path(dataset_key, cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    gdf.to_parquet(path)
+    if verbose:
+        print(f"  Cached {ECONOMIC_DATASETS[dataset_key].display_name}: {path}")
+
+
+def _make_economic_value_data(
+    gdf: gpd.GeoDataFrame, spec: EconomicDatasetConfig
+) -> EconomicValueData:
+    gdf = gdf.copy()
+    gdf.attrs["value_column"] = spec.value_column
+    gdf.attrs["value_type"] = spec.key
+    gdf.attrs["display_name"] = spec.display_name
+    gdf.attrs["units"] = spec.units
+    if "value_type" not in gdf.columns:
+        gdf["value_type"] = spec.key
+    if "dataset" not in gdf.columns:
+        gdf["dataset"] = spec.key
+    return EconomicValueData(
+        gdf=gdf,
+        value_column=spec.value_column,
+        value_type=spec.key,
+        display_name=spec.display_name,
+        units=spec.units,
+    )
+
+
+def _ensure_value_column(
+    gdf: gpd.GeoDataFrame, value_column: str, dataset_key: str
+) -> gpd.GeoDataFrame:
+    if value_column not in gdf.columns:
+        raise KeyError(
+            f"{dataset_key} data is missing required value column '{value_column}'. "
+            f"Available columns: {list(gdf.columns)}"
+        )
+    gdf = gdf.copy()
+    gdf[value_column] = pd.to_numeric(gdf[value_column], errors="coerce").fillna(0)
+    return gdf
+
+
+# =============================================================================
 # TOURISM VALUE DATA
 # =============================================================================
 
@@ -218,6 +340,9 @@ def load_tourism_data(
     countries_shapefile: Optional[Path] = None,
     apply_correction: bool = True,
     validate: bool = True,
+    cache_path: Optional[Path] = None,
+    refresh_cache: bool = False,
+    verbose: bool = True,
 ) -> EconomicValueData:
     """
     Load tourism value data and optionally apply country-level correction.
@@ -245,6 +370,13 @@ def load_tourism_data(
     EconomicValueData
         Container with GeoDataFrame and metadata.
     """
+    dataset_key = "tourism"
+    cached = None if refresh_cache else _load_cached_economic_data(
+        dataset_key, cache_path, verbose=verbose
+    )
+    if cached is not None:
+        return cached
+
     if shapefile_path is None:
         shapefile_path = (
             config.tourism_dir
@@ -297,9 +429,16 @@ def load_tourism_data(
     if validate:
         _summarise_tourism_data(gdf_with_countries, value_column)
 
-    return EconomicValueData(
-        gdf=gdf_with_countries, value_column=value_column, value_type="tourism"
+    gdf_with_countries = _ensure_value_column(
+        gdf_with_countries, value_column, dataset_key
     )
+    if value_column != ECONOMIC_DATASETS[dataset_key].value_column:
+        gdf_with_countries[ECONOMIC_DATASETS[dataset_key].value_column] = (
+            gdf_with_countries[value_column]
+        )
+    gdf_with_countries["source_dataset"] = dataset_key
+    _write_economic_cache(gdf_with_countries, dataset_key, cache_path, verbose=verbose)
+    return _make_economic_value_data(gdf_with_countries, ECONOMIC_DATASETS[dataset_key])
 
 
 def _assign_pts_to_countries(
@@ -462,6 +601,128 @@ def _summarise_tourism_data(gdf: gpd.GeoDataFrame, value_column: str) -> None:
     print(f"{'─' * 60}\n")
 
 
+def load_fisheries_data(
+    raster_path: Optional[Path] = None,
+    cache_path: Optional[Path] = None,
+    refresh_cache: bool = False,
+    validate: bool = True,
+    verbose: bool = True,
+) -> EconomicValueData:
+    """Load reef fisheries points, deriving and caching them from predicted catch."""
+    dataset_key = "fisheries"
+    cached = None if refresh_cache else _load_cached_economic_data(
+        dataset_key, cache_path, verbose=verbose
+    )
+    if cached is not None:
+        return cached
+
+    if raster_path is None:
+        candidates = [
+            config.economics_data_dir
+            / "test"
+            / "rasters_exported"
+            / "predicted_catch.tif",
+            config.economics_data_dir
+            / "test_holistic"
+            / "rasters_exported"
+            / "predicted_catch.tif",
+            config.economics_data_dir
+            / "CR_Fisheries_Shoreline_Protection"
+            / "predicted_catch"
+            / "predicted_catch.tif",
+        ]
+        raster_path = next((p for p in candidates if p.exists()), None)
+    if raster_path is None or not Path(raster_path).exists():
+        raise FileNotFoundError("Could not find predicted_catch.tif for fisheries data")
+
+    gdf = _predicted_catch_raster_to_points(Path(raster_path), verbose=verbose)
+    gdf["predicted_catch"] = gdf["value"].map(_catch_class_to_tonnes()).fillna(0)
+    gdf["catch_revenue"] = gdf["predicted_catch"] * 5000
+    gdf = _assign_economic_points_to_nations(gdf, verbose=verbose)
+    gdf = _ensure_value_column(gdf, "catch_revenue", dataset_key)
+    gdf["source_dataset"] = dataset_key
+
+    if validate:
+        _summarise_generic_economic_data(gdf, ECONOMIC_DATASETS[dataset_key])
+
+    _write_economic_cache(gdf, dataset_key, cache_path, verbose=verbose)
+    return _make_economic_value_data(gdf, ECONOMIC_DATASETS[dataset_key])
+
+
+def _predicted_catch_raster_to_points(
+    raster_path: Path, *, verbose: bool
+) -> gpd.GeoDataFrame:
+    """Convert non-zero predicted catch raster cells to WGS84 point features."""
+    import rasterio
+    from rasterio.transform import xy
+
+    with rasterio.open(raster_path) as src:
+        arr = src.read(1, masked=True)
+        values = np.asarray(arr.filled(np.nan), dtype=float)
+        valid = np.isfinite(values) & (values != 0) & (values != 15)
+        rows, cols = np.where(valid)
+        xs, ys = xy(src.transform, rows, cols, offset="center")
+        crs = src.crs or "EPSG:4326"
+
+    gdf = gpd.GeoDataFrame(
+        {"value": values[rows, cols]},
+        geometry=gpd.points_from_xy(xs, ys),
+        crs=crs,
+    ).to_crs("EPSG:4326")
+    if verbose:
+        print(f"✓ Processed fisheries raster: {len(gdf):,} catch points")
+    return gdf
+
+
+def _catch_class_to_tonnes() -> Dict[float, float]:
+    """Approximate predicted catch classes from the notebook as tonnes/km2."""
+    return {
+        0.0: 0.0,
+        1.0: float(np.median((0.1, 1.0))),
+        2.0: float(np.median((1.1, 1.5))),
+        3.0: float(np.median((1.6, 2.0))),
+        4.0: float(np.median((2.1, 2.5))),
+        5.0: float(np.median((2.6, 3.0))),
+        6.0: float(np.median((3.1, 3.5))),
+        7.0: float(np.median((3.6, 4.0))),
+        8.0: float(np.median((4.1, 4.5))),
+        9.0: 4.75,
+    }
+
+
+def _assign_economic_points_to_nations(
+    gdf: gpd.GeoDataFrame, *, verbose: bool
+) -> gpd.GeoDataFrame:
+    from src.processing import processdata
+
+    return processdata.assign_points_to_nations(gdf, verbose=verbose)
+
+
+def _summarise_generic_economic_data(
+    gdf: gpd.GeoDataFrame, spec: EconomicDatasetConfig
+) -> None:
+    total = gdf[spec.value_column].sum()
+    countries = gdf["country"].nunique() if "country" in gdf.columns else "N/A"
+    print(f"\n{'─' * 60}")
+    print(f"💰 {spec.display_name.upper()} DATA LOADED")
+    print(f"{'─' * 60}")
+    print(f"  Features: {len(gdf):,}")
+    print(f"  Countries: {countries}")
+    print(f"  Value column: '{spec.value_column}' ({spec.units})")
+    print(f"  Total: {total:,.2f}")
+    if "country" in gdf.columns:
+        top = (
+            gdf.groupby("country")[spec.value_column]
+            .sum()
+            .sort_values(ascending=False)
+        )
+        print("\n  🏆 Top 10 Countries by Value:")
+        for i, (country, value) in enumerate(top.head(10).items(), 1):
+            pct = 100 * value / total if total else 0
+            print(f"     {i:2}. {country}: {value:,.0f} ({pct:.1f}%)")
+    print(f"{'─' * 60}\n")
+
+
 # =============================================================================
 # SHORELINE PROTECTION DATA
 # =============================================================================
@@ -471,7 +732,10 @@ def load_shoreline_protection_data(
     geoparquet_path: Optional[Path] = None,
     countries_shapefile: Optional[Path] = None,
     eez_path: Optional[Path] = None,
+    cache_path: Optional[Path] = None,
+    refresh_cache: bool = False,
     validate: bool = True,
+    verbose: bool = True,
 ) -> EconomicValueData:
     """
     Load shoreline protection (GDP spared from flooding) data.
@@ -492,48 +756,52 @@ def load_shoreline_protection_data(
     EconomicValueData
         Container with GeoDataFrame and metadata.
 
-    Notes
-    -----
-    The GDP_spared values are classifications (1-10+), not dollar amounts.
-    You'll need a separate mapping to convert to actual dollar values.
+    The expected value column is ``gdp_spared_pt``: dollars spared by reef presence.
     """
+    del countries_shapefile, eez_path  # Kept for backwards-compatible signature.
+    dataset_key = "coastal_protection"
+    cached = None if refresh_cache else _load_cached_economic_data(
+        dataset_key, cache_path, verbose=verbose
+    )
+    if cached is not None:
+        return cached
+
     if geoparquet_path is None:
-        geoparquet_path = (
+        candidates = [
+            config.economics_data_dir
+            / "test"
+            / "geoparquet"
+            / "GDP_spared_PT.parquet",
+            config.economics_data_dir
+            / "test_holistic"
+            / "geoparquet"
+            / "GDP_spared_PT.parquet",
             config.economics_data_dir
             / "CR_Fisheries_Shoreline_Protection"
             / "geoparquet"
-            / "GDP_spared_PT.parquet"
-        )
-    if countries_shapefile is None:
-        countries_shapefile = (
-            config.geographic_dir
-            / "ne_10m_admin_0_countries"
-            / "ne_10m_admin_0_countries.shp"
-        )
+            / "GDP_spared_PT.parquet",
+        ]
+        geoparquet_path = next((p for p in candidates if p.exists()), None)
+    if geoparquet_path is None or not Path(geoparquet_path).exists():
+        raise FileNotFoundError("Could not find GDP_spared_PT.parquet")
 
     # Load parquet
     gdf = (
         gpd.read_parquet(geoparquet_path).rename(columns=str.lower).to_crs("EPSG:4326")
     )
 
-    # Rename grid_code to something meaningful
-    if "grid_code" in gdf.columns:
-        gdf = gdf.rename(columns={"grid_code": "gdp_spared_class"})
-
-    # TODO: Map classification to actual dollar values if available
-    # For now, use classification as a proxy value
-    # This should be updated with actual value mapping
-    gdf["gdp_spared_value"] = gdf["gdp_spared_class"]  # Placeholder
-
-    # Assign to countries using nearest-neighbor (many points are offshore)
-    gdf = _assign_protection_to_countries(gdf, countries_shapefile)
+    if "grid_code" in gdf.columns and "gdp_spared_pt" not in gdf.columns:
+        gdf = gdf.rename(columns={"grid_code": "gdp_spared_pt"})
+    gdf = _ensure_value_column(gdf, "gdp_spared_pt", dataset_key)
+    if not {"country", "iso_a3"}.issubset(gdf.columns):
+        gdf = _assign_economic_points_to_nations(gdf, verbose=verbose)
+    gdf["source_dataset"] = dataset_key
 
     if validate:
-        _validate_protection_data(gdf)
+        _summarise_generic_economic_data(gdf, ECONOMIC_DATASETS[dataset_key])
 
-    return EconomicValueData(
-        gdf=gdf, value_column="gdp_spared_value", value_type="shoreline_protection"
-    )
+    _write_economic_cache(gdf, dataset_key, cache_path, verbose=verbose)
+    return _make_economic_value_data(gdf, ECONOMIC_DATASETS[dataset_key])
 
 
 def _assign_protection_to_countries(
@@ -556,7 +824,36 @@ def _validate_protection_data(gdf: gpd.GeoDataFrame) -> None:
     print(
         f"  Countries: {gdf['country'].nunique() if 'country' in gdf.columns else 'N/A'}"
     )
-    print(f"  Value classes: {gdf['gdp_spared_class'].nunique()} unique")
+    value_col = "gdp_spared_pt" if "gdp_spared_pt" in gdf.columns else "gdp_spared_class"
+    if value_col in gdf.columns:
+        print(f"  Values: {gdf[value_col].nunique()} unique")
+
+
+def load_economic_value_datasets(
+    value_types: Optional[List[str]] = None,
+    refresh_cache: bool = False,
+    validate: bool = True,
+    verbose: bool = True,
+) -> Dict[str, EconomicValueData]:
+    """Load configured economic value datasets with a shared cache-first contract."""
+    loaders = {
+        "tourism": load_tourism_data,
+        "fisheries": load_fisheries_data,
+        "coastal_protection": load_shoreline_protection_data,
+    }
+    value_types = value_types or list(ECONOMIC_DATASETS)
+
+    datasets: Dict[str, EconomicValueData] = {}
+    for key in value_types:
+        if key not in loaders:
+            warnings.warn(f"Unknown economic dataset '{key}', skipping")
+            continue
+        datasets[key] = loaders[key](
+            refresh_cache=refresh_cache,
+            validate=validate,
+            verbose=verbose,
+        )
+    return datasets
 
 
 # =============================================================================
@@ -633,6 +930,11 @@ def align_coral_to_economic_data(
 
     # Add distance column
     econ_gdf["distance_to_coral_site"] = distances
+    econ_gdf.attrs.update(economic_data.gdf.attrs)
+    econ_gdf.attrs["value_column"] = economic_data.value_column
+    econ_gdf.attrs["value_type"] = economic_data.value_type
+    econ_gdf.attrs["display_name"] = economic_data.display_name
+    econ_gdf.attrs["units"] = economic_data.units
 
     # Summary stats
     n_matched = (distances <= max_distance_deg).sum()
@@ -754,70 +1056,139 @@ def load_gdp_data(
 
 
 def compute_country_aggregations(
-    tourism_gdf: gpd.GeoDataFrame,
+    economic_gdf: gpd.GeoDataFrame,
     value_column: str = "approx_price_corrected",
+    dataset_key: str = "tourism",
     gdp_data: pd.DataFrame = None,
     verbose: bool = True,
 ) -> pd.DataFrame:
     """
-    Compute country-level aggregations of tourism value.
+    Compute country-level aggregations for one economic layer.
 
-    Optionally computes reef tourism as % of national GDP.
-
-    Parameters
-    ----------
-    tourism_gdf : GeoDataFrame
-        Tourism data with country assignments.
-    value_column : str
-        Column to aggregate.
-    gdp_data : DataFrame, optional
-        GDP data with 'iso_a3' and 'gdp' columns.
-
-    Returns
-    -------
-    DataFrame
-        Aggregated by country with optional GDP percentage.
+    Optionally computes the value as % of national GDP.
     """
+    spec = ECONOMIC_DATASETS.get(dataset_key)
+    display_name = spec.display_name if spec else dataset_key
     if verbose:
         print(f"\n{'─' * 60}")
-        print("📊 COMPUTING COUNTRY AGGREGATIONS")
+        print(f"📊 COMPUTING COUNTRY AGGREGATIONS: {display_name}")
         print(f"{'─' * 60}")
 
     # Aggregate by country
     by_country = (
-        tourism_gdf.groupby(["country", "iso_a3"])
+        economic_gdf.groupby(["country", "iso_a3"], dropna=False)
         .agg({value_column: "sum"})
         .reset_index()
     )
+    by_country["dataset"] = dataset_key
+    by_country["display_name"] = display_name
+    by_country["value_column"] = value_column
+    if spec:
+        by_country["units"] = spec.units
     by_country = by_country.set_index("iso_a3")
 
     # Add GDP percentage if GDP data provided
     if gdp_data is not None:
         gdp_map = gdp_data.set_index("iso_a3")["gdp"]
         by_country["national_gdp"] = by_country.index.map(gdp_map)
-        by_country["reef_tourism_gdp_as_pct_of_national_gdp"] = (
+        by_country["value_gdp_as_pct_of_national_gdp"] = (
             100 * by_country[value_column] / by_country["national_gdp"]
         )
+        if dataset_key == "tourism":
+            by_country["reef_tourism_gdp_as_pct_of_national_gdp"] = by_country[
+                "value_gdp_as_pct_of_national_gdp"
+            ]
 
     if verbose:
-        _report_country_aggregations(by_country, value_column)
+        _report_country_aggregations(by_country, value_column, display_name)
 
     return by_country
 
 
-def _report_country_aggregations(by_country: pd.DataFrame, value_column: str) -> None:
+def compute_dataset_country_aggregations(
+    datasets: Dict[str, EconomicValueData],
+    gdp_data: pd.DataFrame = None,
+    verbose: bool = True,
+) -> Dict[str, pd.DataFrame]:
+    """Compute per-country aggregations for each loaded economic layer."""
+    return {
+        key: compute_country_aggregations(
+            data.gdf,
+            value_column=data.value_column,
+            dataset_key=key,
+            gdp_data=gdp_data,
+            verbose=verbose,
+        )
+        for key, data in datasets.items()
+    }
+
+
+def compute_combined_country_aggregations(
+    datasets: Dict[str, EconomicValueData],
+    gdp_data: pd.DataFrame = None,
+    verbose: bool = True,
+) -> pd.DataFrame:
+    """Sum all layer contributions by country, regardless of units."""
+    rows = []
+    for key, data in datasets.items():
+        grouped = (
+            data.gdf.groupby(["country", "iso_a3"], dropna=False)[data.value_column]
+            .sum()
+            .reset_index(name="dataset_value")
+        )
+        grouped["dataset"] = key
+        grouped["display_name"] = data.display_name or key
+        grouped["units"] = data.units
+        rows.append(grouped)
+
+    if not rows:
+        return pd.DataFrame()
+
+    long_df = pd.concat(rows, ignore_index=True)
+    combined = (
+        long_df.groupby(["country", "iso_a3"], dropna=False)
+        .agg(composite_value=("dataset_value", "sum"), n_datasets=("dataset", "nunique"))
+        .reset_index()
+        .set_index("iso_a3")
+    )
+
+    if gdp_data is not None:
+        gdp_map = gdp_data.set_index("iso_a3")["gdp"]
+        combined["national_gdp"] = combined.index.map(gdp_map)
+        combined["composite_value_gdp_as_pct"] = (
+            100 * combined["composite_value"] / combined["national_gdp"]
+        )
+
+    if verbose:
+        print(f"\n{'─' * 60}")
+        print("📊 COMBINED COUNTRY AGGREGATIONS")
+        print(f"{'─' * 60}")
+        print(f"  Countries: {len(combined)}")
+        print(
+            "  Composite value sums all configured layers; units are layer-specific."
+        )
+        print(f"  Total composite value: {combined['composite_value'].sum():,.2f}")
+        print(f"{'─' * 60}\n")
+
+    return combined
+
+
+def _report_country_aggregations(
+    by_country: pd.DataFrame, value_column: str, display_name: str
+) -> None:
     print(f"\n{'─' * 60}")
     print("📊 COUNTRY AGGREGATIONS")
     print(f"{'─' * 60}")
     print(f"  Countries: {len(by_country)}")
-    print(f"  Total tourism value: ${by_country[value_column].sum() / 1e9:.2f}B")
+    print(f"  Layer: {display_name}")
+    print(f"  Total value: {by_country[value_column].sum():,.2f}")
 
-    if "reef_tourism_gdp_as_pct_of_national_gdp" in by_country.columns:
+    if "value_gdp_as_pct_of_national_gdp" in by_country.columns:
         print("\n  🏆 Top 10 by GDP Contribution (%):")
-        top = by_country.nlargest(10, "reef_tourism_gdp_as_pct_of_national_gdp")
+        top = by_country.nlargest(10, "value_gdp_as_pct_of_national_gdp")
         for i, (iso, row) in enumerate(top.iterrows(), 1):
             print(
-                f"     {i:2}. {row['country']}: {row['reef_tourism_gdp_as_pct_of_national_gdp']:.2f}%"
+                f"     {i:2}. {row['country']}: {row['value_gdp_as_pct_of_national_gdp']:.2f}%"
             )
 
     print(f"{'─' * 60}\n")
