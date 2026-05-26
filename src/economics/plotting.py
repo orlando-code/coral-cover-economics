@@ -5,10 +5,12 @@ Provides both static (matplotlib) and interactive (plotly) visualizations.
 """
 
 import warnings
+import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 
 import cartopy.crs as ccrs
+import matplotlib
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -1756,6 +1758,103 @@ def plot_total_revenue_choropleth(
     return fig
 
 
+# Ocean Wealth tourism value bins (discrete)
+TOURISM_PRICE_BIN_LABELS = [
+    "no value",
+    "up to 4000",
+    "4001-8000",
+    "8001-12000",
+    "12001-24000",
+    "24001-44000",
+    "44001-92000",
+    "92001-172000",
+    "172001-352000",
+    "352001-908000",
+    ">908000",
+]
+TOURISM_PRICE_BIN_COLORS = [
+    "#828282",
+    "#2892c8",
+    "#74b474",
+    "#52bf81",
+    "#59d95e",
+    "#58f230",
+    "#f6e058",
+    "#e6ac3e",
+    "#d57726",
+    "#bf4713",
+    "#730000",
+]
+
+
+def _folium_colorizer(
+    gdf_plot: pd.DataFrame,
+    plot_column: str,
+    cmap: matplotlib.colors.Colormap | None,
+    *,
+    discrete: bool | None,
+    bin_labels: list[str] | None,
+    bin_colors: list[str] | None,
+):
+    """Return (branca colormap, value->hex color, whether discrete bins are used)."""
+    import branca
+
+    if discrete is None:
+        discrete = plot_column == "bin_global" or (
+            pd.api.types.is_integer_dtype(gdf_plot[plot_column])
+            and gdf_plot[plot_column].nunique() <= len(TOURISM_PRICE_BIN_COLORS)
+        )
+
+    if not discrete:
+        base = matplotlib.cm.get_cmap("turbo") if cmap is None else cmap
+        values = gdf_plot[plot_column].values.astype(float)
+        vmin, vmax = float(np.nanmin(values)), float(np.nanmax(values))
+        colormap = branca.colormap.LinearColormap(
+            [mcolors.to_hex(base(i)) for i in np.linspace(0, 1, 256)],
+            vmin=vmin,
+            vmax=vmax,
+        )
+        colormap.caption = plot_column
+
+        def color_for(val):
+            if val is None or (isinstance(val, float) and np.isnan(val)):
+                return "#999999"
+            return colormap(float(val))
+
+        return colormap, color_for, False
+
+    labels = bin_labels or TOURISM_PRICE_BIN_LABELS
+    if bin_colors is not None:
+        colors = list(bin_colors)
+    elif cmap is not None and hasattr(cmap, "colors"):
+        colors = [mcolors.to_hex(c) for c in cmap.colors]
+    else:
+        colors = TOURISM_PRICE_BIN_COLORS
+
+    n = len(colors)
+    color_by_bin = {i: colors[i] for i in range(n)}
+
+    colormap = branca.colormap.StepColormap(
+        colors=colors,
+        index=list(range(n + 1)),
+        vmin=0,
+        vmax=n,
+    )
+    colormap.caption = plot_column
+    if hasattr(colormap, "tick_labels"):
+        colormap.tick_labels = labels
+
+    def color_for(val):
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return colors[0]
+        idx = int(round(float(val)))
+        if idx < 0 or idx >= n:
+            return "#999999"
+        return color_by_bin[idx]
+
+    return colormap, color_for, True
+
+
 def plot_tourism_value_bins_map(
     tourism_gdf,
     bin_column: str = "bin_global",
@@ -1783,36 +1882,8 @@ def plot_tourism_value_bins_map(
     import matplotlib.cm as cm
     from matplotlib.colors import ListedColormap
 
-    # Price bin labels
-    prices_key = [
-        "no value",
-        "up to 4000",
-        "4001-8000",
-        "8001-12000",
-        "12001-24000",
-        "24001-44000",
-        "44001-92000",
-        "92001-172000",
-        "172001-352000",
-        "352001-908000",
-        ">908000",
-    ]
-
-    # Custom colormap to match Ocean Wealth display
-    colormap = [
-        "#828282",
-        "#2892c8",
-        "#74b474",
-        "#52bf81",
-        "#59d95e",
-        "#58f230",
-        "#f6e058",
-        "#e6ac3e",
-        "#d57726",
-        "#bf4713",
-        "#730000",
-    ]
-    price_cmap = ListedColormap(colormap)
+    prices_key = TOURISM_PRICE_BIN_LABELS
+    price_cmap = ListedColormap(TOURISM_PRICE_BIN_COLORS)
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -2222,7 +2293,13 @@ def plot_spatial_distribution_interactive(
     gdf,
     plot_column: str = "bin_global",
     bbox: tuple = None,
+    cmap: matplotlib.colors.Colormap = None,
     save_path: Path = None,
+    *,
+    discrete: bool | None = None,
+    bin_labels: list[str] | None = None,
+    bin_colors: list[str] | None = None,
+    label_column: str | None = None,
 ) -> "folium.Map":  # noqa
     """
     Create an interactive map showing the spatial distribution of a column in a GeoDataFrame,
@@ -2233,90 +2310,117 @@ def plot_spatial_distribution_interactive(
     gdf : GeoDataFrame
         Data with values to plot.
     plot_column : str
-        Column containing values to plot.
+        Column containing values to plot (use ``bin_global`` for discrete tourism bins).
     bbox : tuple, optional
         Bounding box (minx, miny, maxx, maxy) to zoom to.
+    cmap : Colormap, optional
+        Matplotlib colormap; for discrete mode pass ``ListedColormap`` (e.g. ``price_cmap``).
     save_path : Path, optional
         Path to save the HTML map.
+    discrete : bool, optional
+        Force discrete bin coloring. Auto-enabled for ``bin_global``.
+    bin_labels : list[str], optional
+        Legend labels for discrete bins (defaults to Ocean Wealth ``price_bin`` labels).
+    bin_colors : list[str], optional
+        Hex colors per bin index (defaults to Ocean Wealth palette).
+    label_column : str, optional
+        Column for tooltip labels. If omitted, discrete maps use Ocean Wealth bin labels.
 
     Returns
     -------
     folium.Map
         The interactive folium map.
     """
-    import branca
     import folium
-    import matplotlib
-    import numpy as np
 
-    # Filter by bounding box if provided
+    from shapely.geometry import box
+
     if bbox:
-        from shapely.geometry import box
-
-        bbox_geom = box(*bbox)
-        gdf_plot = gdf[gdf.geometry.intersects(bbox_geom)].copy()
-        gdf_plot = gdf_plot[gdf_plot[plot_column].notnull()]
+        gdf_plot = gdf[gdf.geometry.intersects(box(*bbox))].copy()
     else:
         gdf_plot = gdf.copy()
-        gdf_plot = gdf_plot[gdf_plot[plot_column].notnull()]
+    gdf_plot = gdf_plot[gdf_plot[plot_column].notnull()]
 
-    # Calculate bounds
+    if gdf_plot.crs is not None and gdf_plot.crs.to_epsg() != 4326:
+        gdf_plot = gdf_plot.to_crs(epsg=4326)
+
     if bbox:
         minx, miny, maxx, maxy = bbox
     else:
         minx, miny, maxx, maxy = gdf_plot.total_bounds
-
-    # Center of the map
     center = [(miny + maxy) / 2, (minx + maxx) / 2]
 
-    # Choose colormap to match appearance with matplotlib's "turbo"
-    cmap = matplotlib.cm.get_cmap("turbo")
-    values = gdf_plot[plot_column].values.astype(float)
-    vmin, vmax = np.nanmin(values), np.nanmax(values)
-
-    # Create a branca colormap (for folium coloring)
-    colormap = branca.colormap.LinearColormap(
-        [matplotlib.colors.rgb2hex(cmap(i)) for i in np.linspace(0, 1, 256)],
-        vmin=vmin,
-        vmax=vmax,
+    colormap, color_for, use_discrete = _folium_colorizer(
+        gdf_plot,
+        plot_column,
+        cmap,
+        discrete=discrete,
+        bin_labels=bin_labels,
+        bin_colors=bin_colors,
     )
-    colormap.caption = plot_column
+    bin_label_lookup = (
+        (bin_labels or TOURISM_PRICE_BIN_LABELS) if use_discrete else None
+    )
 
-    # Reproject to WGS84 if not already
-    if gdf_plot.crs is not None and gdf_plot.crs.to_epsg() != 4326:
-        gdf_plot = gdf_plot.to_crs(epsg=4326)
+    def _tooltip_text(row, val):
+        if label_column and label_column in row.index:
+            return f"{row[label_column]} ({plot_column}={val})"
+        if bin_label_lookup is not None:
+            idx = int(round(float(val)))
+            if 0 <= idx < len(bin_label_lookup):
+                return bin_label_lookup[idx]
+        return f"{plot_column}: {val}"
 
-    # Create the folium map
     m = folium.Map(location=center, zoom_start=7, tiles="cartodbpositron")
 
-    # Add features at reasonable geojson resolution (for high-res display)
-    # If there are lots of polygons, simplify to a small tolerance for performance,
-    # but we'll use a small value so detail is high.
-    gdf_plot = gdf_plot.copy()
-    gdf_plot["geometry"] = gdf_plot["geometry"].simplify(
-        tolerance=0.0003, preserve_topology=True
-    )
+    is_point_like = gdf_plot.geometry.geom_type.isin(["Point", "MultiPoint"]).all()
+    if not is_point_like:
+        gdf_plot = gdf_plot.copy()
+        gdf_plot["geometry"] = gdf_plot["geometry"].simplify(
+            tolerance=0.0003, preserve_topology=True
+        )
 
-    def style_function(feature):
-        val = feature["properties"][plot_column]
-        if val is not None:
-            color = colormap(val)
-        else:
-            color = "#999999"
-        return {
-            "fillOpacity": 0.7,
-            "weight": 0.2,
-            "color": color,
-            "fillColor": color,
-        }
+    tooltip_fields = [plot_column]
+    if label_column and label_column in gdf_plot.columns:
+        tooltip_fields = [label_column, plot_column]
 
-    folium.GeoJson(
-        gdf_plot,
-        name="spatial",
-        style_function=style_function,
-        highlight_function=lambda x: {"weight": 2, "color": "yellow"},
-        tooltip=folium.GeoJsonTooltip(fields=[plot_column]),
-    ).add_to(m)
+    if is_point_like:
+        for _, row in gdf_plot.iterrows():
+            geom = row.geometry
+            val = row[plot_column]
+            color = color_for(val)
+            tip = _tooltip_text(row, val)
+            geoms = [geom] if geom.geom_type == "Point" else list(geom.geoms)
+            for pt in geoms:
+                folium.CircleMarker(
+                    location=[pt.y, pt.x],
+                    radius=3,
+                    color=color,
+                    weight=0.5,
+                    fill=True,
+                    fill_color=color,
+                    fill_opacity=0.8,
+                    tooltip=tip,
+                ).add_to(m)
+    else:
+
+        def style_function(feature):
+            val = feature["properties"][plot_column]
+            color = color_for(val)
+            return {
+                "fillOpacity": 0.7,
+                "weight": 0.2,
+                "color": color,
+                "fillColor": color,
+            }
+
+        folium.GeoJson(
+            gdf_plot,
+            name="spatial",
+            style_function=style_function,
+            highlight_function=lambda x: {"weight": 2, "color": "yellow"},
+            tooltip=folium.GeoJsonTooltip(fields=tooltip_fields),
+        ).add_to(m)
 
     colormap.add_to(m)
 
@@ -2328,6 +2432,206 @@ def plot_spatial_distribution_interactive(
         print(f"Interactive map saved: {save_path}")
 
     return m
+
+
+def plot_composite_economic_layers(
+    datasets: Dict[str, Any],
+    output_dir: Path,
+    static_filename: str = "composite_economic_layers.png",
+    interactive_filename: str = "composite_economic_layers.html",
+) -> Dict[str, Path]:
+    """Plot all economic layers together with per-layer colorbars/toggles."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    saved: Dict[str, Path] = {}
+    static_path = output_dir / static_filename
+    interactive_path = output_dir / interactive_filename
+
+    fig, ax = _plot_composite_economic_layers_static(datasets)
+    fig.savefig(static_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    saved["static"] = static_path
+
+    interactive = _plot_composite_economic_layers_interactive(datasets)
+    interactive.write_html(interactive_path)
+    saved["interactive"] = interactive_path
+
+    print(f"✓ Generated composite economic layer maps: {len(saved)} files")
+    return saved
+
+
+def _plot_composite_economic_layers_static(
+    datasets: Dict[str, Any],
+) -> Tuple[plt.Figure, plt.Axes]:
+    """Static composite map for mixed point/polygon economic layers."""
+    fig, ax = plot_utils.generate_geo_axis(figsize=(14, 8), dpi=150)
+    ax = plot_utils.format_geo_axes(ax)
+    transform = ccrs.PlateCarree()
+    cmaps = ["Greens", "Blues", "Purples", "Oranges", "Reds"]
+
+    for i, (key, data) in enumerate(datasets.items()):
+        gdf = data.gdf.to_crs("EPSG:4326").copy()
+        value_column = data.value_column
+        label = data.display_name or key.replace("_", " ").title()
+        values = gdf[value_column].fillna(0)
+        vmin, vmax = _value_bounds(values)
+        norm = Normalize(vmin=vmin, vmax=vmax)
+        cmap = plt.get_cmap(cmaps[i % len(cmaps)])
+        geom_types = set(gdf.geometry.geom_type.unique())
+
+        if geom_types <= {"Point", "MultiPoint"}:
+            ax.scatter(
+                gdf.geometry.x,
+                gdf.geometry.y,
+                c=values,
+                cmap=cmap,
+                norm=norm,
+                s=3,
+                alpha=0.75,
+                linewidths=0,
+                transform=transform,
+                zorder=20 + i,
+                label=label,
+            )
+        else:
+            gdf.sort_values(value_column).plot(
+                ax=ax,
+                column=value_column,
+                cmap=cmap,
+                norm=norm,
+                alpha=0.65,
+                linewidth=0.1,
+                edgecolor="none",
+                transform=transform,
+                zorder=5 + i,
+            )
+
+        sm = cm.ScalarMappable(norm=norm, cmap=cmap)
+        sm.set_array([])
+        cbar = fig.colorbar(
+            sm,
+            ax=ax,
+            orientation="vertical",
+            fraction=0.025,
+            pad=0.02 + 0.055 * i,
+        )
+        units = f" ({data.units})" if data.units else ""
+        cbar.set_label(f"{label}{units}")
+
+    ax.set_title("Composite reef economic value layers")
+    return fig, ax
+
+
+def _plot_composite_economic_layers_interactive(
+    datasets: Dict[str, Any],
+) -> go.Figure:
+    """Interactive composite map with one toggleable trace per economic layer."""
+    fig = go.Figure()
+    color_scales = ["Greens", "Blues", "Purples", "Oranges", "Reds"]
+
+    for i, (key, data) in enumerate(datasets.items()):
+        gdf = data.gdf.to_crs("EPSG:4326").copy()
+        value_column = data.value_column
+        label = data.display_name or key.replace("_", " ").title()
+        values = gdf[value_column].fillna(0)
+        vmin, vmax = _value_bounds(values)
+        colorscale = color_scales[i % len(color_scales)]
+        colorbar = dict(
+            title=f"{label}<br>{data.units}" if data.units else label,
+            x=1.02 + 0.08 * i,
+        )
+        geom_types = set(gdf.geometry.geom_type.unique())
+
+        if geom_types <= {"Point", "MultiPoint"}:
+            fig.add_trace(
+                go.Scattergeo(
+                    lon=gdf.geometry.x,
+                    lat=gdf.geometry.y,
+                    mode="markers",
+                    name=label,
+                    legendgroup=key,
+                    showlegend=True,
+                    marker=dict(
+                        size=3,
+                        opacity=0.75,
+                        color=values,
+                        colorscale=colorscale,
+                        cmin=vmin,
+                        cmax=vmax,
+                        colorbar=colorbar,
+                    ),
+                    customdata=np.stack(
+                        [
+                            gdf.get("country", pd.Series("", index=gdf.index)),
+                            values,
+                        ],
+                        axis=-1,
+                    ),
+                    hovertemplate=(
+                        f"{label}<br>Country: %{{customdata[0]}}"
+                        f"<br>{value_column}: %{{customdata[1]:,.2f}}<extra></extra>"
+                    ),
+                )
+            )
+        else:
+            plot_gdf = gdf.reset_index(drop=True)
+            plot_gdf["_feature_id"] = plot_gdf.index.astype(str)
+            geojson = json.loads(plot_gdf.to_json())
+            fig.add_trace(
+                go.Choropleth(
+                    geojson=geojson,
+                    locations=plot_gdf["_feature_id"],
+                    z=values,
+                    featureidkey="properties._feature_id",
+                    name=label,
+                    legendgroup=key,
+                    showlegend=True,
+                    colorscale=colorscale,
+                    marker_line_width=0,
+                    colorbar=colorbar,
+                    customdata=np.stack(
+                        [
+                            plot_gdf.get(
+                                "country",
+                                pd.Series("", index=plot_gdf.index),
+                            ),
+                            values,
+                        ],
+                        axis=-1,
+                    ),
+                    hovertemplate=(
+                        f"{label}<br>Country: %{{customdata[0]}}"
+                        f"<br>{value_column}: %{{customdata[1]:,.2f}}<extra></extra>"
+                    ),
+                )
+            )
+
+    fig.update_geos(
+        projection_type="natural earth",
+        showland=True,
+        landcolor="rgb(245,245,245)",
+        showocean=True,
+        oceancolor="rgb(235,245,255)",
+        showcountries=True,
+        coastlinecolor="rgb(120,120,120)",
+    )
+    fig.update_layout(
+        title="Composite reef economic value layers",
+        legend_title="Toggle layers",
+        margin=dict(l=0, r=160, t=50, b=0),
+        height=750,
+    )
+    return fig
+
+
+def _value_bounds(values: pd.Series) -> Tuple[float, float]:
+    """Return non-degenerate color bounds for a value series."""
+    vmin = float(values.min())
+    vmax = float(values.max())
+    if vmax <= vmin:
+        vmax = vmin + 1.0
+    return vmin, vmax
 
 
 def generate_verification_plots(
@@ -2478,8 +2782,10 @@ def plot_loss_as_gdp_pct_bar(
 
     ax.grid(True, axis="x", alpha=0.3)
     ax.set_xlabel("Projected Value Loss as % of National GDP", fontsize=12)
+    value_label = result.value_type.replace("_", " ").title()
     ax.set_title(
-        f"Top {top_n} Countries: Tourism Loss as % of GDP\n{result.scenario} | {result.model.name}",
+        f"Top {top_n} Countries: {value_label} Loss as % of GDP\n"
+        f"{result.scenario} | {result.model.name}",
         fontsize=14,
     )
 
@@ -2603,7 +2909,10 @@ def plot_loss_as_gdp_pct_choropleth(
     fig.update_layout(
         geo=dict(showcoastlines=True, showland=True),
         title=dict(
-            text=f"Projected Tourism Value Loss as % of National GDP<br>{result.scenario} | {result.model.name}"
+            text=(
+                f"Projected {result.value_type.replace('_', ' ').title()} Value Loss "
+                f"as % of National GDP<br>{result.scenario} | {result.model.name}"
+            )
             + ("<br>(logarithmic scale)" if log_scale else ""),
             x=0.5,
             y=0.95,
