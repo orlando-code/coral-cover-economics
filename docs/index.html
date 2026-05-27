@@ -716,7 +716,7 @@
             <section id="page-overview" class="page active">
                 <div class="hero">
                     <h1>Economic Impact of Coral Cover Loss</h1>
-                    <p>Projected loss of reef-associated tourism value under climate change scenarios (RCP 4.5 & 8.5) through 2100 via linear, compound, and ecosystem tipping point economic depreciation models.</p>
+                    <p>Projected loss of the huamn benefits of coral reefs under two climate change scenarios (RCPs 4.5 & 8.5) throughout the century via linear, compound, and ecosystem tipping point economic depreciation models.</p>
                 </div>
                 
                 <div class="stats-grid" id="summary-stats">
@@ -729,6 +729,23 @@
                             <h2 class="chart-title">Scenario Comparison</h2>
                             <p class="chart-subtitle">Annual value loss at endpoint by scenario and model</p>
                         </div>
+                        <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Datasets:</span>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="scenario-value-type-checkbox" value="tourism" checked />
+                                    <span>Tourism</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="scenario-value-type-checkbox" value="fisheries" checked />
+                                    <span>Fisheries</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="scenario-value-type-checkbox" value="coastal_protection" checked />
+                                    <span>Coastal protection</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <div id="scenario-comparison-chart" style="height: 400px;"></div>
                 </div>
@@ -740,6 +757,15 @@
                             <p class="chart-subtitle">Economic losses over time by scenario and model</p>
                         </div>
                         <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Dataset:</span>
+                                <select id="overview-value-type">
+                                    <option value="all" selected>All datasets</option>
+                                    <option value="tourism">Tourism</option>
+                                    <option value="fisheries">Fisheries</option>
+                                    <option value="coastal_protection">Coastal protection</option>
+                                </select>
+                            </div>
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="overview-model">
@@ -768,6 +794,15 @@
                             <p class="chart-subtitle">Point-by-point visualization of projected economic impact</p>
                         </div>
                         <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Dataset:</span>
+                                <select id="map-value-type">
+                                    <option value="all" selected>All datasets (overlay)</option>
+                                    <option value="tourism">Tourism</option>
+                                    <option value="fisheries">Fisheries</option>
+                                    <option value="coastal_protection">Coastal protection</option>
+                                </select>
+                            </div>
                             <div class="control-group">
                                 <span class="control-label">Scenario:</span>
                                 <select id="map-scenario">
@@ -884,6 +919,15 @@
                         </div>
                         <div class="controls">
                             <div class="control-group">
+                                <span class="control-label">Dataset:</span>
+                                <select id="country-value-type">
+                                    <option value="all" selected>All datasets (aggregate)</option>
+                                    <option value="tourism">Tourism</option>
+                                    <option value="fisheries">Fisheries</option>
+                                    <option value="coastal_protection">Coastal protection</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
                                 <span class="control-label">Scenario:</span>
                                 <select id="country-scenario">
                                     <optgroup label="Annual Loss">
@@ -912,14 +956,14 @@
                                 <span class="control-label">Metric:</span>
                                 <select id="country-metric">
                                     <option value="value_loss" selected>Absolute Value Loss ($)</option>
-                                    <option value="reef_loss_pct">Loss % of reef tourism</option>
+                                    <option value="reef_loss_pct">Loss % of reef-associated value</option>
                                     <option value="gdp_pct">% of national GDP</option>
                                 </select>
                             </div>
                             <div class="control-group">
                                 <span class="control-label">Colour by:</span>
                                 <select id="country-color-mode">
-                                    <option value="reef_loss_pct" selected>Loss % of reef tourism</option>
+                                    <option value="reef_loss_pct" selected>Loss % of reef-associated value</option>
                                     <option value="gdp_pct">% of national GDP</option>
                                     <option value="value_loss">Absolute Value Loss ($)</option>
                                 </select>
@@ -945,6 +989,15 @@
                             <p class="chart-subtitle">Side-by-side comparison of all scenarios</p>
                         </div>
                         <div class="controls">
+                            <div class="control-group">
+                                <span class="control-label">Dataset:</span>
+                                <select id="gdp-value-type">
+                                    <option value="all" selected>All datasets (aggregate)</option>
+                                    <option value="tourism">Tourism</option>
+                                    <option value="fisheries">Fisheries</option>
+                                    <option value="coastal_protection">Coastal protection</option>
+                                </select>
+                            </div>
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="gdp-comparison-model">
@@ -1059,8 +1112,105 @@
         let countryBoundaries = null;
         let renderTimeout = null;  // For debouncing
         let isRendering = false;  // Prevent concurrent renders
+        const VALUE_TYPES = ['tourism', 'fisheries', 'coastal_protection'];
+        const VALUE_TYPE_LABELS = {
+            all: 'All datasets',
+            tourism: 'Tourism',
+            fisheries: 'Fisheries',
+            coastal_protection: 'Coastal protection',
+        };
         
         const DATA_PATH = 'exported_data/';
+
+        function getSelectedValueType(controlId, fallback = 'all') {
+            const control = document.getElementById(controlId);
+            return control ? control.value : fallback;
+        }
+
+        function formatValueType(valueType) {
+            return VALUE_TYPE_LABELS[valueType] || valueType;
+        }
+
+        function getScenarioComparisonValueTypes() {
+            const checkboxes = document.querySelectorAll('.scenario-value-type-checkbox');
+            const selected = Array.from(checkboxes)
+                .filter((cb) => cb.checked)
+                .map((cb) => cb.value);
+            return selected.length > 0 ? selected : [...VALUE_TYPES];
+        }
+
+        function formatBillions(valueInBillions) {
+            const abs = Math.abs(Number(valueInBillions || 0));
+            if (abs >= 1) return `$${valueInBillions.toFixed(2)}B`;
+            return `$${(valueInBillions * 1000).toFixed(1)}M`;
+        }
+
+        function aggregateRowsByCountry(rows, isCumulative = false, includeGdp = false) {
+            const grouped = new Map();
+            rows.forEach((row) => {
+                const country = row.country || '';
+                const key = `${country}||${row.iso_a3 || ''}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        country,
+                        iso_a3: row.iso_a3 || '',
+                        original_value: 0,
+                        value_loss: 0,
+                        cumulative_loss: 0,
+                        annual_loss: 0,
+                        loss_fraction: 0,
+                        cumulative_loss_fraction: 0,
+                        _annual_fraction_weighted_loss: 0,
+                        _cumulative_fraction_weighted_loss: 0,
+                        _gdp_loss: 0,
+                        _gdp_base: null,
+                    });
+                }
+                const acc = grouped.get(key);
+                acc.original_value += Number(row.original_value || 0);
+                acc.value_loss += Number(row.value_loss || 0);
+                acc.cumulative_loss += Number(row.cumulative_loss || 0);
+                acc.annual_loss += Number(row.annual_loss || row.value_loss || 0);
+                acc._annual_fraction_weighted_loss += Number(row.original_value || 0) * Number(row.loss_fraction || 0);
+                acc._cumulative_fraction_weighted_loss += Number(row.original_value || 0) * Number(row.cumulative_loss_fraction || 0);
+
+                if (includeGdp) {
+                    const gdpKey = `${row.scenario}||${row.model}||${row.value_type || ''}||${country}`;
+                    const gdpRec = window.gdpImpactLookup ? window.gdpImpactLookup[gdpKey] : null;
+                    if (gdpRec) {
+                        acc._gdp_loss += Number(gdpRec.value_loss || 0);
+                        const nationalGdp = Number(gdpRec.national_gdp || 0);
+                        if (nationalGdp > 0) {
+                            acc._gdp_base = nationalGdp;
+                        }
+                    }
+                }
+            });
+
+            return Array.from(grouped.values()).map((row) => {
+                const original = row.original_value;
+                row.loss_fraction = original > 0
+                    ? (row._annual_fraction_weighted_loss > 0
+                        ? row._annual_fraction_weighted_loss / original
+                        : row.value_loss / original)
+                    : 0;
+                row.cumulative_loss_fraction = original > 0
+                    ? (row._cumulative_fraction_weighted_loss > 0
+                        ? row._cumulative_fraction_weighted_loss / original
+                        : row.cumulative_loss / original)
+                    : 0;
+                if (includeGdp) {
+                    row.loss_as_gdp_pct = row._gdp_base && row._gdp_base > 0
+                        ? (row._gdp_loss / row._gdp_base) * 100
+                        : 0;
+                }
+                delete row._annual_fraction_weighted_loss;
+                delete row._cumulative_fraction_weighted_loss;
+                delete row._gdp_loss;
+                delete row._gdp_base;
+                return row;
+            });
+        }
         
         async function loadData() {
             try {
@@ -1083,7 +1233,7 @@
                 window.gdpImpactLookup = {};
                 if (Array.isArray(gdpImpactData)) {
                     gdpImpactData.forEach(d => {
-                        const key = `${d.scenario}||${d.model}||${d.country}`;
+                        const key = `${d.scenario}||${d.model}||${d.value_type || ''}||${d.country}`;
                         window.gdpImpactLookup[key] = d;
                     });
                 }
@@ -1216,6 +1366,18 @@
                 const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
                 renderOverviewTrajectory(metric);
             });
+            document.getElementById('overview-value-type').addEventListener('change', () => {
+                renderSummaryStats();
+                renderScenarioComparison();
+                const activeBtn = document.querySelector('.toggle-btn[data-metric].active');
+                const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
+                renderOverviewTrajectory(metric);
+            });
+            document.querySelectorAll('.scenario-value-type-checkbox').forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    renderScenarioComparison();
+                });
+            });
             
             // Map controls
             // Debounce filter changes to avoid excessive re-renders
@@ -1228,6 +1390,7 @@
             
             document.getElementById('map-scenario').addEventListener('change', debouncedLoadSiteData);
             document.getElementById('map-model').addEventListener('change', debouncedLoadSiteData);
+            document.getElementById('map-value-type').addEventListener('change', debouncedLoadSiteData);
             document.getElementById('map-metric').addEventListener('change', () => {
                 // Debounce metric changes
                 clearTimeout(renderTimeout);
@@ -1260,12 +1423,14 @@
             // Country controls
             document.getElementById('country-scenario').addEventListener('change', renderCountryChart);
             document.getElementById('country-model').addEventListener('change', renderCountryChart);
+            document.getElementById('country-value-type').addEventListener('change', renderCountryChart);
             document.getElementById('country-limit').addEventListener('change', renderCountryChart);
             document.getElementById('country-metric').addEventListener('change', renderCountryChart);
             document.getElementById('country-color-mode').addEventListener('change', renderCountryChart);
             
             // GDP comparison controls
             document.getElementById('gdp-comparison-model').addEventListener('change', renderGdpComparison);
+            document.getElementById('gdp-value-type').addEventListener('change', renderGdpComparison);
             document.getElementById('gdp-comparison-metric').addEventListener('change', renderGdpComparison);
             document.getElementById('gdp-comparison-limit').addEventListener('change', renderGdpComparison);
         }
@@ -1276,52 +1441,85 @@
         
         function renderSummaryStats() {
             if (!summaryData) return;
-            
-            const worstCase = summaryData.snapshot_results.find(r => 
-                r.scenario.includes('rcp85') && r.scenario.includes('2100')
-            ) || summaryData.snapshot_results[summaryData.snapshot_results.length - 1];
-            
-            // Calculate model cumulative average: average across all models and interpolations for RCP 8.5 by 2100
-            const rcp85_2100_results = summaryData.cumulative_results.filter(r => {
-                const scenario = r.scenario.toLowerCase();
-                const period = r.period || '';
-                // Match RCP 8.5 and end year 2100 (check both scenario name and period)
-                return scenario.includes('rcp85') && (scenario.includes('2100') || period.includes('2100'));
+            const snapshotRows = summaryData.snapshot_results || [];
+            const cumulativeRows = summaryData.cumulative_results || [];
+            if (!snapshotRows.length || !cumulativeRows.length) return;
+
+            const getBaseline = (valueType) => {
+                const rows = snapshotRows.filter((r) => r.value_type === valueType);
+                if (!rows.length) return 0;
+                return Math.max(...rows.map((r) => Number(r.original_value_billions || 0)));
+            };
+
+            const baselineTourism = getBaseline('tourism');
+            const baselineFisheries = getBaseline('fisheries');
+            const baselineCoastal = getBaseline('coastal_protection');
+
+            const annualAggregate = new Map();
+            snapshotRows.forEach((r) => {
+                const key = `${r.scenario}||${r.model}`;
+                annualAggregate.set(
+                    key,
+                    (annualAggregate.get(key) || 0) + Number(r.total_loss_billions || 0)
+                );
             });
-            
-            let cumulativeAverage = 0;
-            if (rcp85_2100_results.length > 0) {
-                const total = rcp85_2100_results.reduce((sum, r) => sum + (r.total_cumulative_loss_trillions || 0), 0);
-                cumulativeAverage = total / rcp85_2100_results.length;
-            }
-            
-            // Use first result for other fields (cover change, etc.) - they should be similar across models
-            const cumulative = rcp85_2100_results.find(r => r.interpolation === 'linear') || 
-                              summaryData.cumulative_results.find(r => 
-                                  r.scenario.toLowerCase().includes('rcp85')
-                              ) || 
-                              summaryData.cumulative_results[0];
-            
+            let worstAnnualLoss = 0;
+            annualAggregate.forEach((value) => {
+                if (value > worstAnnualLoss) worstAnnualLoss = value;
+            });
+
+            const cumulativeAggregate = new Map();
+            cumulativeRows.forEach((r) => {
+                const key = `${r.scenario}||${r.interpolation}||${r.model}`;
+                cumulativeAggregate.set(
+                    key,
+                    (cumulativeAggregate.get(key) || 0) + Number(r.total_cumulative_loss_trillions || 0)
+                );
+            });
+            let worstCumulativeLoss = 0;
+            cumulativeAggregate.forEach((value) => {
+                if (value > worstCumulativeLoss) worstCumulativeLoss = value;
+            });
+
+            const coralRow =
+                cumulativeRows.find((r) => {
+                    const scenario = (r.scenario || '').toLowerCase();
+                    return scenario.includes('rcp85') && (r.period || '').includes('2100') && r.interpolation === 'linear';
+                }) ||
+                cumulativeRows.find((r) => (r.scenario || '').toLowerCase().includes('rcp85')) ||
+                cumulativeRows[0];
+            if (!coralRow) return;
+
             const html = `
                 <div class="stat-card">
                     <div class="stat-label">Baseline Tourism Value</div>
-                    <div class="stat-value value">$${worstCase.original_value_billions.toFixed(1)}B</div>
+                    <div class="stat-value value">${formatBillions(baselineTourism)}</div>
                     <div class="stat-detail">Annual reef-associated tourism</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Worst-Case Annual Loss (2100)</div>
-                    <div class="stat-value loss">-$${worstCase.total_loss_billions.toFixed(1)}B</div>
-                    <div class="stat-detail">${worstCase.loss_fraction_pct.toFixed(1)}% decline under RCP 8.5</div>
+                    <div class="stat-label">Baseline Coastal Protection Value</div>
+                    <div class="stat-value value">${formatBillions(baselineCoastal)}</div>
+                    <div class="stat-detail">Annual reef-derived flood protection</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Cumulative Loss (2013-2100)</div>
-                    <div class="stat-value loss">-$${cumulativeAverage.toFixed(2)}T</div>
-                    <div class="stat-detail">Model average loss since 2013 (RCP 8.5)</div>
+                    <div class="stat-label">Baseline Fisheries Value</div>
+                    <div class="stat-value value">${formatBillions(baselineFisheries)}</div>
+                    <div class="stat-detail">Annual reef fisheries value</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Worst-Case Aggregate Annual Loss</div>
+                    <div class="stat-value loss">-${formatBillions(worstAnnualLoss)}</div>
+                    <div class="stat-detail">Summed across all three datasets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Worst-Case Aggregate Cumulative Loss</div>
+                    <div class="stat-value loss">-$${Number(worstCumulativeLoss || 0).toFixed(2)}T</div>
+                    <div class="stat-detail">2013 onward, summed across datasets</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Coral Cover Change</div>
-                    <div class="stat-value neutral">${cumulative.cover_change_pp.toFixed(1)}pp</div>
-                    <div class="stat-detail">${cumulative.baseline_cover_pct.toFixed(1)}% → ${cumulative.final_cover_pct.toFixed(1)}%</div>
+                    <div class="stat-value neutral">${Number(coralRow.cover_change_pp || 0).toFixed(1)}pp</div>
+                    <div class="stat-detail">${Number(coralRow.baseline_cover_pct || 0).toFixed(1)}% → ${Number(coralRow.final_cover_pct || 0).toFixed(1)}%</div>
                 </div>
             `;
             
@@ -1330,8 +1528,33 @@
         
         function renderScenarioComparison() {
             if (!summaryData) return;
+            const selectedValueTypes = getScenarioComparisonValueTypes();
             
-            const results = summaryData.snapshot_results;
+            let results = summaryData.snapshot_results || [];
+            results = results.filter((r) => selectedValueTypes.includes(r.value_type));
+            const grouped = new Map();
+            results.forEach((r) => {
+                const key = `${r.scenario}||${r.model}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        ...r,
+                        value_type: 'aggregate_selected',
+                        original_value_billions: 0,
+                        remaining_value_billions: 0,
+                        total_loss_billions: 0,
+                        loss_fraction_pct: 0,
+                    });
+                }
+                const g = grouped.get(key);
+                g.original_value_billions += Number(r.original_value_billions || 0);
+                g.remaining_value_billions += Number(r.remaining_value_billions || 0);
+                g.total_loss_billions += Number(r.total_loss_billions || 0);
+                g.loss_fraction_pct = g.original_value_billions > 0
+                    ? (g.total_loss_billions / g.original_value_billions) * 100
+                    : 0;
+            });
+            results = Array.from(grouped.values());
+            if (!results.length) return;
             
             const models = [...new Set(results.map(r => r.model))];
             
@@ -1391,6 +1614,7 @@
             if (!trajectoryData) return;
             
             const modelFilter = document.getElementById('overview-model').value;
+            const selectedValueType = getSelectedValueType('overview-value-type', 'all');
             
             // Color and linestyle config - matching scenario comparison chart
             // Color = RCP scenario (blue for RCP45, red for RCP85)
@@ -1398,11 +1622,11 @@
                 'rcp45': '#3498db',  // Blue (matching scenario comparison)
                 'rcp85': '#e74c3c',  // Red (matching scenario comparison)
             };
-            // Linestyle = Model (solid for Linear, dashed for Compound, dotted for Tipping Point)
-            const modelLineStyles = {
-                'Linear': 'solid',      // Solid (matches no hatch in scenario comparison)
-                'Compound': 'dash',     // Dashed (matches /// hatch conceptually)
-                'Tipping': 'dot',       // Dotted (matches ... hatch conceptually)
+            // Linestyle = dataset type
+            const datasetLineStyles = {
+                tourism: 'solid',
+                fisheries: 'dash',
+                coastal_protection: 'dot',
             };
 
             // Map trace types for Plotly
@@ -1414,6 +1638,9 @@
 
             // Filter data: use linear interpolation only, apply model filter
             let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
+            if (selectedValueType !== 'all') {
+                filtered = filtered.filter(t => t.value_type === selectedValueType);
+            }
             if (modelFilter !== 'all') {
                 filtered = filtered.filter(t => {
                     const modelName = t.model.toLowerCase();
@@ -1430,14 +1657,9 @@
 
             // Create traces
             const traces = filtered.map(t => {
-                const modelName = t.model.toLowerCase();
-                const modelShort = modelName.includes('linear') && !modelName.includes('compound') && !modelName.includes('tipping') ? 'Linear' : 
-                                modelName.includes('compound') && !modelName.includes('tipping') ? 'Compound' : 
-                                modelName.includes('tipping') ? 'Tipping' : 'Unknown';
-                
                 const scenario = t.scenario.toLowerCase();
                 const color = rcpColors[scenario] || '#94a3b8';
-                const linestyle = modelLineStyles[modelShort] || 'solid';
+                const linestyle = datasetLineStyles[t.value_type] || 'solid';
                 
                 let yData;
                 if (metric === 'cumulative_loss') {
@@ -1453,10 +1675,10 @@
                 return {
                     x: t.years,
                     y: yData,
-                    name: modelFilter === 'all'
-                        ? `${t.scenario.toUpperCase()} - ${modelShort}`
-                        : `${t.scenario.toUpperCase()}`,
+                    name: `${t.scenario.toUpperCase()} - ${formatValueType(t.value_type)}`,
+                    showlegend: false,
                     mode: 'lines',
+                    hovertemplate: `${t.scenario.toUpperCase()} | ${formatValueType(t.value_type)}<br>%{x}: %{y:.3f}<extra></extra>`,
                     line: {
                         color: color,
                         dash: linestyle,
@@ -1464,6 +1686,35 @@
                     }
                 };
             });
+
+            // Legend guide: colors indicate scenario, dash indicates dataset
+            const legendGuideTraces = [
+                {
+                    x: [null], y: [null], mode: 'lines', name: 'RCP 4.5',
+                    line: { color: rcpColors.rcp45, dash: 'solid', width: 3 },
+                    hoverinfo: 'skip'
+                },
+                {
+                    x: [null], y: [null], mode: 'lines', name: 'RCP 8.5',
+                    line: { color: rcpColors.rcp85, dash: 'solid', width: 3 },
+                    hoverinfo: 'skip'
+                },
+                {
+                    x: [null], y: [null], mode: 'lines', name: 'Tourism (solid)',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.tourism, width: 3 },
+                    hoverinfo: 'skip'
+                },
+                {
+                    x: [null], y: [null], mode: 'lines', name: 'Fisheries (dash)',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.fisheries, width: 3 },
+                    hoverinfo: 'skip'
+                },
+                {
+                    x: [null], y: [null], mode: 'lines', name: 'Coastal protection (dot)',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.coastal_protection, width: 3 },
+                    hoverinfo: 'skip'
+                },
+            ];
             
             const layout = {
                 paper_bgcolor: 'transparent',
@@ -1487,7 +1738,7 @@
                 margin: { t: 20, r: 20, b: 80, l: 60 }
             };
             
-            Plotly.newPlot('trajectory-chart', traces, layout, {responsive: true});
+            Plotly.newPlot('trajectory-chart', [...traces, ...legendGuideTraces], layout, {responsive: true});
         }
         
         function renderTrajectoryPage() {
@@ -1626,6 +1877,7 @@
             const scenario = document.getElementById('country-scenario').value;
             const isCumulative = scenario.startsWith('cumulative_');
             const dataSource = isCumulative ? cumulativeCountryData : countryData;
+            const valueType = getSelectedValueType('country-value-type', 'all');
             
             if (!dataSource) {
                 console.warn('Country data not loaded. isCumulative:', isCumulative, 'dataSource:', !!dataSource);
@@ -1643,6 +1895,15 @@
             let filtered = dataSource.filter(c => 
                 c.scenario === scenario && c.model === model
             );
+            if (valueType !== 'all') {
+                filtered = filtered.filter(c => c.value_type === valueType);
+            } else {
+                filtered = aggregateRowsByCountry(
+                    filtered.map(row => ({ ...row, scenario, model })),
+                    isCumulative,
+                    true
+                );
+            }
             
             console.log('Filtered countries:', filtered.length, 'for scenario:', scenario, 'model:', model);
             
@@ -1656,12 +1917,12 @@
             } else if (metric === 'gdp_pct' && !isCumulative && window.gdpImpactLookup) {
                 // Sort by GDP % if available
                 filtered = filtered.sort((a, b) => {
-                    const keyA = `${scenario}||${model}||${a.country}`;
-                    const keyB = `${scenario}||${model}||${b.country}`;
-                    const recA = window.gdpImpactLookup[keyA];
-                    const recB = window.gdpImpactLookup[keyB];
-                    const valA = recA ? recA.loss_as_gdp_pct : 0;
-                    const valB = recB ? recB.loss_as_gdp_pct : 0;
+                    const valA = valueType === 'all'
+                        ? (a.loss_as_gdp_pct || 0)
+                        : ((window.gdpImpactLookup[`${scenario}||${model}||${valueType}||${a.country}`] || {}).loss_as_gdp_pct || 0);
+                    const valB = valueType === 'all'
+                        ? (b.loss_as_gdp_pct || 0)
+                        : ((window.gdpImpactLookup[`${scenario}||${model}||${valueType}||${b.country}`] || {}).loss_as_gdp_pct || 0);
                     return valB - valA;
                 });
             } else {
@@ -1695,14 +1956,14 @@
                 // For GDP %, need to look up from gdpImpactData
                 if (!isCumulative && window.gdpImpactLookup) {
                     xData = filtered.map(c => {
-                        const key = `${scenario}||${model}||${c.country}`;
-                        const rec = window.gdpImpactLookup[key];
+                        if (valueType === 'all') return c.loss_as_gdp_pct || 0;
+                        const rec = window.gdpImpactLookup[`${scenario}||${model}||${valueType}||${c.country}`];
                         return rec ? rec.loss_as_gdp_pct : 0;
                     });
                     xTitle = 'Loss as % of National GDP';
                     textFn = c => {
-                        const key = `${scenario}||${model}||${c.country}`;
-                        const rec = window.gdpImpactLookup[key];
+                        if (valueType === 'all') return `${(c.loss_as_gdp_pct || 0).toFixed(2)}%`;
+                        const rec = window.gdpImpactLookup[`${scenario}||${model}||${valueType}||${c.country}`];
                         return rec ? `${rec.loss_as_gdp_pct.toFixed(2)}%` : '0%';
                     };
                 } else {
@@ -1725,8 +1986,8 @@
             if (colorMode === 'gdp_pct' && !isCumulative && window.gdpImpactLookup) {
                 // Use loss_as_gdp_pct from gdpImpactData where available (annual scenarios only)
                 colorValues = filtered.map(c => {
-                    const key = `${scenario}||${model}||${c.country}`;
-                    const rec = window.gdpImpactLookup[key];
+                    if (valueType === 'all') return c.loss_as_gdp_pct || 0;
+                    const rec = window.gdpImpactLookup[`${scenario}||${model}||${valueType}||${c.country}`];
                     return rec ? rec.loss_as_gdp_pct : 0;
                 });
                 colorbarTitle = '% GDP';
@@ -1864,10 +2125,35 @@
             const model = document.getElementById('gdp-comparison-model').value;
             const metric = document.getElementById('gdp-comparison-metric').value;
             const limitValue = document.getElementById('gdp-comparison-limit').value;
+            const valueType = getSelectedValueType('gdp-value-type', 'all');
             const limit = limitValue === 'all' ? 9999 : parseInt(limitValue);
+            let gdpSource = gdpImpactData.filter(c => c.model === model);
+            if (valueType !== 'all') {
+                gdpSource = gdpSource.filter(c => c.value_type === valueType);
+            } else {
+                const grouped = new Map();
+                gdpSource.forEach((row) => {
+                    const key = `${row.scenario}||${row.model}||${row.country}`;
+                    if (!grouped.has(key)) {
+                        grouped.set(key, {
+                            ...row,
+                            value_type: 'all',
+                            value_loss: 0,
+                            loss_as_gdp_pct: 0,
+                        });
+                    }
+                    const g = grouped.get(key);
+                    g.value_loss += Number(row.value_loss || 0);
+                    const nationalGdp = Number(row.national_gdp || 0);
+                    if (nationalGdp > 0) {
+                        g.loss_as_gdp_pct = (g.value_loss / nationalGdp) * 100;
+                    }
+                });
+                gdpSource = Array.from(grouped.values());
+            }
             
             // Get top countries by worst-case impact for selected model and metric
-            const worstCase = gdpImpactData.filter(c => 
+            const worstCase = gdpSource.filter(c => 
                 c.scenario.includes('rcp85') && c.scenario.includes('2100') &&
                 c.model === model
             );
@@ -1903,14 +2189,14 @@
             // For each RCP, create two traces: 2100 (base, lighter) and 2050 (overlay, darker)
             rcpScenarios.forEach(rcp => {
                 // Get data for both years
-                const data2100 = gdpImpactData.filter(c => 
+                const data2100 = gdpSource.filter(c => 
                     c.scenario.toLowerCase().includes(rcp.rcp) && 
                     c.scenario.includes('2100') &&
                     c.model === model &&
                     topCountries.includes(c.country)
                 );
                 
-                const data2050 = gdpImpactData.filter(c => 
+                const data2050 = gdpSource.filter(c => 
                     c.scenario.toLowerCase().includes(rcp.rcp) && 
                     c.scenario.includes('2050') &&
                     c.model === model &&
@@ -2231,6 +2517,7 @@
             
             const scenario = document.getElementById('map-scenario').value;
             const model = document.getElementById('map-model').value;
+            const valueType = getSelectedValueType('map-value-type', 'all');
             
             if (!scenario || !model) {
                 console.warn('Scenario or model not selected');
@@ -2259,28 +2546,31 @@
             };
             
             const sanitizedModel = sanitizeModelName(model);
-            const filename = `sites_${scenarioKey}_${sanitizedModel}.json`;
+            const buildFilename = (datasetKey) => `sites_${datasetKey}_${scenarioKey}_${sanitizedModel}.json`;
+            const datasetsToLoad = valueType === 'all' ? VALUE_TYPES : [valueType];
+            const filenames = datasetsToLoad.map(buildFilename);
             
-            console.log('Loading site data:', { scenario, model, isCumulative, scenarioKey, sanitizedModel, filename });
+            console.log('Loading site data:', { scenario, model, valueType, isCumulative, scenarioKey, sanitizedModel, filenames });
             
             try {
-                const response = await fetch(DATA_PATH + filename);
-                if (!response.ok) {
-                    console.error(`Site data not found: ${filename} (Status: ${response.status})`);
-                    console.log('Expected file path:', DATA_PATH + filename);
-                    if (siteManifest && siteManifest.cumulative_scenarios) {
-                        console.log('Available cumulative scenarios:', siteManifest.cumulative_scenarios.slice(0, 5));
-                    }
-                    if (siteManifest && siteManifest.scenarios) {
-                        console.log('Available annual scenarios:', siteManifest.scenarios.slice(0, 5));
-                    }
-                    // Clear the map if no data found
+                const geojsons = await Promise.all(
+                    filenames.map(async (filename) => {
+                        const response = await fetch(DATA_PATH + filename);
+                        if (!response.ok) return null;
+                        return response.json();
+                    })
+                );
+                const validGeojsons = geojsons.filter(g => g && Array.isArray(g.features));
+                if (validGeojsons.length === 0) {
+                    console.error('No site datasets found for selection', { filenames });
                     siteLayer.clearLayers();
                     currentSiteGeojson = null;
                     return;
                 }
-                
-                const geojson = await response.json();
+                const geojson = {
+                    type: 'FeatureCollection',
+                    features: validGeojsons.flatMap(g => g.features || []),
+                };
                 
                 if (!geojson || !geojson.features || geojson.features.length === 0) {
                     console.warn('GeoJSON has no features');
@@ -2289,7 +2579,7 @@
                     return;
                 }
                 
-                console.log(`✓ Loaded ${geojson.features.length} features from ${filename}`);
+                console.log(`✓ Loaded ${geojson.features.length} features from ${filenames.length} file(s)`);
                 renderSites(geojson, isCumulative, currentView);
                 
                 // Mark that initial load is complete
@@ -2636,6 +2926,7 @@
             const scenario = document.getElementById('map-scenario').value;
             const isCumulative = scenario.startsWith('cumulative_');
             const metric = document.getElementById('map-metric').value;
+            const valueType = getSelectedValueType('map-value-type', 'all');
             const dataSource = isCumulative ? cumulativeCountryData : countryData;
             
             if (!dataSource || !countryBoundaries) {
@@ -2674,14 +2965,18 @@
                 const targetModel = normalizeModelName(model);
                 const scenarioMatch = cScenario === targetScenario;
                 const modelMatch = cModel === targetModel;
-                return scenarioMatch && modelMatch;
+                const valueTypeMatch = valueType === 'all' ? true : c.value_type === valueType;
+                return scenarioMatch && modelMatch && valueTypeMatch;
             });
+            const filteredData = valueType === 'all'
+                ? aggregateRowsByCountry(filtered.map(r => ({ ...r, scenario, model })), isCumulative, false)
+                : filtered;
             
-            console.log('Filtered countries:', filtered.length);
+            console.log('Filtered countries:', filteredData.length);
             
             // Create lookup map by country name
             const countryMetrics = {};
-            filtered.forEach(c => {
+            filteredData.forEach(c => {
                 const countryName = c.country;
                 // Store by multiple possible keys for flexible matching
                 countryMetrics[countryName] = {
