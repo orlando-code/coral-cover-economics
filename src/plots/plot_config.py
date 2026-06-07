@@ -240,5 +240,50 @@ MODEL_COLORS = {
     "tipping_point": "#F11B00",
 }
 
+# Hierarchical beta model (Sully / hb_beta)
+COVARIATE_LABELS = {
+    "lat_stzd": "Latitude",
+    "historical_sst_max_stzd": "Max. historical SST",
+    "ssta_dhwmax_stzd": "Max. SSTA DHW",
+    "tsa_freqstdev_stzd": "TSA standard deviation",
+    "ssta_min_stzd": "Min. SST anomaly",
+    "tsa_max_stzd": "Max. TSA anomaly",
+    "beta_diversity": "Beta diversity",
+    "sst_mean_stzd": "Mean SST",
+    "depth_stzd": "Depth",
+    "ssta_mean_stzd": "Mean SSTA",
+    "cyclone_stzd": "Cyclone frequency",
+    "ssta_freqstdev_stzd": "SSTA frequency",
+    "human_pop_stzd": "Local human population",
+    "turbidity_mean_stzd": "Mean turbidity",
+}
+COVARIATE_LABELS_DICT = COVARIATE_LABELS
+
+TRACE_DIAGNOSTIC_VARS = (
+    "beta",
+    "beta_diversity",
+    "mu_global",
+    "sigma_site",
+    "sigma_ecoregion",
+    "theta",
+)
+HYPERPARAM_TRACE_VARS = TRACE_DIAGNOSTIC_VARS[1:]
+HYPERPARAM_LABELS = {
+    "beta_diversity": "Beta diversity",
+    "mu_global": "Global mean",
+    "sigma_site": "Site SD",
+    "sigma_ecoregion": "Ecoregion SD",
+    "theta": "Beta precision",
+}
+
+SPOT_CLASSES = ("normal", "bright_spot", "dark_spot")
+SPOT_STYLE = {
+    "normal": {"c": "gray", "s": 30, "alpha": 0.5, "label": "Normal"},
+    "bright_spot": {"c": "yellow", "edgecolor": "orange", "s": 50, "label": "Bright spot"},
+    "dark_spot": {"c": "black", "alpha": 0.7, "s": 40, "label": "Dark spot"},
+}
+
+HBB_FIG_DPI = 300
+
 
 # countries mapping

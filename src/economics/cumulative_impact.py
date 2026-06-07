@@ -11,10 +11,12 @@ coral cover gradually accumulates economic losses each year, not just at the end
 """
 
 import json
+import os
 import pickle
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -442,25 +444,12 @@ def calculate_cumulative_impact(
     # 3. Models with higher endpoint loss_fraction have higher cumulative loss
 
     value_lost_this_year = np.zeros_like(annual_values)
-    annual_lost_revenue = np.zeros_like(annual_values)
-
-    # First year: value lost is the decline from baseline
     value_lost_this_year[0] = np.maximum(baseline_value - annual_values[0], 0.0)
-    annual_lost_revenue[0] = np.maximum(
-        baseline_value - annual_values[0], 0.0
-    )  # Opportunity cost from first year
-
-    # Subsequent years: calculate year-over-year value decline and opportunity cost
-    for i in range(1, len(annual_values)):
-        prev_value = annual_values[i - 1]
-        curr_value = annual_values[i]
-
-        # Value lost this year: year-over-year decline (decreases as less value remains)
-        value_lost_this_year[i] = np.maximum(prev_value - curr_value, 0.0)
-
-        # Annual lost revenue: opportunity cost (baseline revenue we could have earned)
-        # This stays high after collapse, representing the ongoing opportunity cost
-        annual_lost_revenue[i] = np.maximum(baseline_value - curr_value, 0.0)
+    if len(annual_values) > 1:
+        value_lost_this_year[1:] = np.maximum(
+            annual_values[:-1] - annual_values[1:], 0.0
+        )
+    annual_lost_revenue = np.maximum(baseline_value - annual_values, 0.0)
 
     # # Apply discounting if specified (the extent to which future years are 'worth less')
     # if discount_rate > 0:
@@ -606,6 +595,8 @@ def calculate_cumulative_impacts_multi_scenario_per_site(
     discount_rate: float = 0.0,
     value_type: str = "tourism",
     verbose: bool = False,
+    n_jobs: Union[int, str, None] = "auto",
+    chunk_size: int = 25000,
     **model_kwargs,
 ) -> Dict[str, CumulativeImpactResult]:
     """
@@ -671,6 +662,8 @@ def calculate_cumulative_impacts_multi_scenario_per_site(
     """
     if interpolation_methods is None:
         interpolation_methods = ["linear", "exponential"]
+    if chunk_size <= 0:
+        raise ValueError(f"chunk_size must be positive, got {chunk_size}")
 
     # Instantiate model once (ensures consistency across scenarios)
     if isinstance(model, str):
@@ -695,153 +688,222 @@ def calculate_cumulative_impacts_multi_scenario_per_site(
                     f"expected {n_sites}"
                 )
 
-    results = {}
+    total_baseline_value = baseline_values.sum()
 
+    def _compute_cover_matrix(
+        chunk_baseline_covers: np.ndarray,
+        endpoint_years: List[int],
+        endpoint_cover_arrays: List[np.ndarray],
+        years: np.ndarray,
+        method: str,
+    ) -> np.ndarray:
+        row_count = len(chunk_baseline_covers)
+        cover_matrix = np.empty((row_count, len(years)), dtype=float)
+
+        prev_year = baseline_year
+        prev_covers = chunk_baseline_covers
+        first_segment = True
+
+        for year, covers in zip(endpoint_years, endpoint_cover_arrays):
+            current_covers = covers
+            if first_segment:
+                seg_mask = (years >= prev_year) & (years <= year)
+            else:
+                seg_mask = (years > prev_year) & (years <= year)
+            seg_years = years[seg_mask]
+            if len(seg_years) == 0:
+                prev_year = year
+                prev_covers = current_covers
+                first_segment = False
+                continue
+
+            if method == "linear":
+                t = (seg_years - prev_year) / (year - prev_year)
+                segment_vals = prev_covers[:, None] + (
+                    current_covers - prev_covers
+                )[:, None] * t[None, :]
+            elif method == "exponential":
+                dt = year - prev_year
+                t_rel = seg_years - prev_year
+                can_exp = (prev_covers > 0) & (current_covers > 0)
+                ratio = np.ones_like(prev_covers, dtype=float)
+                ratio[can_exp] = current_covers[can_exp] / prev_covers[can_exp]
+                decay = np.zeros_like(prev_covers, dtype=float)
+                decay[can_exp] = -np.log(ratio[can_exp]) / dt
+                exp_vals = prev_covers[:, None] * np.exp(-decay[:, None] * t_rel[None, :])
+                lin_t = t_rel / dt
+                lin_vals = prev_covers[:, None] + (
+                    current_covers - prev_covers
+                )[:, None] * lin_t[None, :]
+                segment_vals = np.where(can_exp[:, None], exp_vals, lin_vals)
+            else:
+                raise ValueError(f"Unknown interpolation method: {method}")
+
+            cover_matrix[:, seg_mask] = segment_vals
+            prev_year = year
+            prev_covers = current_covers
+            first_segment = False
+
+        return cover_matrix
+
+    def _compute_one_task(
+        scenario_name: str,
+        method: str,
+        sorted_endpoints: List[Tuple[int, np.ndarray]],
+    ) -> Tuple[str, Optional[CumulativeImpactResult], int]:
+        if verbose:
+            print(f"      Calculating {scenario_name} ({method}) for {n_sites} sites...")
+
+        if not sorted_endpoints:
+            return f"{scenario_name}_{method}", None, 0
+
+        endpoint_years = [year for year, _ in sorted_endpoints]
+        years = np.arange(baseline_year, max(endpoint_years) + 1)
+        n_years = len(years)
+        discount_factors = None
+        if discount_rate > 0:
+            years_from_start = years - years[0]
+            discount_factors = (1 + discount_rate) ** (-years_from_start)
+
+        aggregated_annual_values = np.zeros(n_years, dtype=float)
+        aggregated_annual_value_lost = np.zeros(n_years, dtype=float)
+        aggregated_annual_opportunity_cost = np.zeros(n_years, dtype=float)
+        aggregated_trajectory_covers_sum = np.zeros(n_years, dtype=float)
+        sites_processed = 0
+
+        for start in range(0, n_sites, chunk_size):
+            end = min(start + chunk_size, n_sites)
+            chunk_baseline_covers = baseline_covers[start:end]
+            chunk_baseline_values = baseline_values[start:end]
+            chunk_endpoint_cover_arrays = [covers[start:end] for _, covers in sorted_endpoints]
+
+            cover_matrix = _compute_cover_matrix(
+                chunk_baseline_covers=chunk_baseline_covers,
+                endpoint_years=endpoint_years,
+                endpoint_cover_arrays=chunk_endpoint_cover_arrays,
+                years=years,
+                method=method,
+            )
+
+            delta_cc_matrix = cover_matrix - chunk_baseline_covers[:, None]
+            if model.model_type == "tipping_point":
+                threshold = getattr(model, "threshold_cc", 0.1)
+                annual_values_chunk = model.calculate(
+                    delta_cc_matrix,
+                    chunk_baseline_values[:, None],
+                    original_cc=chunk_baseline_covers[:, None],
+                    threshold=threshold,
+                )
+            else:
+                annual_values_chunk = model.calculate(
+                    delta_cc_matrix, chunk_baseline_values[:, None]
+                )
+
+            annual_value_lost_chunk = np.zeros_like(annual_values_chunk)
+            annual_value_lost_chunk[:, 0] = np.maximum(
+                chunk_baseline_values - annual_values_chunk[:, 0], 0.0
+            )
+            if n_years > 1:
+                annual_value_lost_chunk[:, 1:] = np.maximum(
+                    annual_values_chunk[:, :-1] - annual_values_chunk[:, 1:], 0.0
+                )
+
+            annual_opportunity_cost_chunk = np.maximum(
+                chunk_baseline_values[:, None] - annual_values_chunk, 0.0
+            )
+
+            if discount_factors is not None:
+                annual_value_lost_chunk *= discount_factors[None, :]
+                annual_opportunity_cost_chunk *= discount_factors[None, :]
+
+            aggregated_annual_values += annual_values_chunk.sum(axis=0)
+            aggregated_annual_value_lost += annual_value_lost_chunk.sum(axis=0)
+            aggregated_annual_opportunity_cost += annual_opportunity_cost_chunk.sum(axis=0)
+            aggregated_trajectory_covers_sum += cover_matrix.sum(axis=0)
+            sites_processed += len(chunk_baseline_covers)
+
+        if sites_processed == 0:
+            return f"{scenario_name}_{method}", None, 0
+
+        aggregated_trajectory_covers = aggregated_trajectory_covers_sum / sites_processed
+        aggregated_cumulative_losses = np.cumsum(aggregated_annual_opportunity_cost)
+        aggregated_trajectory = CoverTrajectory(
+            years=years,
+            covers=aggregated_trajectory_covers,
+            scenario=scenario_name,
+            interpolation_method=method,
+        )
+        result = CumulativeImpactResult(
+            trajectory=aggregated_trajectory,
+            annual_values=aggregated_annual_values,
+            annual_losses=aggregated_annual_value_lost,
+            annual_value_lost=aggregated_annual_value_lost,
+            annual_opportunity_cost=aggregated_annual_opportunity_cost,
+            cumulative_losses=aggregated_cumulative_losses,
+            baseline_value=total_baseline_value,
+            model=model,
+            value_type=value_type,
+            discount_rate=discount_rate,
+        )
+        return f"{scenario_name}_{method}", result, sites_processed
+
+    tasks: List[Tuple[str, str, List[Tuple[int, np.ndarray]]]] = []
     for scenario_name, endpoints_dict in scenario_endpoints_per_site.items():
-        # Convert endpoints to sorted list of (year, covers_array) tuples
         sorted_endpoints = sorted(endpoints_dict.items())
-
         for method in interpolation_methods:
-            if verbose:
-                print(
-                    f"      Calculating {scenario_name} ({method}) for {n_sites} sites..."
-                )
+            tasks.append((scenario_name, method, sorted_endpoints))
 
-            # Initialize aggregated arrays (will sum across all sites)
-            aggregated_annual_values = None
-            aggregated_annual_losses = None
-            aggregated_annual_value_lost = None
-            aggregated_annual_opportunity_cost = None
-            aggregated_cumulative_losses = None
-            aggregated_trajectory_years = None
-            aggregated_trajectory_covers = None  # Mean covers for trajectory
+    if n_jobs in (None, "auto"):
+        max_workers = min(len(tasks), max(1, os.cpu_count() or 1))
+    else:
+        max_workers = max(1, int(n_jobs))
+    max_workers = min(max_workers, len(tasks)) if tasks else 1
 
-            total_baseline_value = baseline_values.sum()
+    if n_sites >= 200000:
+        max_workers = 1
 
-            # Process each site
-            sites_processed = 0
-            for site_idx in range(n_sites):
-                site_baseline_cover = baseline_covers[site_idx]
-                site_baseline_value = baseline_values[site_idx]
-
-                # Skip invalid sites
-                if (
-                    np.isnan(site_baseline_cover)
-                    or np.isnan(site_baseline_value)
-                    or site_baseline_cover <= 0
-                    or site_baseline_value <= 0
-                ):
-                    continue
-
-                # Create trajectory points for this site
-                site_points = []
-                site_projected_covers = []
-                for year, covers_array in sorted_endpoints:
-                    site_projected_cover = covers_array[site_idx]
-                    if not (np.isnan(site_projected_cover) or site_projected_cover < 0):
-                        site_points.append(
-                            TrajectoryPoint(year=year, cover=site_projected_cover)
-                        )
-                        site_projected_covers.append(site_projected_cover)
-
-                if len(site_points) == 0:
-                    continue  # Skip sites with no valid projections
-
-                # Generate trajectory for this site
-                if method == "linear":
-                    site_trajectory = interpolate_linear(
-                        baseline_year,
-                        site_baseline_cover,
-                        site_points,
-                        annual_resolution=True,
-                    )
-                elif method == "exponential":
-                    site_trajectory = interpolate_exponential(
-                        baseline_year,
-                        site_baseline_cover,
-                        site_points,
-                        annual_resolution=True,
-                    )
-                else:
-                    raise ValueError(f"Unknown interpolation method: {method}")
-
-                # Calculate cumulative impact for this site
-                # For tipping point models, use site's own baseline_cover as original_cc
-                site_result = calculate_cumulative_impact(
-                    baseline_cover=site_baseline_cover,  # Site's own baseline
-                    baseline_value=site_baseline_value,  # Site's own value
-                    trajectory=site_trajectory,
-                    model=model,
-                    discount_rate=discount_rate,
-                    value_type=value_type,
-                )
-
-                # Initialize aggregated arrays on first site
-                if aggregated_annual_values is None:
-                    n_years = len(site_result.annual_values)
-                    aggregated_annual_values = np.zeros(n_years)
-                    aggregated_annual_losses = np.zeros(n_years)
-                    aggregated_annual_value_lost = np.zeros(n_years)
-                    aggregated_annual_opportunity_cost = np.zeros(n_years)
-                    aggregated_cumulative_losses = np.zeros(n_years)
-                    aggregated_trajectory_years = site_result.years.copy()
-                    aggregated_trajectory_covers = np.zeros(n_years)
-
-                # Sum this site's results
-                aggregated_annual_values += site_result.annual_values
-                aggregated_annual_losses += site_result.annual_losses
-                aggregated_annual_value_lost += site_result.annual_value_lost
-                aggregated_annual_opportunity_cost += (
-                    site_result.annual_opportunity_cost
-                )
-                aggregated_cumulative_losses += site_result.cumulative_losses
-
-                # For trajectory covers, use mean (weighted by site value for better representation)
-                # But for simplicity, just use mean of covers
-                aggregated_trajectory_covers += site_result.trajectory.covers
-
-                sites_processed += 1
-
-            if sites_processed == 0:
+    results = {}
+    if max_workers == 1 or len(tasks) <= 1:
+        for scenario_name, method, sorted_endpoints in tasks:
+            key, result, sites_processed = _compute_one_task(
+                scenario_name, method, sorted_endpoints
+            )
+            if result is None:
                 if verbose:
                     print(
                         f"        ⚠️  No valid sites processed for {scenario_name} ({method})"
                     )
                 continue
-
-            # Normalize trajectory covers to mean (divide by number of sites processed)
-            aggregated_trajectory_covers /= sites_processed
-
-            # Create aggregated trajectory (using mean covers)
-            aggregated_trajectory = CoverTrajectory(
-                years=aggregated_trajectory_years,
-                covers=aggregated_trajectory_covers,
-                scenario=scenario_name,
-                interpolation_method=method,
-            )
-
-            # Create aggregated CumulativeImpactResult
-            aggregated_result = CumulativeImpactResult(
-                trajectory=aggregated_trajectory,
-                annual_values=aggregated_annual_values,
-                annual_losses=aggregated_annual_losses,
-                annual_value_lost=aggregated_annual_value_lost,
-                annual_opportunity_cost=aggregated_annual_opportunity_cost,
-                cumulative_losses=aggregated_cumulative_losses,
-                baseline_value=total_baseline_value,  # Sum of all site values
-                model=model,
-                value_type=value_type,
-                discount_rate=discount_rate,
-            )
-
-            key = f"{scenario_name}_{method}"
-            results[key] = aggregated_result
-
+            results[key] = result
             if verbose:
                 print(
                     f"        ✓ Processed {sites_processed} sites, "
-                    f"cumulative loss: ${aggregated_result.total_cumulative_loss / 1e12:.2f}T"
+                    f"cumulative loss: ${result.total_cumulative_loss / 1e12:.2f}T"
                 )
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(_compute_one_task, scenario_name, method, sorted_endpoints): (
+                    scenario_name,
+                    method,
+                )
+                for scenario_name, method, sorted_endpoints in tasks
+            }
+            for future in as_completed(futures):
+                scenario_name, method = futures[future]
+                key, result, sites_processed = future.result()
+                if result is None:
+                    if verbose:
+                        print(
+                            f"        ⚠️  No valid sites processed for {scenario_name} ({method})"
+                        )
+                    continue
+                results[key] = result
+                if verbose:
+                    print(
+                        f"        ✓ Processed {sites_processed} sites, "
+                        f"cumulative loss: ${result.total_cumulative_loss / 1e12:.2f}T"
+                    )
 
     return results
 
@@ -1103,52 +1165,77 @@ def add_spatial_cumulative_losses(
     # Initialize output array
     cumulative_losses = np.zeros(len(gdf), dtype=float)
 
-    # Process valid polygons in batches (vectorized where possible)
+    # Process valid polygons in a batched vectorized path
     if np.any(valid_mask):
         valid_indices = np.where(valid_mask)[0]
         valid_baseline_covers = baseline_covers[valid_indices]
         valid_projected_covers = projected_covers[valid_indices]
         valid_baseline_values = baseline_values[valid_indices]
+        years = np.arange(baseline_year, target_year + 1)
+        row_count = len(valid_indices)
 
-        # Process each valid polygon (trajectory generation requires individual processing)
-        # but model calculation can be vectorized
-        for idx, (baseline_cover, projected_cover, baseline_value) in enumerate(
-            zip(valid_baseline_covers, valid_projected_covers, valid_baseline_values)
-        ):
-            # Generate trajectory for this polygon
-            point = TrajectoryPoint(year=target_year, cover=projected_cover)
+        if target_year <= baseline_year:
+            cover_matrix = valid_baseline_covers[:, None]
+        else:
+            dt = target_year - baseline_year
+            t_rel = years - baseline_year
+
             if interpolation_method == "linear":
-                trajectory = interpolate_linear(
-                    baseline_year=baseline_year,
-                    baseline_cover=baseline_cover,
-                    points=[point],
-                    annual_resolution=True,
-                )
+                t = t_rel / dt
+                cover_matrix = valid_baseline_covers[:, None] + (
+                    valid_projected_covers - valid_baseline_covers
+                )[:, None] * t[None, :]
             elif interpolation_method == "exponential":
-                trajectory = interpolate_exponential(
-                    baseline_year=baseline_year,
-                    baseline_cover=baseline_cover,
-                    points=[point],
-                    annual_resolution=True,
+                # Use exponential interpolation when both endpoints are positive.
+                # Fall back to linear interpolation for zero/non-positive covers.
+                can_exp = (valid_baseline_covers > 0) & (valid_projected_covers > 0)
+                ratio = np.ones(row_count, dtype=float)
+                ratio[can_exp] = (
+                    valid_projected_covers[can_exp] / valid_baseline_covers[can_exp]
                 )
+                decay = np.zeros(row_count, dtype=float)
+                decay[can_exp] = -np.log(ratio[can_exp]) / dt
+                exp_vals = valid_baseline_covers[:, None] * np.exp(
+                    -decay[:, None] * t_rel[None, :]
+                )
+
+                t = t_rel / dt
+                lin_vals = valid_baseline_covers[:, None] + (
+                    valid_projected_covers - valid_baseline_covers
+                )[:, None] * t[None, :]
+                cover_matrix = np.where(can_exp[:, None], exp_vals, lin_vals)
             else:
                 raise ValueError(
                     f"Unknown interpolation method: {interpolation_method}"
                 )
 
-            # Calculate cumulative impact (vectorized internally)
-            cum_result = calculate_cumulative_impact(
-                baseline_cover=baseline_cover,
-                baseline_value=baseline_value,
-                trajectory=trajectory,
-                model=model,
-                discount_rate=discount_rate,
-                value_type=result.value_type,
+        # Calculate annual value trajectory for each polygon/year.
+        delta_cc_matrix = cover_matrix - valid_baseline_covers[:, None]
+        if model.model_type == "tipping_point":
+            threshold = getattr(model, "threshold_cc", 0.1)
+            annual_values = model.calculate(
+                delta_cc_matrix,
+                valid_baseline_values[:, None],
+                original_cc=valid_baseline_covers[:, None],
+                threshold=threshold,
+            )
+        else:
+            annual_values = model.calculate(
+                delta_cc_matrix, valid_baseline_values[:, None]
             )
 
-            # Store total cumulative loss
-            gdf_idx = valid_indices[idx]
-            cumulative_losses[gdf_idx] = cum_result.total_cumulative_loss
+        annual_opportunity_cost = np.maximum(
+            valid_baseline_values[:, None] - annual_values, 0.0
+        )
+        if discount_rate > 0:
+            years_from_start = years - years[0]
+            discount_factors = (1 + discount_rate) ** (-years_from_start)
+            annual_opportunity_cost *= discount_factors[None, :]
+
+        # Keep behavior aligned with calculate_cumulative_impact:
+        # cumulative loss = cumulative sum of annual opportunity cost.
+        cumulative_matrix = np.cumsum(annual_opportunity_cost, axis=1)
+        cumulative_losses[valid_indices] = cumulative_matrix[:, -1]
 
     # Add column to gdf
     gdf[cum_col] = cumulative_losses

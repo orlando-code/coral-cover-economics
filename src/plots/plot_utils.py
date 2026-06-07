@@ -1,15 +1,299 @@
-from typing import Literal, Optional
+# general
+from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Iterable, Literal, Optional
+
+# plotting
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+
+# spatial
+import geopandas as gpd
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.figure import Figure
+from matplotlib.ticker import MaxNLocator
 
+# custom
 from .plot_config import SpatialPlotConfig
+
+# -- Config --------------------------------------------------------------------
+EXTENTS = {
+    "cairns": [145.404053, -17.014768, 146.097565, -16.429499],
+    "red_sea": [32, 27.926474, 34.112549, 30.145127],
+    "suez": [32.207794, 29.430029, 32.876587, 29.979918],
+    "half_suez": [32.407794, 29.430029, 32.876587, 29.979918],
+    "west_carribbean": [-85.561523, 17.224758, -71.147461, 25.482951],
+    "caribbean": [-85, 0, -60, 30],
+    "key_west": [-83.5, 24, -80, 25],
+}  # minx, miny, maxx, maxy
+SAVE_DPI = 300
+FONT = "sans-serif"
+
+
+# ------------------------------- Extent class for specifying spatial bounding boxes -------------------------------
+@dataclass(slots=True, init=False)
+class Extent:
+    """Named map extent (reads from the live ``EXTENTS`` dict)."""
+
+    name: str
+    xmin: float
+    ymin: float
+    xmax: float
+    ymax: float
+
+    def __init__(self, name: str, extent: Iterable[float] | None = None):
+        key = name.strip().lower()
+        if extent is None:
+            if key not in EXTENTS:
+                raise KeyError(f"Unknown extent '{name}'. Available: {sorted(EXTENTS)}")
+            vals = EXTENTS[key]
+        else:
+            vals = extent
+            if len(tuple(vals)) != 4:
+                raise ValueError("Extent must have 4 values: (xmin, ymin, xmax, ymax)")
+        self.name = key
+        self.xmin, self.ymin, self.xmax, self.ymax = map(float, vals)
+        self._validate()
+
+    def __repr__(self) -> str:
+        return (
+            f"Extent(name={self.name!r}, "
+            f"xmin={self.xmin}, ymin={self.ymin}, xmax={self.xmax}, ymax={self.ymax})"
+        )
+
+    def __str__(self) -> str:
+        return f"{self.name}: {self.xmin}, {self.ymin}, {self.xmax}, {self.ymax}"
+
+    def _validate(self) -> None:
+        if self.xmin >= self.xmax:
+            raise ValueError(f"Invalid extent '{self.name}': xmin must be < xmax")
+        if self.ymin >= self.ymax:
+            raise ValueError(f"Invalid extent '{self.name}': ymin must be < ymax")
+
+    @classmethod
+    def from_tuple(
+        cls,
+        extent: Iterable[float],
+        name: str = "tuple",
+        *,
+        cartopy_order: bool = False,
+    ) -> "Extent":
+        """Build an ``Extent`` from four bounds.
+
+        Parameters
+        ----------
+        extent
+            Either ``(xmin, ymin, xmax, ymax)`` or, if ``cartopy_order=True``,
+            cartopy's ``(x0, x1, y0, y1)`` from ``GeoAxes.get_extent()``.
+        name
+            Optional label stored on the object (default ``"tuple"``).
+        """
+        vals = tuple(map(float, extent))
+        if len(vals) != 4:
+            raise ValueError("Extent must have 4 values: (xmin, ymin, xmax, ymax)")
+        if cartopy_order:
+            x0, x1, y0, y1 = vals
+            vals = (x0, y0, x1, y1)
+        return cls(name, vals)
+
+    @classmethod
+    def from_name(cls, name: str) -> "Extent":
+        return cls(name)
+
+    def store(self, overwrite: bool = True) -> None:
+        """Persist this extent into ``EXTENTS`` (visible to new lookups immediately)."""
+        if not overwrite and self.name in EXTENTS:
+            raise KeyError(f"Extent '{self.name}' already exists")
+        EXTENTS[self.name] = list(self.as_tuple())
+
+    @classmethod
+    def get(cls, name: str, default: tuple[float, float, float, float] | None = None):
+        raw = EXTENTS.get(name.strip().lower())
+        return tuple(raw) if raw is not None else default
+
+    @classmethod
+    def names(cls) -> list[str]:
+        return sorted(EXTENTS)
+
+    def as_tuple(self) -> tuple[float, float, float, float]:
+        return (self.xmin, self.ymin, self.xmax, self.ymax)
+
+    def as_extent_tuple(self, shrink: float = 0.0) -> tuple[float, float, float, float]:
+        """Return cartopy extent order: ``(xmin, xmax, ymin, ymax)``.
+
+        Parameters
+        ----------
+        shrink
+            Fraction to trim from each side (0.0 = full extent, 0.1 trims 10% on
+            each side). Useful for slight zoom-ins while preserving axis order.
+        """
+        if not (0.0 <= shrink < 0.5):
+            raise ValueError("shrink must be in [0.0, 0.5).")
+        dx = self.xmax - self.xmin
+        dy = self.ymax - self.ymin
+        return (
+            self.xmin + shrink * dx,
+            self.xmax - shrink * dx,
+            self.ymin + shrink * dy,
+            self.ymax - shrink * dy,
+        )
+
+    def contains(self, x: float, y: float) -> bool:
+        return self.xmin <= x <= self.xmax and self.ymin <= y <= self.ymax
+
+
+# ------------------------------- Helpers -------------------------------
+def axis_tick_locs(
+    vmin: float,
+    vmax: float,
+    *,
+    spacing: float | None = None,
+    min_ticks: int = 4,
+    max_ticks: int = 10,
+) -> np.ndarray:
+    """Return tick positions for one axis with round, readable spacing."""
+    if vmax < vmin:
+        vmin, vmax = vmax, vmin
+    span = vmax - vmin
+    if span == 0:
+        return np.array([vmin])
+
+    if spacing is not None:
+        locs = np.arange(vmin, vmax + spacing * 0.5, spacing)
+    else:
+        # Matplotlib's MaxNLocator signature varies across versions; avoid
+        # min_n_ticks/max_n_ticks kwargs and instead search nbins.
+        # We prefer "nice" rounded steps for readability.
+        locs = np.array([])
+        for nbins in range(min_ticks, max_ticks + 1):
+            locator = MaxNLocator(
+                nbins=nbins,
+                steps=[1, 2, 2.5, 5, 10],
+            )
+            cand = locator.tick_values(vmin, vmax)
+            cand = cand[(cand >= vmin) & (cand <= vmax)]
+            if len(cand) >= min_ticks:
+                locs = cand
+                break
+        if locs.size == 0:
+            locs = np.linspace(vmin, vmax, min_ticks)
+
+    locs = locs[(locs >= vmin) & (locs <= vmax)]
+    if len(locs) < min_ticks:
+        locs = np.linspace(vmin, vmax, min_ticks)
+    return locs
+
+
+def auto_gridlines(
+    extent: Extent,
+    *,
+    x_spacing: float | None = None,
+    y_spacing: float | None = None,
+    min_ticks: int = 4,
+    max_ticks: int = 10,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ``(xlocs, ylocs)`` with at least ``min_ticks`` lines per axis."""
+    return (
+        axis_tick_locs(
+            extent.xmin,
+            extent.xmax,
+            spacing=x_spacing,
+            min_ticks=min_ticks,
+            max_ticks=max_ticks,
+        ),
+        axis_tick_locs(
+            extent.ymin,
+            extent.ymax,
+            spacing=y_spacing,
+            min_ticks=min_ticks,
+            max_ticks=max_ticks,
+        ),
+    )
+
+
+def format_geo_axes(
+    ax: plt.Axes,
+    resolution: str = "10m",
+    xlocs: Iterable[float] | str = "auto",
+    ylocs: Iterable[float] | str = "auto",
+    x_spacing: float | None = None,
+    y_spacing: float | None = None,
+    min_gridlines: int = 4,
+    max_gridlines: int = 10,
+    coastlines_gdf: gpd.GeoDataFrame = None,
+) -> plt.Axes:
+    # features
+    ax.set_facecolor("#F0FCFF")  # ocean-like background
+    ax.add_feature(cfeature.LAND, facecolor="#FFFFFF", edgecolor="none", zorder=1)
+
+    if coastlines_gdf is not None:
+        coastlines_gdf.plot(ax=ax, color="grey", linewidth=0.1, zorder=2)
+    else:
+        ax.coastlines(resolution=resolution, color="grey", linewidth=0.3, zorder=2)
+    ax.add_feature(
+        cfeature.BORDERS, linestyle=":", edgecolor="gray", alpha=0.1, zorder=2
+    )
+    auto_x_requested = xlocs == "auto"
+    auto_y_requested = ylocs == "auto"
+
+    extent = Extent.from_tuple(ax.get_extent(ccrs.PlateCarree()), cartopy_order=True)
+    if auto_x_requested or auto_y_requested:
+        auto_x, auto_y = auto_gridlines(
+            extent,
+            x_spacing=x_spacing,
+            y_spacing=y_spacing,
+            min_ticks=max(min_gridlines, 4),
+            max_ticks=max_gridlines,
+        )
+        if auto_x_requested:
+            xlocs = auto_x
+        if auto_y_requested:
+            ylocs = auto_y
+
+    # gridlines
+    gl = ax.gridlines(
+        crs=ccrs.PlateCarree(),
+        draw_labels=True,
+        linewidth=0.5,
+        color="grey",
+        alpha=0.35,
+        linestyle="-",
+        xlocs=xlocs,
+        ylocs=ylocs,
+    )
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.xlabel_style = {"size": 8}
+    gl.ylabel_style = {"size": 8}
+
+    if auto_x_requested or auto_y_requested:
+
+        def _refresh_auto_gridlines(*_args) -> None:
+            current = Extent.from_tuple(
+                ax.get_extent(ccrs.PlateCarree()), cartopy_order=True
+            )
+            curr_x, curr_y = auto_gridlines(
+                current,
+                x_spacing=x_spacing,
+                y_spacing=y_spacing,
+                min_ticks=max(min_gridlines, 4),
+                max_ticks=max_gridlines,
+            )
+            if auto_x_requested:
+                gl.xlocator = mticker.FixedLocator(curr_x)
+            if auto_y_requested:
+                gl.ylocator = mticker.FixedLocator(curr_y)
+
+        _refresh_auto_gridlines()
+        ax.figure.canvas.mpl_connect("draw_event", _refresh_auto_gridlines)
+
+    return ax
 
 
 def override_config_with_kwargs(config, **kwargs):
@@ -87,98 +371,82 @@ def generate_geo_axis(
     return plt.figure(figsize=figsize, dpi=dpi), plt.axes(projection=map_proj)
 
 
-def format_geo_axes(
-    ax: plt.Axes,
-    extent: Optional[tuple | list] = None,
-    crs: Optional[ccrs.CRS] = None,
-    landmass_zorder: int = 1000,
-    ocean_zorder: int = -2,
-    config: Optional[SpatialPlotConfig] = None,
-) -> plt.Axes:
-    """Format the geographical axes object.
+# def format_geo_axes(
+#     ax: plt.Axes,
+#     extent: Optional[tuple | list] = None,
+#     crs: Optional[ccrs.CRS] = None,
+#     landmass_zorder: int = 1000,
+#     ocean_zorder: int = -2,
+#     config: Optional[SpatialPlotConfig] = None,
+# ) -> plt.Axes:
+#     """Format the geographical axes object.
 
-    Args:
-        ax (Axes): axes object to plot onto.
-        extent (tuple, optional): the extent of the map (x0,x1,y0,y1).
-        crs (ccrs.CRS, optional): the projection of the map.
-        landmass_zorder (int): z-order for landmass features.
-        config (SpatialPlotConfig, optional): Configuration object. If provided, overrides
-            individual parameters.
+#     Args:
+#         ax (Axes): axes object to plot onto.
+#         extent (tuple, optional): the extent of the map (x0,x1,y0,y1).
+#         crs (ccrs.CRS, optional): the projection of the map.
+#         landmass_zorder (int): z-order for landmass features.
+#         config (SpatialPlotConfig, optional): Configuration object. If provided, overrides
+#             individual parameters.
 
-    Returns:
-        Axes: the formatted axes object.
-    """
-    # Use config if provided
-    if config is not None:
-        extent = config.get_extent() if config.extent is not None else extent
-        crs = config.extent_crs if extent is not None else (crs or ccrs.PlateCarree())
+#     Returns:
+#         Axes: the formatted axes object.
+#     """
+#     # Use config if provided
+#     if config is not None:
+#         extent = config.get_extent() if config.extent is not None else extent
+#         crs = config.extent_crs if extent is not None else (crs or ccrs.PlateCarree())
 
-        # Set extent if provided
-        if extent is not None:
-            ax.set_extent(extent, crs=crs)
+#         # Set extent if provided
+#         if extent is not None:
+#             ax.set_extent(extent, crs=crs)
 
-        # Add map features based on config
-        if config.show_land:
-            ax.add_feature(
-                cfeature.LAND, facecolor=config.land_color, zorder=landmass_zorder
-            )
-        if config.show_ocean:
-            ax.add_feature(
-                cfeature.OCEAN, alpha=config.ocean_alpha, zorder=ocean_zorder
-            )
-        if config.show_coastline:
-            ax.add_feature(
-                cfeature.COASTLINE,
-                edgecolor=config.coastline_color,
-                zorder=landmass_zorder,
-            )
-        if config.show_borders:
-            ax.add_feature(
-                cfeature.BORDERS,
-                linestyle=config.border_linestyle,
-                edgecolor=config.border_color,
-                alpha=config.border_alpha,
-                zorder=landmass_zorder,
-            )
-    else:
-        # Default behavior
-        if extent is None:
-            extent = (-180, 180, -40, 50)
-        if crs is None:
-            crs = ccrs.PlateCarree()
+#         # Add map features based on config
+#         if config.show_land:
+#             ax.add_feature(
+#                 cfeature.LAND, facecolor=config.land_color, zorder=landmass_zorder
+#             )
+#         if config.show_ocean:
+#             ax.add_feature(
+#                 cfeature.OCEAN, alpha=config.ocean_alpha, zorder=ocean_zorder
+#             )
+#         if config.show_coastline:
+#             ax.add_feature(
+#                 cfeature.COASTLINE,
+#                 edgecolor=config.coastline_color,
+#                 zorder=landmass_zorder,
+#             )
+#         if config.show_borders:
+#             ax.add_feature(
+#                 cfeature.BORDERS,
+#                 linestyle=config.border_linestyle,
+#                 edgecolor=config.border_color,
+#                 alpha=config.border_alpha,
+#                 zorder=landmass_zorder,
+#             )
+#     else:
+#         # Default behavior
+#         if extent is None:
+#             extent = (-180, 180, -40, 50)
+#         if crs is None:
+#             crs = ccrs.PlateCarree()
 
-    ax.set_extent(extent, crs=crs)
-    ax.add_feature(cfeature.LAND, facecolor="white", zorder=landmass_zorder)
-    ax.add_feature(cfeature.OCEAN, alpha=0.3, zorder=landmass_zorder)
-    ax.add_feature(cfeature.COASTLINE, edgecolor="lightgray", zorder=landmass_zorder)
-    ax.add_feature(
-        cfeature.BORDERS,
-        linestyle=":",
-        edgecolor="gray",
-        alpha=0.1,
-        zorder=landmass_zorder,
-    )
+#     ax.set_extent(extent, crs=crs)
+#     ax.add_feature(cfeature.LAND, facecolor="white", zorder=landmass_zorder)
+#     ax.add_feature(cfeature.OCEAN, alpha=0.3, zorder=landmass_zorder)
+#     ax.add_feature(cfeature.COASTLINE, edgecolor="lightgray", zorder=landmass_zorder)
+#     ax.add_feature(
+#         cfeature.BORDERS,
+#         linestyle=":",
+#         edgecolor="gray",
+#         alpha=0.1,
+#         zorder=landmass_zorder,
+#     )
 
-    return ax
+#     return ax
 
 
-COVARIATE_LABELS_DICT = {
-    "lat_stzd": "Latitude",
-    "historical_sst_max_stzd": "Max. historical SST",
-    "ssta_dhwmax_stzd": "Max. SSTA DHW",
-    "tsa_freqstdev_stzd": "TSA standard deviation",
-    "ssta_min_stzd": "Min. SST anomaly",
-    "tsa_max_stzd": "Max. TSA anomaly",
-    "beta_diversity": "Beta diversity",
-    "sst_mean_stzd": "Mean SST",
-    "depth_stzd": "Depth",
-    "ssta_mean_stzd": "Mean SSTA",
-    "cyclone_stzd": "Cyclone frequency",
-    "ssta_freqstdev_stzd": "SSTA frequency",
-    "human_pop_stzd": "Local human population",
-    "turbidity_mean_stzd": "Mean turbidity",
-}
-
+from .plot_config import COVARIATE_LABELS_DICT  # noqa: F401
 
 WA_COLORMAP = [
     "#3A9AB2",
