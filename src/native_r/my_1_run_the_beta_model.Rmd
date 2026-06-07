@@ -1,0 +1,1123 @@
+---
+title: "Coral_cover_beta_model"
+author: "SS"
+date: "May 1, 2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r load libraries}
+BETA_SMOKE <- identical(Sys.getenv("BETA_SMOKE"), "1")
+
+suppressPackageStartupMessages({
+  library(R2jags)
+  library(ggplot2)
+  library(terra)
+  library(dplyr)
+  library(lattice)
+  library(corrplot)
+  library(viridis)
+  library(viridisLite)
+})
+
+# Legacy paper dependencies (maptools, raster, sp, etc.) are not required:
+# shapefile join and model fitting use terra; bright-spot map uses terra below.
+if (!BETA_SMOKE) {
+  suppressPackageStartupMessages(library(plotrix))
+}
+```
+
+```{r initialize directories and read in data}
+#set names for the directories where your data are stored
+# home = "C:/Users/Shannon/Desktop/Ecoregions"
+# coral_cover_directory = "C:/Users/Shannon/Desktop/Ecoregions/Coral cover"
+# shapefiles_directory = "C:/Users/Shannon/Desktop/Ecoregions/shapefiles"
+# diversity_data_directory = "C:/Users/Shannon/Desktop/Ecoregions/Coral cover"
+# output_directory = "C:/Users/Shannon/Desktop/Ecoregions/Coral cover/output"
+# output_directory = "C:/Users/Shannon/Desktop/Ecoregions/Coral cover/GitHub_code"
+default_data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/data/sully_og"
+data_dir <- Sys.getenv("BETA_DATA_DIR", unset = default_data_dir)
+
+shapefiles_directory <- file.path(data_dir, "shapefiles")
+output_directory <- Sys.getenv("BETA_OUTPUT_DIR", unset = file.path(data_dir, "output"))
+dir.create(output_directory, recursive = TRUE, showWarnings = FALSE)
+if (!exists("BETA_SMOKE")) {
+  BETA_SMOKE <- identical(Sys.getenv("BETA_SMOKE"), "1")
+}
+if (BETA_SMOKE) {
+  mcmc_cfg <- list(
+    n_chains = as.integer(Sys.getenv("BETA_SMOKE_N_CHAINS", unset = "2")),
+    n_burnin = as.integer(Sys.getenv("BETA_SMOKE_N_BURNIN", unset = "5")),
+    n_iter = as.integer(Sys.getenv("BETA_SMOKE_N_ITER", unset = "20")),
+    n_thin = 1L,
+    run_large = FALSE,
+    use_parallel = FALSE
+  )
+  message("BETA_SMOKE=1: tiny subsample, serial JAGS, skipping map/future-cover chunks.")
+} else {
+  mcmc_cfg <- list(n_chains = 3L, n_burnin = 4000L, n_iter = 15000L, n_thin = 10L, run_large = TRUE, use_parallel = TRUE)
+}
+# coral_cover_directory <- file.path(data_dir)
+home <- file.path(data_dir)
+
+native_r <- Sys.getenv(
+  "BETA_NATIVE_R",
+  unset = normalizePath(file.path(data_dir, "..", "..", "src", "native_r"), wins = FALSE, mustWork = FALSE)
+)
+source(file.path(native_r, "beta_model_reparam_utils.R"))
+setwd(output_directory)
+# setwd("C:/Users/Shannon/Desktop/Ecoregions/Coral cover/GitHub_code")
+coral_cover_data <- read.csv(file=file.path(data_dir, "data.csv"), header=TRUE, sep=",")
+#make a duplicate reef ID column, but named 'reef'. When comparing with other files, some use the name 'reef' instead of 'Reef_ID' so this makes comparisons easier.
+coral_cover_data$reef <- coral_cover_data$Reef_ID
+
+# setwd(coral_cover_directory)
+
+setwd(home)
+Sys.sleep(1)
+source(file = "MyBUGSOutput.R")
+source(file = "HighstatLibV10.R")  
+source(file = "MCMCSupportHighstatV4.R")
+
+#diversity data
+# no diversity data so have to reverse-engineer based on shapefile and standardised diversity. Do this later
+# setwd(output_directory)
+# diversity<-read.csv(file=file.path(diversity_data_directory, "coral_diversity_for_coral_cover.csv"), header=TRUE, sep=",")
+# names(diversity)[1]<-"Ecoregion"
+# diversity$Region<-diversity$Ecoregion
+# diversity<-diversity[order(diversity$Ecoregion),]
+
+```
+
+
+```{r read in and format shapefiles of a world map, and ecoregion boundaries}
+# Modern shapefile loading using terra
+# library(terra)
+
+# Load world boundaries and ecoregion polygons as SpatVector objects
+wlrd.p <- terra::vect(file.path(shapefiles_directory, 'TM_WORLD_BORDERS_SIMPL_PC150.shp'))
+ECO <- terra::vect(file.path(shapefiles_directory, 'ecoregion_exportPolygon.shp'))
+
+# No need to convert to sp::SpatialPolygons or manipulate slots when using terra.
+# 'ECO' is now a SpatVector polygon object and can be used with terra and sf functions.
+# For compatibility with downstream code, you may want to ensure attribute names match expectations.
+# If any downstream code expects a SpatialPolygonsDataFrame from 'sp', use as.polygons()/as.data.frame() and sf::as_Spatial methods,
+# but it is recommended to update analysis to work directly with SpatVector objects.
+
+# Example: Print summary info for SpatVector objects
+print(ECO)
+print(wlrd.p)
+
+# Assign coordinates for point data (lon/lat)
+coral_cover_data$lat <- coral_cover_data$Latitude.Degrees
+coral_cover_data$lon <- coral_cover_data$Longitude.Degrees
+coral_cover_data$Longitude <- coral_cover_data$lon
+
+# Convert coral_cover_data to a SpatVector of points using lon/lat (WGS84),
+# then project to the ecoregion CRS before extracting polygon attributes.
+coral_cover_points <- terra::vect(coral_cover_data, geom = c("lon", "lat"), crs = "EPSG:4326")
+coral_cover_points <- terra::project(coral_cover_points, terra::crs(ECO))
+eco_extracted <- terra::extract(ECO, coral_cover_points)
+
+table(is.na(eco_extracted$ERG))
+head(unique(eco_extracted$Ecoregion), 20)
+
+
+# spatially plot points which don't have an ecoregion assigned
+# Convert the 'ECO' SpatVector to an sf object for use with ggplot2::geom_sf
+ECO_sf <- sf::st_as_sf(ECO)
+
+# Plot: world polygons and highlight points with missing ERG
+ggplot() +
+  geom_sf(data = ECO_sf) +
+  geom_point(
+    data = coral_cover_data[is.na(coral_cover_data$ERG), ],
+    aes(x = lon, y = lat),
+    color = "red"
+  )
+  # xlim(120, 180) +
+  # ylim(-20, 20)
+
+
+
+# # Ensure CRS matches between points and polygons (assume ECO is correct)
+# if (!terra::crs(coral_cover_points) == terra::crs(ECO)) {
+#   coral_cover_points <- terra::project(coral_cover_points, terra::crs(ECO))
+# }
+
+# Extract ecoregion attributes from polygons to points
+# eco_extracted <- terra::extract(ECO, coral_cover_points)
+
+# Write extracted values directly to avoid duplicate ERG/Ecoregion columns
+# (which can happen with cbind and cause coral_cover_data$ERG to reference stale NA values).
+coral_cover_data <- as.data.frame(coral_cover_data)
+coral_cover_data$ERG <- eco_extracted$ERG
+coral_cover_data$Ecoregion <- eco_extracted$Ecoregion
+
+# Optionally, remove "ID" column added by terra::extract if present
+if ("ID" %in% colnames(coral_cover_data)) {
+  coral_cover_data$ID <- NULL
+}
+
+# Use data_for_maps.csv as the trusted reef -> ecoregion/diversity mapping.
+# This flags spatial-join disagreements while preserving the curated mapping.
+data_for_maps <- read.csv(file.path(data_dir, "data_for_maps.csv"), header=TRUE)
+trusted_mapping <- data_for_maps %>%
+  dplyr::transmute(
+    Reef_ID = as.character(Reef_ID),
+    trusted_ecoregion = as.character(Ecoregion.x),
+    trusted_erg = as.character(ERG),
+    diversity.standardized = as.numeric(diversity.standardized)
+  ) %>%
+  dplyr::distinct(Reef_ID, .keep_all = TRUE)
+
+coral_cover_data <- coral_cover_data %>%
+  dplyr::mutate(Reef_ID = as.character(Reef_ID)) %>%
+  dplyr::left_join(trusted_mapping, by = "Reef_ID")
+
+missing_trusted <- is.na(coral_cover_data$trusted_ecoregion)
+if (any(missing_trusted)) {
+  message(sprintf(
+    "No trusted data_for_maps mapping for %d pre-filter row(s). Example reef_id(s): %s",
+    sum(missing_trusted),
+    paste(head(coral_cover_data$Reef_ID[missing_trusted], 5), collapse = ", ")
+  ))
+}
+
+mapped_trusted <- !missing_trusted
+region_disagreement <- mapped_trusted &
+  !is.na(coral_cover_data$Ecoregion) &
+  !is.na(coral_cover_data$trusted_ecoregion) &
+  trimws(tolower(as.character(coral_cover_data$Ecoregion))) !=
+  trimws(tolower(as.character(coral_cover_data$trusted_ecoregion)))
+if (any(region_disagreement)) {
+  message(sprintf(
+    "data_for_maps.csv ecoregion mapping overrides %d row(s) from the spatial join.",
+    sum(region_disagreement)
+  ))
+  print(unique(coral_cover_data[region_disagreement, c("Reef_ID", "Ecoregion", "trusted_ecoregion")]))
+}
+
+coral_cover_data$Ecoregion[mapped_trusted] <- coral_cover_data$trusted_ecoregion[mapped_trusted]
+coral_cover_data$ERG[mapped_trusted] <- coral_cover_data$trusted_erg[mapped_trusted]
+coral_cover_data$trusted_ecoregion <- NULL
+coral_cover_data$trusted_erg <- NULL
+```
+
+```{r remove sites that have any NA values or implausible values}
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Average_coral_cover),]
+coral_cover_data <- coral_cover_data[(coral_cover_data$Average_coral_cover>0),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$SST_mean),] #
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$SSTA_stdev),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$SSTA_freqmax),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$SSTA_freqmean),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Turbidity_mean),]
+
+#there are a few points on land
+coral_cover_data<-coral_cover_data[coral_cover_data$Turbidity_mean<0.35,]
+
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$ERG),]
+#coral_cover_data$Human_pop[is.na(coral_cover_data$Human_pop)]<-0 # don't know why this is commented out
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Cyclone),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Depth),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Historical_SST_max),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$sst_mean_rcp85_2100),]
+coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$diversity.standardized),]
+
+if (BETA_SMOKE) {
+  max_sites <- as.integer(Sys.getenv("BETA_SMOKE_MAX_SITES", unset = "12"))
+  set.seed(20260529L)
+  keep_reefs <- sample(
+    unique(coral_cover_data$Reef_ID),
+    min(max_sites, length(unique(coral_cover_data$Reef_ID)))
+  )
+  coral_cover_data <- coral_cover_data[coral_cover_data$Reef_ID %in% keep_reefs, ]
+  message(sprintf(
+    "BETA_SMOKE subsample: %d rows | %d sites",
+    nrow(coral_cover_data),
+    length(unique(coral_cover_data$Reef_ID))
+  ))
+}
+```
+
+
+```{r make a correlation plot and a csv to examine which parameters are correlated. Supplementary Figure 18}
+if (!BETA_SMOKE) {
+#make one corrplot
+
+res<- as.matrix(coral_cover_data[c("Latitude.Degrees", "Depth", "Human_pop", "Cyclone", "SST_mean", "SST_min", "SST_max", "SST_stdev", "SSTA_Mean", "SSTA_min", "SSTA_max", "SSTA_stdev", "SSTA_freqmax", "SSTA_freqstdev", "SSTA_freqmean", "SSTA_dhwmax", "SSTA_dhwmean", "SSTA_dhwstdev", "TSA_min", "TSA_max", "TSA_stdev", "TSA_mean", "TSA_freqmax", "TSA_freqstdev", "TSA_freqmean", "TSA_dhwmax", "TSA_dhwmean", "TSA_dhwstdev", "Turbidity_mean", "Turbidity_max", "Turbidity_min", "Historical_SST_mean", "Historical_SST_max", "Historical_SST_sd")])
+res2<-cor(res)
+colnames(res2)<-c("Latitude.Degrees", "Depth", "Human_pop", "Cyclone", "SST_mean", "SST_min", "SST_max", "SST_sd", "SSTA_Mean", "SSTA_min", "SSTA_max", "SSTA_sd", "SSTA_freqmax", "SSTA_freq_sd", "SSTA_freqmean", "SSTA_dhwmax", "SSTA_dhwmean", "SSTA_dhw_sd", "TSA_min", "TSA_max", "TSA_stdev", "TSA_mean", "TSA_freqmax", "TSA_freq_sd", "TSA_freqmean", "TSA_dhwmax", "TSA_dhwmean", "TSA_dhw_sd", "Turbidity_mean", "Turbidity_max", "Turbidity_min", "Historical_SST_mean", "Historical_SST_max", "Historical_SST_sd")
+rownames(res2)<-c("Latitude.Degrees", "Depth", "Human_pop", "Cyclone", "SST_mean", "SST_min", "SST_max", "SST_sd", "SSTA_Mean", "SSTA_min", "SSTA_max", "SSTA_sd", "SSTA_freqmax", "SSTA_freq_sd", "SSTA_freqmean", "SSTA_dhwmax", "SSTA_dhwmean", "SSTA_dhw_sd", "TSA_min", "TSA_max", "TSA_stdev", "TSA_mean", "TSA_freqmax", "TSA_freq_sd", "TSA_freqmean", "TSA_dhwmax", "TSA_dhwmean", "TSA_dhw_sd", "Turbidity_mean", "Turbidity_max", "Turbidity_min", "Historical_SST_mean", "Historical_SST_max", "Historical_SST_sd") 
+corrplot(res2)
+#tiff(file=file.path(output_directory,'corrplot.tif'), res=300,width=3000,height=3000)
+png(file=file.path(output_directory,'corrplot.png'), res=300,width=3000,height=3000)
+color_palette<-rev(plasma(100))
+corrplot(res2, method="circle", col=color_palette)
+dev.off()
+write.csv(res2, file = file.path(output_directory,'corrplot.csv'))
+}
+data<-coral_cover_data
+
+
+```
+
+#we set 'data' equal to 'coral_cover_data' and use that for the rest of the code because if you want to do exploratory data analysis, you have all the previous work saved as 'coral_cover_data' and don't need to rerun everything before this to get your previous work back.
+data<-coral_cover_data
+
+
+```{r standardize explanatory variables}
+
+X_raw <- data[c('lon', 'lat', 'Depth', 'Human_pop', 'Cyclone', 'SST_mean', 'SST_max', 'SST_stdev', 'SSTA_min', 'SSTA_max', 'SSTA_Mean', 'SSTA_stdev', 'SSTA_freqmax', 'SSTA_freqstdev', 'SSTA_dhwmean', 'SSTA_dhwmax', 'TSA_min', 'TSA_max', 'TSA_mean', 'TSA_freqstdev', 'TSA_dhwmean', 'TSA_dhwmax', 'TSA_dhwstdev', 'Turbidity_mean', 'Turbidity_max', 'Historical_SST_max', 'Historical_SST_mean', 'Historical_SST_sd')]
+
+X_raw$lat <- abs(X_raw$lat)
+
+standardize_function<-function(x){
+  x.standardized=(x-mean(na.omit(x)))/sd(na.omit(x))
+  return(x.standardized)
+}
+
+X_standardized <- X_raw
+for(i in 1:ncol(X_raw)){
+  X_standardized[,i] <- standardize_function(X_raw[,i])
+}
+
+# get the ecoregion names of any nan values of diversity.standardized
+nan_ecoregions <- data$Ecoregion[is.na(data$diversity.standardized)]
+print(nan_ecoregions)
+if (length(nan_ecoregions) > 0) {
+  stop("Model-ready rows are missing trusted diversity.standardized values.")
+}
+
+
+```
+
+```{r create a dataframe containing information for each site, with the ecoregion it belongs to, and the standardized diversity value}
+
+data$Reef_ID<-as.factor(as.character(as.factor(data$Reef_ID)))
+
+sites_and_region_df <- data %>% distinct(Reef_ID, Ecoregion) %>% ungroup()
+sites_and_region_df$site <- as.numeric(as.factor(sites_and_region_df$Reef_ID))
+sites_and_region_df$region <- as.numeric(as.factor(sites_and_region_df$Ecoregion))
+
+region_diversity_df <- data %>%
+  dplyr::distinct(Ecoregion, diversity.standardized) %>%
+  dplyr::mutate(region = as.numeric(as.factor(Ecoregion))) %>%
+  dplyr::arrange(region)
+
+# Attach site/region indices to each observation row (required for JAGS random effects).
+data <- left_join(data, sites_and_region_df[, c("Reef_ID", "site", "region")], by = "Reef_ID")
+
+```
+
+
+```{r define, initialize, and run the beta model. Save some output in csvs}
+
+X <- model.matrix(~ lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean + SSTA_min + SSTA_freqstdev + SSTA_dhwmax + TSA_max + TSA_freqstdev + Turbidity_mean + Historical_SST_max, data =X_standardized)
+
+
+K <- ncol(X)
+
+N <- nrow(data)
+Nre  = length(unique(data$site))
+re   = data$site
+R    = length(unique(data$ERG))
+
+if (Nre == 0 || all(is.na(re))) {
+  stop("`data$site` was not populated. Check the Reef_ID -> site join above.")
+}
+if (nrow(region_diversity_df) != R) {
+  stop("Region-diversity vector length does not match R.")
+}
+
+data$coral_cover_Beta <- (data$Average_coral_cover * (N - 1) + 0.5) / N
+
+win.data <- list(Y    = data$coral_cover_Beta,
+                 N    = N,
+                 X    = X,
+                 K    = K,
+                 re   = re, #Site
+                 R    = R,
+                 Nre  = Nre, #J
+                 region_for_each_site = as.factor(as.character(sites_and_region_df$region)),
+                 diversity = region_diversity_df$diversity.standardized
+)
+getwd()
+sink(file.path(output_directory, "GLMM_coral_cover.txt"))
+cat("
+    model{
+    #1A. Priors
+    for (i in 1:K) { beta[i]  ~ dnorm(0, 0.0001) }
+    for (i in 1:Nre) {a[i] ~ dnorm(ecoregion[region_for_each_site[i]], tau)}
+    # Hierarchical effects
+    for(z in 1:R){ # R is total number of ecoregions
+    ecoregion[z] ~ dnorm(g[z],tau_ecoregion)
+    g[z] <- mu_global + beta_diversity*diversity[z]
+    }
+    mu_global ~ dnorm(0, 0.0001) # prior for global mean
+    beta_diversity ~ dnorm(0, 0.0001) #prior for the slope for diversity
+    
+    #1B.
+    num   ~ dnorm(0, 0.0016) 
+    denom ~ dnorm(0, 1)
+    sigma <- abs(num / denom)
+    
+    num_ecoregion   ~ dnorm(0, 0.0016) 
+    denom_ecoregion ~ dnorm(0, 1)
+    sigma_ecoregion <- abs(num_ecoregion / denom_ecoregion)
+    
+    #1C. half-Cauchy(25) prior tau
+    tau   <- 1 / (sigma * sigma)
+    numtheta   ~ dnorm(0, 0.0016) 
+    denomtheta ~ dnorm(0, 1)
+    theta <- abs(numtheta / denomtheta)
+    
+    tau_ecoregion   <- 1 / (sigma_ecoregion * sigma_ecoregion)
+
+#2. Likelihood 
+    for (i in 1:N){       
+      Y[i]       ~ dbeta(shape1[i], shape2[i])
+      shape1[i] <- theta * pi[i]        #a
+      shape2[i] <- theta * (1 - pi[i])  #b
+      
+      logit(pi[i]) <- eta[i]
+      eta[i]<- inprod(beta[], X[i,]) + a[re[i]]
+      
+
+      ExpY[i] <- pi[i] 
+      VarY[i] <- pi[i] * (1 - pi[i])  / (theta + 1)
+      PRes[i] <- (Y[i] - ExpY[i]) / sqrt(VarY[i])
+
+      #Discrepancy measures (used for checking overdispersion)
+      YNew[i]   ~ dbeta(shape1[i], shape2[i])   #New data
+      PResNew[i] <- (YNew[i] - ExpY[i]) / sqrt(VarY[i])
+      D[i]       <- pow(PRes[i], 2)
+      DNew[i]    <- pow(PResNew[i], 2)
+  } 
+    Fit         <- sum(D[1:N])
+    FitNew      <- sum(DNew[1:N]) 
+}
+",fill = TRUE)
+sink()
+
+#Set the initial values for the betas and sigma to be input to the beta model
+init_seed <- as.integer(Sys.getenv("BETA_INIT_SEED", unset = "20260529"))
+
+#Parameters to estimate and save
+params <- c("beta", "beta_diversity", "a", "theta", "PRes", "Fit", "FitNew",
+            "YNew", "ecoregion", "sigma", "sigma_ecoregion", "mu_global")
+
+model_path <- file.path(output_directory, "GLMM_coral_cover.txt")
+
+J0 <- run_centered_jags_fit(
+  win.data = win.data,
+  model_path = model_path,
+  params = params,
+  K = K,
+  Nre = Nre,
+  mcmc_cfg = mcmc_cfg,
+  init_seed = init_seed,
+  progress_bar = if (BETA_SMOKE) "none" else "text"
+)
+
+if (isTRUE(mcmc_cfg$run_large)) {
+  large_cfg <- list(
+    n_chains = 6L,
+    n_burnin = 10000L,
+    n_iter = 20000L,
+    n_thin = 10L,
+    use_parallel = mcmc_cfg$use_parallel
+  )
+  J0_large <- run_centered_jags_fit(
+    win.data = win.data,
+    model_path = model_path,
+    params = params,
+    K = K,
+    Nre = Nre,
+    mcmc_cfg = large_cfg,
+    init_seed = init_seed + 1L,
+    progress_bar = "text"
+  )
+
+  model_fp <- file.path(output_directory, "saved_parallel_model_large.RData")
+  save(J0_large, file = model_fp)
+}
+
+setwd(home)
+Sys.sleep(1)
+source(file= "MyBUGSOutput.R")
+
+out <- J0$BUGSoutput
+
+eco_random_effects<-cbind(ERG=levels(as.factor(as.character(data$ERG))), random_effect=as.numeric(out$mean$ecoregion))
+write.csv(eco_random_effects, file = file.path(output_directory,'ecoregion_random_effect.csv'),row.names=F)
+
+vars <- c("beta[2]","beta[3]","beta[4]","beta[5]", "beta[6]", "beta[7]", "beta[8]", "beta[9]", "beta[10]", "beta[11]", "beta[12]", "beta[13]", "beta[14]", "beta_diversity")
+
+OUT0 <- MyBUGSOutput(J0$BUGSoutput, vars)
+OUT1 <- round(OUT0, digits=2)
+
+J1_df=data.frame(variableJ1=c("Latitude", "Depth", "Human_pop", "Cyclone",  "SST_mean", "SSTA_Mean", "SSTA_min", "SSTA_freqstdev", "SSTA_dhwmax", "TSA_max", "TSA_freqstdev", "Turbidity_mean", "Historical_SST_max", "Diversity"), MeanJ1=OUT1[,1], Down=OUT1[,3], Up=OUT1[,4], Down_quarter=OUT1[,5], Up_quarter=OUT1[,6])
+
+write.csv(J1_df, file = file.path(output_directory,'beta_est.csv'),row.names=F)
+#write.csv(out$mean$a[re], file=file.path(output_directory,"a_param.csv"),row.names=F)
+#write.csv(out$mean$theta, file = file.path(output_directory,'theta_param.csv'),row.names=F)
+Y_observed_and_Y_expected<-data.frame("observed_coral_cover"=data$Average_coral_cover, "expected_coral_cover"=J0$BUGSoutput$mean$YNew)
+#write.csv(Y_observed_and_Y_expected,file = file.path(output_directory, "Y_observed_and_Y_expected.csv"),row.names=F)
+#write.csv(out$mean$beta[1], file=file.path(output_directory, "intercept_beta.csv"),row.names=F)
+
+Y_New<-J0$BUGSoutput$mean$YNew
+Y_New[Y_New<0]<-0
+Y_New[Y_New>1]<-1
+Y_New<-round(Y_New, digits=2)
+```
+
+```{r coefficient plot for all variables in beta model. Figure 2}
+J1_df$color <- ("white")
+J1_df$color[(J1_df$MeanJ1 > 0) & (J1_df$Down>=0)] <- 'blue'
+J1_df$color[(J1_df$MeanJ1 < 0) & (J1_df$Up<=0)] <- 'red'
+
+library(ggplot2)
+# tiff(file=file.path(output_directory,'Beta_coeff_plot.tif'),height=2000,width=2700,res=300)
+png(file=file.path(output_directory,'Beta_coeff_plot.png'),height=2000,width=2700,res=300)
+
+p <- ggplot(J1_df,aes(x=reorder(variableJ1, MeanJ1), MeanJ1)) +
+  geom_errorbar(aes(ymax=Up, ymin=Down), width=0) +
+  geom_errorbar(aes(ymax=Up_quarter, ymin=Down_quarter), width=0, size=1.3) +
+  # geom_errorbar(aes(ymax=J1_df$Up, ymin=J1_df$Down), width=0) +
+  # geom_errorbar(aes(ymax=J1_df$Up_quarter, ymin=J1_df$Down_quarter), width=0, size=1.3) +
+  geom_point(pch=21, size=3, fill=J1_df$color, color="black") +
+  coord_flip() +
+  theme_grey(base_size=18) +
+  guides(colour=FALSE)+
+  geom_hline(yintercept=0, linetype="dashed", color="gray") +
+  labs(y=expression(paste("Estimated ",gamma," coefficients")), x="")
+print(p)
+dev.off()
+```
+
+```{r convergence_diagnostics}
+cat("\n", paste(rep("=", 60), collapse=""), "\n")
+cat(paste("CONVERGENCE DIAGNOSTICS (R-hat)\n"))
+cat(paste(rep("=", 60), collapse=""), "\n\n")
+
+
+# out <- J0$BUGSoutput
+out <- J0$BUGSoutput
+
+# Extract coefficient estimates
+# Note: beta[1] is intercept, beta[2] is latitude, etc.
+# XXX: The original script uses a custom `MyBUGSOutput()` helper to format
+# beta summaries (means and quantiles) into `beta_est.csv`. Here we recreate
+# those summaries manually from the posterior samples. Small differences in
+# rounding, quantile definition, or variable ordering may mean that
+# `beta_est_from_preprocessed.csv` is not byte-for-byte identical to the
+# original `beta_est.csv`, even if the underlying posterior is the same.
+beta_names <- c("Intercept", "Latitude", "Depth", "Human_pop", "Cyclone", 
+                "SST_mean", "SSTA_Mean", "SSTA_min", "SSTA_freqstdev", 
+                "SSTA_dhwmax", "TSA_max", "TSA_freqstdev", "Turbidity_mean", 
+                "Historical_SST_max")
+
+cat(paste("\n", paste(rep("=", 60), collapse=""), "\n"))
+cat(paste("COEFFICIENT ESTIMATES\n"))
+cat(paste(rep("=", 60), collapse=""), "\n\n")
+
+# Print coefficient summary
+for (i in 1:K) {
+  beta_samples <- out$sims.list$beta[, i]
+  cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+              beta_names[i],
+              mean(beta_samples),
+              sd(beta_samples),
+              quantile(beta_samples, 0.025),
+              quantile(beta_samples, 0.975))))
+}
+
+cat(paste(sprintf("\n%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+            "beta_diversity",
+            mean(out$sims.list$beta_diversity),
+            sd(out$sims.list$beta_diversity),
+            quantile(out$sims.list$beta_diversity, 0.025),
+            quantile(out$sims.list$beta_diversity, 0.975))))
+
+
+for (val in names(out$sims.list)) {
+  cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+            val,
+            mean(out$sims.list[[val]]),
+            sd(out$sims.list[[val]]))))
+}
+
+
+            
+# Rows = coefficient parameters you care about
+coef_rows <- c(paste0("beta[", 1:K, "]"), "beta_diversity")
+# coef_rows <- c(paste0("beta[", 1:K, "]"), "beta_diversity")
+coef_rows <- c(paste0("beta[", 1:K, "]"), params[params != "beta"])
+
+# Keep only rows that were actually monitored
+coef_rows <- intersect(coef_rows, rownames(out$summary))
+
+# Columns = summary stats you want to inspect
+diag_cols <- intersect(c("mean", "sd", "2.5%", "97.5%", "Rhat", "n.eff"),
+                       colnames(out$summary))
+
+coef_summary <- out$summary[coef_rows, diag_cols, drop = FALSE]
+print(coef_summary)
+
+param_names <- rownames(out$summary)
+beta_params <- grep("^beta\\[", param_names, value = TRUE)
+# Actual covariate names in the same order as beta indices
+# (model.matrix includes "(Intercept)" first)
+x_names <- colnames(X)
+# Build lookup: beta[1] -> (Intercept), beta[2] -> lat, ...
+beta_lookup <- setNames(x_names, paste0("beta[", seq_along(x_names), "]"))
+# Optional prettier labels
+pretty_lookup <- beta_lookup
+pretty_lookup["beta[1]"] <- "Intercept"
+# Apply to beta params
+beta_labels <- unname(pretty_lookup[beta_params])
+# Example: print Rhat with human-readable names
+# Fix: The original indexing with | is not valid. Properly concatenate the two sets of row names and subset by them.
+selected_params <- unique(c(beta_params, params[params != "beta"]))
+selected_params <- intersect(selected_params, rownames(out$summary))
+coef_summary <- out$summary[selected_params, c("mean", "sd", "Rhat", "n.eff"), drop = FALSE]
+for (bp in beta_params) {
+  idx <- which(rownames(coef_summary) == bp)
+  if (length(idx) == 1L && bp %in% names(pretty_lookup)) {
+    rownames(coef_summary)[idx] <- pretty_lookup[[bp]]
+  }
+}
+print(coef_summary)
+
+
+# sel <- c(beta_names, "beta_diversity", "a", "theta", "PRes", "Fit", "FitNew", "YNew", "ecoregion", "sigma", "sigma_ecoregion", "mu_global")
+J0_type <- "parallel_large"
+log_root <- file.path(output_directory, "logs")
+# make dir
+if (!dir.exists(log_root)) {
+  dir.create(log_root, recursive = TRUE)
+}
+
+# CHAIN PLOT
+chains_plot <- MyBUGSChains(out, vars = beta_params, PanelNames = beta_labels)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_chains.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(chains_plot)
+dev.off()
+
+# ACF PLOT
+acf_plot <- MyBUGSACF(
+  Output = out,
+  SelectedVar = beta_params,
+  PanelNames = beta_labels
+)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_acf.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(acf_plot)
+dev.off()
+
+# HISTOGRAM PLOT
+hist_plot <- MyBUGSHist(
+  Output = out,
+  SelectedVar = beta_params,
+  PanelNames = beta_labels
+)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_hist.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(hist_plot)
+dev.off()
+
+if (BETA_SMOKE) {
+  message("BETA_SMOKE=1: skipping map/future-cover chunks.")
+  knitr::knit_exit()
+}
+```
+
+
+
+```{r make beta coeff plot without running the model}
+J1_df<-read.csv(file=file.path(output_directory,'beta_est.csv'))
+J1_df$color <- ("white")
+J1_df$color[(J1_df$MeanJ1 > 0) & (J1_df$Down>=0)] <- 'blue'
+J1_df$color[(J1_df$MeanJ1 < 0) & (J1_df$Up<=0)] <- 'red'
+J1_df$variableJ1<-as.character(J1_df$variableJ1)
+J1_df$variableJ1[J1_df$variableJ1=="SSTA_freqstdev"]<-"SSTA_freq_sd"
+J1_df$variableJ1[J1_df$variableJ1=="TSA_freqstdev"]<-"TSA_freq_sd"
+
+library(ggplot2)
+tiff(file=file.path(output_directory,'Beta_coeff_plot.tif'),height=2000,width=2700,res=300)
+ggplot(J1_df,aes(x=reorder(variableJ1, MeanJ1), MeanJ1)) +
+  geom_errorbar(aes(ymax=Up, ymin=Down), width=0) +
+  geom_errorbar(aes(ymax=Up_quarter, ymin=Down_quarter), width=0, size=1.3) +
+  # geom_errorbar(aes(ymax=J1_df$Up, ymin=J1_df$Down), width=0) +
+  # geom_errorbar(aes(ymax=J1_df$Up_quarter, ymin=J1_df$Down_quarter), width=0, size=1.3) +
+  geom_point(pch=21, size=3, fill=J1_df$color, color="black") +
+  coord_flip() +
+  theme_grey(base_size=18) +
+  guides(colour=FALSE)+
+  geom_hline(yintercept=0, linetype="dashed", color="gray") +
+  labs(y=expression(paste("Estimated ",gamma," coefficients")), x="")
+dev.off()
+```
+
+```{r observed vs expected plot of modern coral cover. Supplementary Figure 19}
+data$deviations_from_expected<-(data$Average_coral_cover-Y_New)/sd(data$Average_coral_cover)
+stdevs<-1.5
+
+png(file=file.path(output_directory,'observed_vs_expected_coral_cover.png'),height=1400,width=1400,res=300)
+plot(data$Average_coral_cover, Y_New, xlab="Observed % coral cover", ylab="Expected % coral cover", col="gray", ylim=c(0,1), xlim=c(0,1), xaxt='n', yaxt='n')
+axis(side=1, at=c(0,.2,.4,.6,.8,1), labels=c('0', '20', '40', '60', '80', '100'))
+axis(side=2, at=c(0,.2,.4,.6,.8,1), labels=c('0', '20', '40', '60', '80', '100'))
+abline(0,1, col="darkgray")
+abline(stdevs*sd(data$Average_coral_cover),1, col="red")
+abline(-1*stdevs*sd(data$Average_coral_cover),1, col="red")
+points(data$Average_coral_cover[(data$Average_coral_cover-Y_New)>(stdevs*sd(data$Average_coral_cover))], Y_New[(data$Average_coral_cover-Y_New)>(stdevs*sd(data$Average_coral_cover))], col="yellow")
+points(data$Average_coral_cover[(data$Average_coral_cover-Y_New)<(-1*stdevs*sd(data$Average_coral_cover))], Y_New[(data$Average_coral_cover-Y_New)<(-1*stdevs*sd(data$Average_coral_cover))], col="black")
+dev.off()
+
+summary(lm(data$Average_coral_cover ~ Y_New))$r.squared #.80
+```
+
+```{r calculate future coral cover expectations for years 2050 and 2100 under climate change scenarios RCP4.5 and RCP8.5 for low turbidity reefs}
+
+Y_New_Beta <- (Y_New * (N - 1) + 0.5) / N
+
+x_vals=seq(from=0, to=100, by=.001)
+y_vals=x_vals
+
+Y_future_RCP45_yr_2050 <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+Y_future_RCP45_yr_2050_original <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+X_future<-X
+
+X_future[,4]<-(data$human_pop_2050_vals-(mean(data$Human_pop)))/sd(data$Human_pop)
+X_future[,6]<-(data$sst_mean_rcp45_2050-(mean(data$SST_mean)-273.15))/sd(data$SST_mean)
+
+
+for (i in 1:dim(X_future)[1]){
+  if (!is.na(X_future[i,6])){
+    #X columns that were significant: intercept (1), latitude (2),  depth (3), Human_pop (4), Cyclone (5),  SST_mean (6), SSTA_Mean(7), ssta_freqstdev (9), Turbidity_mean (13), Historical_SST_max (14): so # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p <- boot::inv.logit(out$mean$beta[1]*X_future[i,1] + out$mean$beta[2]*X_future[i,2] + out$mean$beta[3]*X_future[i,3] + out$mean$beta[4]*X_future[i,4] + out$mean$beta[5]*X_future[i,5] + out$mean$beta[6]*X_future[i,6] + out$mean$beta[7]*X_future[i,7] + out$mean$beta[9]*X_future[i,9] + out$mean$beta[13]*X_future[i,13] + out$mean$beta[14]*X_future[i,14] +  out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p
+    shape2 <- out$mean$theta * (1 - p)
+    Y_future_RCP45_yr_2050_Beta <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP45_yr_2050[i,1]<-((Y_future_RCP45_yr_2050_Beta*N)-0.5)/(N-1)
+    
+    # 1, 2, 3, 5, 7, 9, 13, 14
+    p_original <- boot::inv.logit(out$mean$beta[1]*X[i,1] + out$mean$beta[2]*X[i,2] + out$mean$beta[3]*X[i,3] + out$mean$beta[4]*X[i,4] + out$mean$beta[5]*X[i,5] + out$mean$beta[6]*X[i,6] + out$mean$beta[7]*X[i,7] + out$mean$beta[9]*X[i,9] + out$mean$beta[13]*X[i,13] + out$mean$beta[14]*X[i,14] +  out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p_original
+    shape2 <- out$mean$theta * (1 - p_original)
+    Y_future_RCP45_yr_2050_Beta_original <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP45_yr_2050_original[i,1]<-((Y_future_RCP45_yr_2050_Beta_original*N)-0.5)/(N-1)
+  }
+}
+
+
+
+Y_future_RCP45_yr_2100 <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+Y_future_RCP45_yr_2100_original <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+X_future<-X
+X_future[,4]<-(data$human_pop_2100_vals-(mean(data$Human_pop)))/sd(data$Human_pop)
+X_future[,6]<-(data$sst_mean_rcp45_2100-(mean(data$SST_mean)-273.15))/sd(data$SST_mean)
+# 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+
+for (i in 1:dim(X_future)[1]){
+  if (!is.na(X_future[i,6])){
+    # 1, 2, 3, 5, 7, 9, 13, 14
+    p <- boot::inv.logit(out$mean$beta[1]*X_future[i,1] + out$mean$beta[2]*X_future[i,2] + out$mean$beta[3]*X_future[i,3] + out$mean$beta[4]*X_future[i,4] + out$mean$beta[5]*X_future[i,5] + out$mean$beta[6]*X_future[i,6] + out$mean$beta[7]*X_future[i,7] + out$mean$beta[9]*X_future[i,9] + out$mean$beta[13]*X_future[i,13] + out$mean$beta[14]*X_future[i,14] +  out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p
+    shape2 <- out$mean$theta * (1 - p)
+    Y_future_RCP45_yr_2100_Beta <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP45_yr_2100[i,1]<-((Y_future_RCP45_yr_2100_Beta*N)-0.5)/(N-1)
+    
+    # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p_original <- boot::inv.logit(out$mean$beta[1]*X[i,1] + out$mean$beta[2]*X[i,2] + out$mean$beta[3]*X[i,3] + out$mean$beta[4]*X[i,4] + out$mean$beta[5]*X[i,5] + out$mean$beta[6]*X[i,6] + out$mean$beta[7]*X[i,7] + out$mean$beta[9]*X[i,9] + out$mean$beta[13]*X[i,13] + out$mean$beta[14]*X[i,14] +  out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p_original
+    shape2 <- out$mean$theta * (1 - p_original)
+    Y_future_RCP45_yr_2100_Beta_original <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP45_yr_2100_original[i,1]<-((Y_future_RCP45_yr_2100_Beta_original*N)-0.5)/(N-1)
+  }
+}
+
+Y_future_RCP85_yr_2050 <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+Y_future_RCP85_yr_2050_original <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+X_future<-X
+X_future[,4]<-(data$human_pop_2050_vals-(mean(data$Human_pop)))/sd(data$Human_pop)
+X_future[,6]<-(data$sst_mean_rcp85_2050-(mean(data$SST_mean)-273.15))/sd(data$SST_mean)
+
+
+for (i in 1:dim(X_future)[1]){
+  if (!is.na(X_future[i,6])){
+    # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p <- boot::inv.logit(out$mean$beta[1]*X_future[i,1] + out$mean$beta[2]*X_future[i,2] + out$mean$beta[3]*X_future[i,3] + out$mean$beta[4]*X_future[i,4] + out$mean$beta[5]*X_future[i,5] + out$mean$beta[6]*X_future[i,6] + out$mean$beta[7]*X_future[i,7] + out$mean$beta[9]*X_future[i,9] + out$mean$beta[13]*X_future[i,13] + out$mean$beta[14]*X_future[i,14] + out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p
+    shape2 <- out$mean$theta * (1 - p)
+    Y_future_RCP85_yr_2050_Beta <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP85_yr_2050[i,1]<-((Y_future_RCP85_yr_2050_Beta*N)-0.5)/(N-1)
+    
+    # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p_original <- boot::inv.logit(out$mean$beta[1]*X[i,1] + out$mean$beta[2]*X[i,2] + out$mean$beta[3]*X[i,3] + out$mean$beta[4]*X[i,4] + out$mean$beta[5]*X[i,5] + out$mean$beta[6]*X[i,6] + out$mean$beta[7]*X[i,7] + out$mean$beta[9]*X[i,9] + out$mean$beta[13]*X[i,13] + out$mean$beta[14]*X[i,14] + out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p_original
+    shape2 <- out$mean$theta * (1 - p_original)
+    Y_future_RCP85_yr_2050_Beta_original <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP85_yr_2050_original[i,1]<-((Y_future_RCP85_yr_2050_Beta_original*N)-0.5)/(N-1)
+  }
+}
+
+Y_future_RCP85_yr_2100 <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+Y_future_RCP85_yr_2100_original <- data.frame(matrix(nrow = dim(X)[1], ncol = 1))
+X_future<-X
+X_future[,4]<-(data$human_pop_2100_vals-(mean(data$Human_pop)))/sd(data$Human_pop)
+X_future[,6]<-(data$sst_mean_rcp85_2100-(mean(data$SST_mean)-273.15))/sd(data$SST_mean)
+
+for (i in 1:dim(X_future)[1]){
+  if (!is.na(X_future[i,6])){
+     # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p <- boot::inv.logit(out$mean$beta[1]*X_future[i,1] + out$mean$beta[2]*X_future[i,2] + out$mean$beta[3]*X_future[i,3] + out$mean$beta[4]*X_future[i,4] + out$mean$beta[5]*X_future[i,5] + out$mean$beta[6]*X_future[i,6] + out$mean$beta[7]*X_future[i,7] +  out$mean$beta[9]*X_future[i,9] + out$mean$beta[13]*X_future[i,13] + out$mean$beta[14]*X_future[i,14] +  out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p
+    shape2 <- out$mean$theta * (1 - p)
+    Y_future_RCP85_yr_2100_Beta <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP85_yr_2100[i,1]<-((Y_future_RCP85_yr_2100_Beta*N)-0.5)/(N-1)
+    
+    # 1, 2, 3, 4, 5, 6, 7, 9, 13, 14
+    p_original <- boot::inv.logit(out$mean$beta[1]*X[i,1] + out$mean$beta[2]*X[i,2] + out$mean$beta[3]*X[i,3] + out$mean$beta[4]*X[i,4] + out$mean$beta[5]*X[i,5] + out$mean$beta[6]*X[i,6] + out$mean$beta[7]*X[i,7] + out$mean$beta[9]*X[i,9] + out$mean$beta[13]*X[i,13] + out$mean$beta[14]*X[i,14] + out$mean$a[re[i]])
+    shape1 <- out$mean$theta * p_original
+    shape2 <- out$mean$theta * (1 - p_original)
+    Y_future_RCP85_yr_2100_Beta_original <- mean(rbeta(n=1000, shape1=shape1, shape2=shape2))
+    Y_future_RCP85_yr_2100_original[i,1]<-((Y_future_RCP85_yr_2100_Beta_original*N)-0.5)/(N-1)
+  }
+}
+
+as_future_vec <- function(x) as.numeric(x[[1L]])
+
+chg_rcp45_2050 <- as_future_vec(Y_future_RCP45_yr_2050) - as_future_vec(Y_future_RCP45_yr_2050_original)
+chg_rcp45_2100 <- as_future_vec(Y_future_RCP45_yr_2100) - as_future_vec(Y_future_RCP45_yr_2100_original)
+chg_rcp85_2050 <- as_future_vec(Y_future_RCP85_yr_2050) - as_future_vec(Y_future_RCP85_yr_2050_original)
+chg_rcp85_2100 <- as_future_vec(Y_future_RCP85_yr_2100) - as_future_vec(Y_future_RCP85_yr_2100_original)
+
+hist(chg_rcp45_2050)
+hist(chg_rcp45_2100)
+hist(chg_rcp85_2050)
+hist(chg_rcp85_2100)
+
+hist(chg_rcp45_2050 / as_future_vec(Y_future_RCP45_yr_2050_original))
+hist(chg_rcp45_2100 / as_future_vec(Y_future_RCP45_yr_2100_original))
+hist(chg_rcp85_2050 / as_future_vec(Y_future_RCP85_yr_2050_original))
+hist(chg_rcp85_2100 / as_future_vec(Y_future_RCP85_yr_2100_original))
+```
+
+
+data<-cbind(data, Y_New, (Y_New + chg_rcp45_2050), (Y_New + chg_rcp45_2100), (Y_New + chg_rcp85_2050), (Y_New + chg_rcp85_2100), chg_rcp45_2050, chg_rcp45_2100, chg_rcp85_2050, chg_rcp85_2100)
+names(data)[dim(data)[2]-8]<-"Y_New"
+names(data)[dim(data)[2]-7]<-"Y_future_RCP45_yr_2050"
+names(data)[dim(data)[2]-6]<-"Y_future_RCP45_yr_2100"
+names(data)[dim(data)[2]-5]<-"Y_future_RCP85_yr_2050"
+names(data)[dim(data)[2]-4]<-"Y_future_RCP85_yr_2100"
+names(data)[dim(data)[2]-3]<-"Y_future_RCP45_yr_2050_change"
+names(data)[dim(data)[2]-2]<-"Y_future_RCP45_yr_2100_change"
+names(data)[dim(data)[2]-1]<-"Y_future_RCP85_yr_2050_change"
+names(data)[dim(data)[2]]<-"Y_future_RCP85_yr_2100_change"
+
+
+```{r map of bright spots and dark spots. Figure 3}
+
+stdevs<-1.5
+
+if (.Platform$OS.type == "windows") {
+  windowsFonts(Arial = windowsFont("TT Arial"))
+  par(family = "Arial")
+}
+tiff(file=file.path(output_directory,'current_coral_cover_bright_and_dark_spots_a.tif'),height=800,width=3300,res=300)
+par(mgp=c(0.5,0.6,0), mar=c(1,2.5,1,1), mfrow=c(1,1))
+plot(wlrd.p,ylim=c(-4400000,4400000),xlim=c(-2000000,2000000), col='darkseagreen3',border='darkseagreen4', ylab="", cex.lab=2.5)
+axis(1,at=c(-10018754.17,3339584.724,16697920),lab=c('60�','180�','-60� '),las=1,tcl=0.35,mgp=c(-1,-1.3,0), cex.axis=.6)
+axis(2, at=c(23*111319.4666666667,0,-23*111319.4666666667),labels=c('23�','0�','-23�'),las=3,tcl=0.35,mgp=c(-2,-1.3,0),hadj=.4, cex.axis=.6)
+axis(3,at=c(-10018754.17,3339584.724,16697920),lab=c('','',''),las=1,tcl=0.35,mgp=c(-1,-1.3,0))
+axis(4, at=c(23*111319.4666666667,0,-23*111319.4666666667),labels=c('','',''),las=2,tcl=0.35,mgp=c(-1,-0.6,0),hadj=0)
+box()
+
+eqc_crs <- "+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=150 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+pts_wgs84 <- terra::vect(
+  data,
+  geom = c("Longitude.Degrees", "Latitude.Degrees"),
+  crs = "EPSG:4326"
+)
+pts_eqc <- terra::project(pts_wgs84, eqc_crs)
+pt_crds <- terra::crds(pts_eqc)
+
+point_col <- rep("gray", nrow(data))
+point_col[(data$Average_coral_cover - data$Y_New) < (-1 * stdevs * sd(data$Average_coral_cover))] <- "black"
+point_col[(data$Average_coral_cover - data$Y_New) > (stdevs * sd(data$Average_coral_cover))] <- "yellow"
+
+points(pt_crds[point_col == "gray", , drop = FALSE], col=rgb(140/255, 140/255, 140/255, alpha=0.7), bg=rgb(140/255, 140/255, 140/255, alpha=0.7), pch=21, cex=1.5)
+points(pt_crds[point_col == "yellow", , drop = FALSE], col=rgb(255/255, 255/255, 0, alpha=0.9), pch=16, cex=1.5)
+points(pt_crds[point_col == "black", , drop = FALSE], col=rgb(0, 0, 0, alpha=0.7), pch=16, cex=1.0)
+
+text(-7868896,-2922012,'Indian Ocean',cex=1,family='Arial')
+text(9438742,487176,'Pacific Ocean',cex=1,family='Arial')
+text(x=(-16654136+111319.4*305), y=1615153*2.15,'Atlantic Ocean',cex=1, family='Arial')
+north.arrow(x=(-16654136+111319.4*320), y=1615153*1, len=(111319.4*2), lab="N", cex=.7, cex.lab=1.1)
+
+#legend
+plotrix::color.legend(9684797.171+25e5,-28*111319.4666666667,15807371.62+25e5,-23.5*111319.4666666667,legend=c("Dark spot", "", "Bright spot"), rect.col=c("black", "lightgray", "yellow"),cex=.8)
+text(((15807371.62+25e5)-(9684797.171+25e5))/2+(9684797.171+25e5),-16*111319.4666666667,"", cex=1.5)
+dev.off()
+```
+
+```{r Table 2 information}
+#The column "Location" in Table 2 was written manually based off the information from  "City_Town", "City_Town_2", "City_Town_3", and "State_Island_Province"
+#Bright spots
+data[,c("Latitude.Degrees", "Longitude.Degrees", "City_Town", "City_Town_2", "City_Town_3", "State_Island_Province", "Country_Name", "Ocean")][data$deviations_from_expected>1.5,]
+
+bright_spots_df<-data.frame(Latitude=data[,"Latitude.Degrees"][data$deviations_from_expected>1.5], Longitude=data[,"Longitude.Degrees"][data$deviations_from_expected>1.5], City_Town=data[,"City_Town"][data$deviations_from_expected>1.5], City_Town_2=data[,"City_Town_2"][data$deviations_from_expected>1.5], City_Town_3=data[,"City_Town_3"][data$deviations_from_expected>1.5], State_Island_Province=data[,"State_Island_Province"][data$deviations_from_expected>1.5], Country_Name=data[,"Country_Name"][data$deviations_from_expected>1.5], Ocean=data[,"Ocean"][data$deviations_from_expected>1.5])
+write.csv(bright_spots_df, file = file.path(output_directory,'bright_spots_list.csv'), row.names=F)
+
+```
+
+```{r histograms of SST change and TSA_dhwmax change}
+png(file=file.path(output_directory, 'change_in_SST_mean.png'),height=2000,width=3200,res=300)
+par(mfrow=c(2,2))
+hist(data$sst_mean_rcp45_2050-(data$SST_mean-273.15), prob=F, xlab=expression("Change in mean SST ("*degree*C*")"), main="RCP4.5 year 2050", xlim=c(-1, 5))
+hist(data$sst_mean_rcp45_2100-(data$SST_mean-273.15), prob=F, xlab=expression("Change in mean SST ("*degree*C*")"), main="RCP4.5 year 2100", xlim=c(-1, 5))
+hist(data$sst_mean_rcp85_2050-(data$SST_mean-273.15), prob=F, xlab=expression("Change in mean SST ("*degree*C*")"), main="RCP8.5 year 2050", xlim=c(-1, 5))
+hist(data$sst_mean_rcp85_2100-(data$SST_mean-273.15), prob=F, xlab=expression("Change in mean SST ("*degree*C*")"), main="RCP8.5 year 2100", xlim=c(-1, 5))
+dev.off()
+
+```
+
+```{r histograms of coral cover change. Supplementary Figures 20-23}
+png(file=file.path(output_directory, 'histogram_coral_cover_change_relative_rcp45_2050.png'),height=1600,width=1600,res=300)
+par(mfrow=c(1,1))
+data_changes<-100*data$Y_future_RCP45_yr_2050_change/data$Average_coral_cover
+data_changes[data_changes<(-100)]<-(-100)
+data_changes[data_changes>(100)]<-(100)
+hist(data_changes, breaks=c(-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, -0, 100), xlim=c(-100, 0), xlab="Relative coral cover change (%)", main="RCP4.5 year 2050", ylab="Probability density")
+dev.off()
+
+png(file=file.path(output_directory, 'histogram_coral_cover_change_relative_rcp45_2100.png'),height=1600,width=1600,res=300)
+par(mfrow=c(1,1))
+data_changes<-100*data$Y_future_RCP45_yr_2100_change/data$Average_coral_cover
+data_changes[data_changes<(-100)]<-(-100)
+data_changes[data_changes>(100)]<-(100)
+hist(data_changes, breaks=c(-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, -0, 100), xlim=c(-100, 0), xlab="Relative coral cover change (%)", main="RCP4.5 year 2100", ylab="Probability density")
+dev.off()
+
+png(file=file.path(output_directory, 'histogram_coral_cover_change_relative_rcp85_2050.png'),height=1600,width=1600,res=300)
+par(mfrow=c(1,1))
+data_changes<-100*data$Y_future_RCP85_yr_2050_change/data$Average_coral_cover
+data_changes[data_changes<(-100)]<-(-100)
+data_changes[data_changes>(100)]<-(100)
+hist(data_changes, breaks=c(-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, -0, 100), xlim=c(-100, 0), xlab="Relative coral cover change (%)", main="RCP8.5 year 2050", ylab="Probability density")
+dev.off()
+
+png(file=file.path(output_directory, 'histogram_coral_cover_change_relative_rcp85_2100.png'),height=1600,width=1600,res=300)
+par(mfrow=c(1,1))
+data_changes<-100*data$Y_future_RCP85_yr_2100_change/data$Average_coral_cover
+data_changes[data_changes<(-100)]<-(-100)
+data_changes[data_changes>(100)]<-(100)
+hist(data_changes, breaks=c(-100, -90, -80, -70, -60, -50, -40, -30, -20, -10, -0, 100), xlim=c(-100, 0), xlab="Relative coral cover change (%)", main="RCP8.5 year 2100", ylab="Probability density")
+dev.off()
+
+```
+
+```{r Figure 6. absolute and relative coral cover change by year 2100, for both RCP4.5 and RCP8.5.}
+#png(file=file.path(output_directory, 'coral_cover_absolute_and_relative_change_plot_RCP45_RCP85_yr_2100.png'),height=2000,width=2000,res=300)
+tiff(file=file.path(output_directory,'coral_cover_absolute_and_relative_change_plot_RCP45_RCP85_yr_2100.tif'),height=2000,width=2000,res=300)
+par(mfrow=c(2,2))
+
+y_vals<-data$Y_future_RCP45_yr_2100_change
+y_vals[y_vals<(-1)]<-(-1)
+plot(x=data$Average_coral_cover*100, y=y_vals*100, xlim=c(0,100), ylim=c(-25,0), ylab="Absolute change in % coral cover", xlab="Modern observed % coral cover", main="RCP4.5 year 2100")
+text(x = 98, y = -23.5, labels = "(a)", cex=1.5, xpd = NA)
+
+
+y_vals<-data$Y_future_RCP45_yr_2100_change/data$Average_coral_cover
+y_vals[y_vals<(-1)]<-(-1)
+plot(x=data$Average_coral_cover*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change in % coral cover", xlab="Modern observed % coral cover", main="RCP4.5 year 2100")
+text(x = 98, y = -94, labels = "(b)", cex=1.5, xpd = NA)
+
+y_vals<-data$Y_future_RCP85_yr_2100_change
+y_vals[y_vals<(-1)]<-(-1)
+plot(x=data$Average_coral_cover*100, y=y_vals*100, xlim=c(0,100), ylim=c(-25,0), ylab="Absolute change in % coral cover", xlab="Modern observed % coral cover", main="RCP8.5 year 2100")
+text(x = 98, y = -23.5, labels = "(c)", cex=1.5, xpd = NA)
+
+
+y_vals<-data$Y_future_RCP85_yr_2100_change/data$Average_coral_cover
+y_vals[y_vals<(-1)]<-(-1)
+plot(x=data$Average_coral_cover*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change in % coral cover", xlab="Modern observed % coral cover", main="RCP8.5 year 2100")
+text(x = 98, y = -94, labels = "(d)", cex=1.5, xpd = NA)
+dev.off()
+```
+
+
+#examine ecoregions. 
+```{r Supplementary Figures 25-107. Modern coral cover and future relative coral cover change for each site in each ecoregion}
+ecoregion_names<-unique(as.character(data$Ecoregion.x))
+#"Eastern Hawaii",  "Gilbert Islands, west Kiribati" are made again after the 'for loop'. The ecoregion name assigned to each of these 3 ecoregions in the original shapefile are different names, but I want to use custom strings so that I can use the locally recognized name for these ecoregions.
+for(i in 1:length(ecoregion_names)){
+  title<-paste('coral_cover_relative_change_ecoregion_', ecoregion_names[i], '.png', sep="")
+  png(file=file.path(output_directory, title), height=3200, width=3200, res=300)
+  par(mfrow=c(2,2), oma=c(0,0,2,0))
+  y_vals<-data$Y_future_RCP45_yr_2050_change[as.character(data$Ecoregion.x)==ecoregion_names[i]]/data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2050")
+  text(x = 98, y = -98, labels = "(a)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP45_yr_2100_change[as.character(data$Ecoregion.x)==ecoregion_names[i]]/data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2100")
+  text(x = 98, y = -98, labels = "(b)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2050_change[as.character(data$Ecoregion.x)==ecoregion_names[i]]/data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2050")
+  text(x = 98, y = -98, labels = "(c)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2100_change[as.character(data$Ecoregion.x)==ecoregion_names[i]]/data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)==ecoregion_names[i]]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2100")
+  text(x = 98, y = -98, labels = "(d)", cex=1.5, xpd = NA)
+  
+  mtext(paste(ecoregion_names[i]), outer=TRUE, cex=2)
+  dev.off()
+}
+
+#"Eastern Hawaii",  "Gilbert Islands, west Kiribati" 
+  title<-paste('coral_cover_relative_change_ecoregion_Eastern_Hawaii', '.png', sep="")
+  png(file=file.path(output_directory, title), height=3200, width=3200, res=300)
+  par(mfrow=c(2,2), oma=c(0,0,2,0))
+  y_vals<-data$Y_future_RCP45_yr_2050_change[as.character(data$Ecoregion.x)=="Eastern Hawaii"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2050")
+  text(x = 98, y = -98, labels = "(a)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP45_yr_2100_change[as.character(data$Ecoregion.x)=="Eastern Hawaii"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2100")
+  text(x = 98, y = -98, labels = "(b)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2050_change[as.character(data$Ecoregion.x)=="Eastern Hawaii"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2050")
+  text(x = 98, y = -98, labels = "(c)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2100_change[as.character(data$Ecoregion.x)=="Eastern Hawaii"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Eastern Hawaii"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2100")
+  text(x = 98, y = -98, labels = "(d)", cex=1.5, xpd = NA)
+  
+  mtext(paste("Eastern Hawai'i"), outer=TRUE, cex=2)
+  dev.off()
+  
+    title<-paste('coral_cover_relative_change_ecoregion_Gilbert_Islands_west_Kiribati', '.png', sep="")
+  png(file=file.path(output_directory, title), height=3200, width=3200, res=300)
+  par(mfrow=c(2,2), oma=c(0,0,2,0))
+  y_vals<-data$Y_future_RCP45_yr_2050_change[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2050")
+  text(x = 98, y = -98, labels = "(a)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP45_yr_2100_change[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP4.5 year 2100")
+  text(x = 98, y = -98, labels = "(b)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2050_change[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2050")
+  text(x = 98, y = -98, labels = "(c)", cex=1.5, xpd = NA)
+  
+  y_vals<-data$Y_future_RCP85_yr_2100_change[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]/data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]
+  y_vals[y_vals<(-1)]<-(-1)
+  y_vals[y_vals>(1)]<-(1)
+  plot(x=data$Average_coral_cover[as.character(data$Ecoregion.x)=="Gilbert Islands, west Kiribati"]*100, y=y_vals*100, xlim=c(0,100), ylim=c(-100,0), ylab="Relative change (%)", xlab="Modern observed % coral cover", main="RCP8.5 year 2100")
+  text(x = 98, y = -98, labels = "(d)", cex=1.5, xpd = NA)
+  
+  mtext(paste("West Kiribati"), outer=TRUE, cex=2)
+  dev.off()
+
+```
+
+write.csv(data, file = file.path(output_directory,'data_for_maps.csv'), row.names=F)
+
+```{r Table 1. calculate coral cover per ocean, without pseudo-replicating}
+reef_list<-unique(data$Reef_ID)
+ocean_list<-c()
+coral_cover_list<-c()
+days_since_19811231_list<-c()
+
+for(i in 1:length(reef_list)){
+  days_since_19811231<-rev(sort(data[data$Reef_ID==reef_list[i],]$days_since_19811231))[1]
+  days_since_19811231_list<-append(days_since_19811231_list, days_since_19811231)
+  
+  cc<-mean(data[data$Reef_ID==reef_list[i],][data[data$Reef_ID==reef_list[i],]$days_since_19811231==days_since_19811231,]$Average_coral_cover)
+  coral_cover_list<-append(coral_cover_list, cc)
+  
+  ocean<-as.character(data[data$Reef_ID==reef_list[i],][data[data$Reef_ID==reef_list[i],]$days_since_19811231==days_since_19811231,]$Ocean[1])
+  ocean_list<-append(ocean_list, ocean)
+  
+}
+
+mean_cc_per_ocean_df<-data.frame("reef"=reef_list, "ocean"=ocean_list, "coral_cover"=coral_cover_list)
+
+mean(mean_cc_per_ocean_df$coral_cover) #.317
+sd(mean_cc_per_ocean_df$coral_cover) #.194
+length(mean_cc_per_ocean_df$coral_cover) #2949
+
+
+mean(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Indian",]$coral_cover) #.326
+sd(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Indian",]$coral_cover) #.180
+length(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Indian",]$coral_cover) #321
+
+mean(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Arabian Gulf",]$coral_cover) #.396
+sd(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Arabian Gulf",]$coral_cover) #.229
+length(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Arabian Gulf",]$coral_cover) #47
+
+mean(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Red Sea",]$coral_cover) #.376
+sd(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Red Sea",]$coral_cover) #.150
+length(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Red Sea",]$coral_cover) #37
+
+mean(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Pacific" | mean_cc_per_ocean_df$ocean=="",]$coral_cover) #.356
+sd(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Pacific" | mean_cc_per_ocean_df$ocean=="",]$coral_cover) #.196
+length(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Pacific" | mean_cc_per_ocean_df$ocean=="",]$coral_cover) #1944
+
+mean(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Atlantic",]$coral_cover) #.177
+sd(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Atlantic",]$coral_cover) #.116
+length(mean_cc_per_ocean_df[mean_cc_per_ocean_df$ocean=="Atlantic",]$coral_cover) #600
+```

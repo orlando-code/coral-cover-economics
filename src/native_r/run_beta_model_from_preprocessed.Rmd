@@ -18,6 +18,13 @@ This script runs the hierarchical beta regression model using the pre-processed
 This allows direct comparison with the Python implementation which also uses
 `data_for_maps.csv`.
 
+<!-- XXX: This script assumes that *all* filtering and preprocessing steps in the
+original `1_run_the_beta_model.Rmd` (e.g. NA removals, turbidity threshold,
+shapefile-based ecoregion assignment, diversity join) have already been applied
+when `data_for_maps.csv` was created. If any of those steps were different or
+omitted when generating `data_for_maps.csv`, this pipeline cannot reproduce the
+paper results exactly from the raw inputs. -->
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -29,23 +36,59 @@ library(ggplot2)
 ```
 
 ```{r set_directories}
-# Set to the directory containing data_for_maps.csv
-data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/data/sully_2022"
-output_dir <- data_dir / "output"
+default_data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/data/sully_og"
+data_dir <- Sys.getenv("BETA_DATA_DIR", unset = default_data_dir)
+output_dir <- Sys.getenv("BETA_OUTPUT_DIR", unset = file.path(data_dir, "output"))
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+BETA_SMOKE <- identical(Sys.getenv("BETA_SMOKE"), "1")
+if (BETA_SMOKE) {
+  mcmc_cfg <- list(
+    n_chains = as.integer(Sys.getenv("BETA_SMOKE_N_CHAINS", unset = "2")),
+    n_burnin = as.integer(Sys.getenv("BETA_SMOKE_N_BURNIN", unset = "5")),
+    n_iter = as.integer(Sys.getenv("BETA_SMOKE_N_ITER", unset = "20")),
+    n_thin = 1L,
+    run_serial = TRUE,
+    use_parallel = FALSE
+  )
+  message("BETA_SMOKE=1: tiny subsample, serial JAGS only.")
+} else {
+  mcmc_cfg <- list(n_chains = 3L, n_burnin = 4000L, n_iter = 15000L, n_thin = 10L, use_parallel = TRUE)
+}
+
+native_r <- Sys.getenv(
+  "BETA_NATIVE_R",
+  unset = normalizePath(file.path(data_dir, "..", "..", "src", "native_r"), wins = FALSE, mustWork = FALSE)
+)
+source(file.path(native_r, "beta_model_reparam_utils.R"))
 
 ```
 
 ```{r load_preprocessed_data}
-# Load the pre-processed data (this is R's OUTPUT from the original script)
-data <- read.csv(file.path(data_dir, "data_for_maps.csv"), header=TRUE)
+# Load pre-processed model-ready data (default: data_for_maps.csv from original pipeline).
+data_path <- Sys.getenv(
+  "BETA_DATA_PATH",
+  unset = file.path(data_dir, "data_for_maps.csv")
+)
+data <- read.csv(data_path, header = TRUE)
 
-cat("Loaded", nrow(data), "observations\n")
-cat("Number of unique sites:", length(unique(data$site)), "\n")
-cat("Number of unique regions:", length(unique(data$region)), "\n")
+if (BETA_SMOKE) {
+  max_sites <- as.integer(Sys.getenv("BETA_SMOKE_MAX_SITES", unset = "12"))
+  set.seed(20260529L)
+  keep_sites <- sample(unique(data$site), min(max_sites, length(unique(data$site))))
+  data <- data[data$site %in% keep_sites, ]
+  message(sprintf(
+    "BETA_SMOKE subsample: %d rows | %d sites | %d regions",
+    nrow(data), length(unique(data$site)), length(unique(data$region))
+  ))
+}
+
+cat(paste("Loaded", nrow(data), "observations\n"))
+cat(paste("Number of unique sites:", length(unique(data$site)), "\n"))
+cat(paste("Number of unique regions:", length(unique(data$region)), "\n"))
 
 # Check the site and region ranges
-cat("\nSite range:", min(data$site), "-", max(data$site), "\n")
-cat("Region range:", min(data$region), "-", max(data$region), "\n")
+cat(paste("\nSite range:", min(data$site), "-", max(data$site), "\n"))
+cat(paste("Region range:", min(data$region), "-", max(data$region), "\n"))
 ```
 
 ```{r examine_structure}
@@ -55,7 +98,7 @@ cat("Region range:", min(data$region), "-", max(data$region), "\n")
 # - diversity.standardized: Pre-computed standardized diversity per ecoregion
 
 # Check column names
-print(names(data))
+cat(paste(names(data), "\n"))
 ```
 
 ```{r standardize_variables}
@@ -87,18 +130,19 @@ X_standardized <- data.frame(
 )
 
 # Print standardization stats for comparison with Python
-cat("\nStandardization stats for comparison:\n")
+cat(paste("\nStandardization stats for comparison:\n"))
 for (col in c("lat", "Depth", "Human_pop", "Cyclone", "SST_mean", "SSTA_Mean", 
               "SSTA_min", "SSTA_freqstdev", "SSTA_dhwmax", "TSA_max", 
               "TSA_freqstdev", "Turbidity_mean", "Historical_SST_max")) {
   if (col == "lat") {
-    raw_col <- data$lat
+    raw_col <- data$lat # TODO: why this?
   } else {
     raw_col <- data[[col]]
   }
-  cat(sprintf("  %s: mean=%.6f, sd=%.6f\n", col, mean(na.omit(raw_col)), sd(na.omit(raw_col))))
+  cat(paste(sprintf("  %s: mean=%.6f, sd=%.6f\n", col, mean(na.omit(raw_col)), sd(na.omit(raw_col)))))
 }
 ```
+
 
 ```{r build_design_matrix}
 # Build design matrix - same as original
@@ -107,8 +151,8 @@ X <- model.matrix(~ lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean +
                     TSA_freqstdev + Turbidity_mean + Historical_SST_max, 
                   data = X_standardized)
 
-cat("Design matrix dimensions:", dim(X), "\n")
-cat("Column names:", colnames(X), "\n")
+cat(paste("Design matrix dimensions:", dim(X), "\n"))
+cat(paste("Column names:", colnames(X), "\n"))
 
 K <- ncol(X)
 N <- nrow(data)
@@ -118,6 +162,16 @@ N <- nrow(data)
 # CRITICAL: Create dense, consecutive indices for JAGS
 # The site and region columns in data_for_maps.csv may not be consecutive (e.g., 1, 5, 10, ...)
 # We need to map them to 1, 2, 3, ... for JAGS
+
+# XXX: In the original script, `site` and region indices are built on the fly:
+#   - `site` from `sites_and_region_df$site` (numeric factor of `Reef_ID`)
+#   - `region_for_each_site` as a factor of `sites_and_region_df$region`
+#   - diversity values coming from a separate CSV joined by ecoregion name.
+# Here we instead rely on `data$site` and `data$region` that were precomputed
+# during creation of `data_for_maps.csv`, and we compress them to dense
+# indices. This is only equivalent if the original authors built these columns
+# exactly as in `1_run_the_beta_model.Rmd`; otherwise the site/region mapping
+# and hence random-effects structure may differ from the published model.
 
 # Create site mapping: sparse R indices -> dense consecutive indices
 unique_sites <- sort(unique(data$site))
@@ -133,8 +187,8 @@ Nre <- length(unique_sites)  # Number of unique sites
 R <- length(unique_regions)   # Number of unique regions
 re <- data$site_dense         # Dense site index for each observation
 
-cat("Number of sites (Nre):", Nre, "\n")
-cat("Number of regions (R):", R, "\n")
+cat(paste("Number of sites (Nre):", Nre, "\n"))
+cat(paste("Number of regions (R):", R, "\n"))
 
 # Create site-to-region mapping
 # This needs to be ordered by dense site index (1, 2, 3, ...)
@@ -145,8 +199,8 @@ site_region_df <- data %>%
 # CRITICAL: Verify that sites map to the correct regions
 # region_for_each_site[s] should give the region for site s
 region_for_each_site <- site_region_df$region_dense
-cat("Length of region_for_each_site:", length(region_for_each_site), "\n")
-cat("Should equal Nre:", Nre, "\n")
+cat(paste("Length of region_for_each_site:", length(region_for_each_site), "\n"))
+cat(paste("Should equal Nre:", Nre, "\n"))
 
 # Verify the mapping is correct
 stopifnot(length(region_for_each_site) == Nre)
@@ -156,15 +210,22 @@ stopifnot(all(site_region_df$site_dense == 1:Nre))
 ```{r prepare_diversity}
 # Get diversity per region (ordered by dense region index)
 # diversity.standardized is already in the data from R's original processing
+# XXX: In the original pipeline, `diversity.standardized` is computed from
+# `coral_diversity_for_coral_cover.csv` and joined to ecoregions by name,
+# *before* building the JAGS data list. Here we assume that the single
+# `diversity.standardized` column in `data_for_maps.csv` is exactly that
+# same standardized vector. If a different diversity file or join logic was
+# used when exporting the CSV, the diversity effect (`beta_diversity`) in
+# this script will not correspond to the published analysis.
 diversity_df <- data %>%
   distinct(region_dense, diversity.standardized) %>%
   arrange(region_dense)
 
 diversity <- diversity_df$diversity.standardized
 
-cat("Diversity vector length:", length(diversity), "\n")
-cat("Should equal R:", R, "\n")
-cat("Diversity range:", range(diversity), "\n")
+cat(paste("Diversity vector length:", length(diversity), "\n"))
+cat(paste("Should equal R:", R, "\n"))
+cat(paste("Diversity range:", range(diversity), "\n"))
 
 stopifnot(length(diversity) == R)
 ```
@@ -174,9 +235,9 @@ stopifnot(length(diversity) == R)
 # y_beta = (y * (N-1) + 0.5) / N
 data$coral_cover_Beta <- (data$Average_coral_cover * (N - 1) + 0.5) / N
 
-cat("Response variable (coral_cover_Beta):\n")
-cat("  Range:", range(data$coral_cover_Beta), "\n")
-cat("  Mean:", mean(data$coral_cover_Beta), "\n")
+cat(paste("Response variable (coral_cover_Beta):\n"))
+cat(paste("  Range:", range(data$coral_cover_Beta), "\n"))
+cat(paste("  Mean:", mean(data$coral_cover_Beta), "\n"))
 ```
 
 ```{r jags_data}
@@ -193,16 +254,17 @@ win.data <- list(
   diversity = diversity                     # Ordered by dense region index
 )
 
-cat("\nJAGS data summary:\n")
-cat("  N (observations):", win.data$N, "\n")
-cat("  K (predictors):", win.data$K, "\n")
-cat("  Nre (sites):", win.data$Nre, "\n")
-cat("  R (regions):", win.data$R, "\n")
+cat(paste("\nJAGS data summary:\n"))
+cat(paste("  N (observations):", win.data$N, "\n"))
+cat(paste("  K (predictors):", win.data$K, "\n"))
+cat(paste("  Nre (sites):", win.data$Nre, "\n"))
+cat(paste("  R (regions):", win.data$R, "\n"))
 ```
 
 ```{r jags_model}
 # Write JAGS model (same as original)
-sink("GLMM_coral_cover_preprocessed.txt")
+model_path <- file.path(output_dir, "GLMM_coral_cover_preprocessed.txt")
+sink(model_path)
 cat("
     model{
     #1A. Priors for fixed effects (vague priors: precision 0.0001 = SD 100)
@@ -266,109 +328,194 @@ sink()
 ```
 
 ```{r jags_inits}
-# Initial values (same as original)
-inits <- function() {
-  list(
-    beta = rnorm(K, 0, 0.1),
-    beta_diversity = rnorm(1, 0, 0.1),
-    a = rnorm(Nre, 0, 0.1),
-    num = rnorm(1, 0, 25), 
-    denom = rnorm(1, 0, 1),
-    numtheta = rnorm(1, 0, 25), 
-    denomtheta = rnorm(1, 0, 1),
-    num_ecoregion = rnorm(1, 0, 25), 
-    denom_ecoregion = rnorm(1, 0, 1)
-  )
-}
+init_seed <- as.integer(Sys.getenv("BETA_INIT_SEED", unset = "20260529"))
 
-# Parameters to monitor
 params <- c("beta", "beta_diversity", "a", "theta", "PRes", "Fit", "FitNew", 
             "YNew", "ecoregion", "sigma", "sigma_ecoregion", "mu_global")
 ```
 
 ```{r run_jags, message=FALSE, warning=FALSE}
-# Run JAGS model - same settings as original
-cat("Running JAGS model...\n")
-cat("This may take several minutes.\n")
+cat(paste("Running JAGS model...\n"))
+if (BETA_SMOKE) {
+  cat(paste("BETA_SMOKE=1: serial JAGS with n.chains=", mcmc_cfg$n_chains,
+            " n.burnin=", mcmc_cfg$n_burnin, " n.iter=", mcmc_cfg$n_iter, "\n", sep = ""))
+} else {
+  cat(paste("This may take several minutes.\n"))
+}
 
-J0 <- jags(
-  data = win.data,
-  inits = inits,
-  parameters = params,
-  model.file = "GLMM_coral_cover_preprocessed.txt",
-  n.thin = 10,
-  n.chains = 3,
-  n.burnin = 4000,
-  n.iter = 15000
+J0 <- run_centered_jags_fit(
+  win.data = win.data,
+  model_path = model_path,
+  params = params,
+  K = K,
+  Nre = Nre,
+  mcmc_cfg = mcmc_cfg,
+  init_seed = init_seed,
+  progress_bar = if (BETA_SMOKE) "none" else "text"
 )
+J0_parallel <- J0
 
-cat("JAGS model complete.\n")
+cat(paste("JAGS model complete.\n"))
 ```
 
 ```{r extract_results}
-out <- J0$BUGSoutput
+
+
+
+J0_instance <- J0
+J0_type <- "single"
+
+# out <- J0$BUGSoutput
+out <- J0_instance$BUGSoutput
 
 # Extract coefficient estimates
 # Note: beta[1] is intercept, beta[2] is latitude, etc.
+# XXX: The original script uses a custom `MyBUGSOutput()` helper to format
+# beta summaries (means and quantiles) into `beta_est.csv`. Here we recreate
+# those summaries manually from the posterior samples. Small differences in
+# rounding, quantile definition, or variable ordering may mean that
+# `beta_est_from_preprocessed.csv` is not byte-for-byte identical to the
+# original `beta_est.csv`, even if the underlying posterior is the same.
 beta_names <- c("Intercept", "Latitude", "Depth", "Human_pop", "Cyclone", 
                 "SST_mean", "SSTA_Mean", "SSTA_min", "SSTA_freqstdev", 
                 "SSTA_dhwmax", "TSA_max", "TSA_freqstdev", "Turbidity_mean", 
                 "Historical_SST_max")
 
-cat("\n", paste(rep("=", 60), collapse=""), "\n")
-cat("COEFFICIENT ESTIMATES\n")
+cat(paste("\n", paste(rep("=", 60), collapse=""), "\n"))
+cat(paste("COEFFICIENT ESTIMATES\n"))
 cat(paste(rep("=", 60), collapse=""), "\n\n")
 
 # Print coefficient summary
 for (i in 1:K) {
   beta_samples <- out$sims.list$beta[, i]
-  cat(sprintf("%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+  cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
               beta_names[i], 
               mean(beta_samples), 
               sd(beta_samples),
               quantile(beta_samples, 0.025),
-              quantile(beta_samples, 0.975)))
+              quantile(beta_samples, 0.975))))
 }
 
-cat(sprintf("\n%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
+cat(paste(sprintf("\n%20s: mean=%7.4f, sd=%6.4f, 2.5%%=%7.4f, 97.5%%=%7.4f\n",
             "beta_diversity",
             mean(out$sims.list$beta_diversity),
             sd(out$sims.list$beta_diversity),
             quantile(out$sims.list$beta_diversity, 0.025),
-            quantile(out$sims.list$beta_diversity, 0.975)))
+            quantile(out$sims.list$beta_diversity, 0.975))))
 
-cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
             "mu_global",
             mean(out$sims.list$mu_global),
-            sd(out$sims.list$mu_global)))
+            sd(out$sims.list$mu_global))))
 
-cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
             "theta",
             mean(out$sims.list$theta),
-            sd(out$sims.list$theta)))
+            sd(out$sims.list$theta))))
 
-cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
             "sigma (site SD)",
             mean(out$sims.list$sigma),
-            sd(out$sims.list$sigma)))
+            sd(out$sims.list$sigma))))
 
-cat(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
+cat(paste(sprintf("%20s: mean=%7.4f, sd=%6.4f\n",
             "sigma_ecoregion",
             mean(out$sims.list$sigma_ecoregion),
-            sd(out$sims.list$sigma_ecoregion)))
+            sd(out$sims.list$sigma_ecoregion))))
 ```
 
 ```{r convergence_diagnostics}
 cat("\n", paste(rep("=", 60), collapse=""), "\n")
-cat("CONVERGENCE DIAGNOSTICS (R-hat)\n")
+cat(paste("CONVERGENCE DIAGNOSTICS (R-hat)\n"))
 cat(paste(rep("=", 60), collapse=""), "\n\n")
 
 # Print R-hat for key parameters
-print(J0$BUGSoutput$summary[c(paste0("beta[", 1:K, "]"), "beta_diversity", 
+print(J0_instance$BUGSoutput$summary[c(paste0("beta[", 1:K, "]"), "beta_diversity", 
                                "mu_global", "theta", "sigma", "sigma_ecoregion"),
                             c("mean", "sd", "2.5%", "97.5%", "Rhat", "n.eff")])
 ```
 
+
+```{r visualise_chains}
+if (!BETA_SMOKE) {
+mcmc_support_path <- file.path(data_dir, "MCMCSupportHighstatV4.R")
+if (!file.exists(mcmc_support_path)) {
+  mcmc_support_path <- file.path(
+    Sys.getenv("BETA_NATIVE_R", unset = file.path(getwd(), "src", "native_r")),
+    "MCMCSupportHighstatV4.R"
+  )
+}
+source(mcmc_support_path)
+# Visualise chains
+# plot(J0_parallel)
+# MyBUGSChains(J0_parallel$BUGSoutput, vars = c("beta", "beta_diversity", "mu_global", "theta", "sigma", "sigma_ecoregion"))
+
+library(lattice)
+
+
+param_names <- dimnames(J0_instance$BUGSoutput$sims.array)[[3]]
+beta_names  <- grep("^beta\\[", param_names, value = TRUE)
+
+sel <- c(beta_names, "beta_diversity", "mu_global", "theta", "sigma", "sigma_ecoregion")
+
+log_root <- file.path(output_dir, "logs")
+# make dir
+if (!dir.exists(log_root)) {
+  dir.create(log_root, recursive = TRUE)
+}
+
+# CHAIN PLOT
+chains_plot <- MyBUGSChains(J0_instance$BUGSoutput, vars = sel)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_chains.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(chains_plot)
+dev.off()
+
+# ACF PLOT
+acf_plot <- MyBUGSACF(
+  Output = J0_instance$BUGSoutput,
+  SelectedVar = sel
+)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_acf.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(acf_plot)
+dev.off()
+
+# HISTOGRAM PLOT
+hist_plot <- MyBUGSHist(
+  Output = J0_instance$BUGSoutput,
+  SelectedVar = sel
+)
+png(
+  file.path(
+    log_root,
+    sprintf("%s_hist.png", if (J0_type == "J0") "parallel" else J0_type)
+  ),
+  width = 9,
+  height = 7,
+  units = "in",
+  res = 300
+)
+print(hist_plot)
+dev.off()
+}
+```
 ```{r save_results}
 # Create summary dataframe (same format as original)
 J1_df <- data.frame(
@@ -392,7 +539,7 @@ J1_df <- data.frame(
 
 # Save to CSV for comparison with Python
 write.csv(J1_df, file.path(output_dir, "beta_est_from_preprocessed.csv"), row.names = FALSE)
-cat("\nSaved coefficient estimates to beta_est_from_preprocessed.csv\n")
+cat(paste("\nSaved coefficient estimates to beta_est_from_preprocessed.csv\n"))
 ```
 
 ```{r coefficient_plot}
@@ -417,6 +564,11 @@ print(p)
 ggsave(file.path(output_dir, "Beta_coeff_plot_from_preprocessed.png"), 
        p, width = 9, height = 7, dpi = 300)
 cat("\nSaved coefficient plot to Beta_coeff_plot_from_preprocessed.png\n")
+
+if (BETA_SMOKE) {
+  message("BETA_SMOKE=1: stopping after coefficient plot.")
+  knitr::knit_exit()
+}
 ```
 
 ```{r model_fit}
@@ -433,6 +585,8 @@ cat(sprintf("Bayesian p-value: %.3f\n", mean(out$sims.list$FitNew > out$sims.lis
 # DIC
 cat(sprintf("DIC: %.2f\n", J0$BUGSoutput$DIC))
 cat(sprintf("pD (effective parameters): %.2f\n", J0$BUGSoutput$pD))
+cat(sprintf("DIC: %.2f\n", J0_parallel$BUGSoutput$DIC))
+cat(sprintf("pD (effective parameters): %.2f\n", J0_parallel$BUGSoutput$pD))
 ```
 
 ```{r predictions}
@@ -440,6 +594,12 @@ cat(sprintf("pD (effective parameters): %.2f\n", J0$BUGSoutput$pD))
 Y_New <- out$mean$YNew
 Y_New[Y_New < 0] <- 0
 Y_New[Y_New > 1] <- 1
+# XXX: The original script additionally rounds `Y_New` to 2 decimal places
+# before writing `data_for_maps.csv`:
+#       Y_New <- round(Y_New, digits=2)
+# Here we clamp to [0, 1] but do not round. If `data_for_maps.csv` stores the
+# rounded values, a direct comparison of this `Y_New` with the CSV will not
+# match exactly, even though the underlying posterior mean is the same.
 
 # Calculate R-squared
 r_squared <- summary(lm(data$Average_coral_cover ~ Y_New))$r.squared
@@ -454,12 +614,8 @@ cat("Saved predictions to predictions_comparison.csv\n")
 ```
 
 ```{r cleanup}
-# Clean up temporary model file
-if (file.exists("GLMM_coral_cover_preprocessed.txt")) {
-  file.remove("GLMM_coral_cover_preprocessed.txt")
-}
-
 cat("\n", paste(rep("=", 60), collapse=""), "\n")
 cat("ANALYSIS COMPLETE\n")
+cat(paste("Outputs written to:", output_dir, "\n"))
 cat(paste(rep("=", 60), collapse=""), "\n")
 ```
