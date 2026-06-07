@@ -197,17 +197,38 @@ class AnalysisResults:
             json.dump(metadata, f, indent=2)
 
     @classmethod
-    def load(cls, path: Path) -> "AnalysisResults":
-        """Load all results from disk."""
+    def load(
+        cls, path: Path, sample_fraction: float = 1.0, random_state: int = 42
+    ) -> "AnalysisResults":
+        """Load all results from disk.
+
+        Parameters
+        ----------
+        path : Path
+            Directory containing pickled `DepreciationResult` files.
+        sample_fraction : float, optional
+            Fraction of site-level rows to keep in each loaded result GeoDataFrame.
+            Useful when loading large runs for lightweight web export workflows.
+        random_state : int, optional
+            Deterministic random seed used when subsampling.
+        """
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Results directory not found: {path}")
+        if not (0 < float(sample_fraction) <= 1):
+            raise ValueError("sample_fraction must be in the range (0, 1].")
 
         results = cls()
 
         # Load all .pkl files
         for pkl_file in path.glob("*.pkl"):
             result = DepreciationResult.load(pkl_file)
+            if sample_fraction < 1.0:
+                result.gdf = result.gdf.sample(
+                    frac=sample_fraction, random_state=random_state
+                )
+                # Reset cached aggregations because gdf changed.
+                result._by_country = None
             # Use filename as key (it should match the original key used in save)
             key = pkl_file.stem
             results.add(key, result)

@@ -68,18 +68,17 @@ docs/_build/
 figures/
 outputs/
 results/
-models/
 
 # Temporary files
 *.tmp
 *.log
 *.bak
 *.cache
+.matplotlib_cache/
 
 # OS
 .DS_Store
 Thumbs.db
-
 # custom
 figures/
 data/

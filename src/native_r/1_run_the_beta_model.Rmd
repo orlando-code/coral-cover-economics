@@ -70,7 +70,7 @@ diversity<-diversity[order(diversity$Ecoregion),]
 ```
 
 ```{r read in and format shapefiles of a world map, and ecoregion boundaries}
-#don't need to do this since ecoregions in data_for_maps.csv
+# don't need to do this since ecoregions in data_for_maps.csv
 wlrd.p <- readOGR(file.path(shapefiles_directory,'TM_WORLD_BORDERS_SIMPL_PC150.shp'))
 ECO <- readOGR(file.path(shapefiles_directory,'ecoregion_exportPolygon.shp')) # ecoregions
 

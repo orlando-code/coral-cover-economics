@@ -34,10 +34,15 @@ data_dir = repo_dir / "data"
 
 # DATA DIRECTORIES
 sully_data_dir = data_dir / "sully_2022"
+sully_og_dir = data_dir / "sully_og"
 economics_data_dir = data_dir / "economics"
 geographic_dir = data_dir / "geographic"
 gdp_dir = economics_data_dir / "gdp"
 tourism_dir = economics_data_dir / "tourism"
+coastlines_dir = data_dir / "coastlines"
+sentinel_coast_dir = coastlines_dir / "S2Coast2023_ShapeFile_vector"
+meow_dir = data_dir / "MEOW"
+mpas_dir = data_dir / "mpas" / "WDPA_Jun2026_Public_shp"
 
 # METADATA DIRECTORIES
 figures_dir = repo_dir / "figures"

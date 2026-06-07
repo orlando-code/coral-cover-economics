@@ -126,4 +126,4 @@ Sully et al. (2022) - "Present and future bright and dark spots for coral reefs 
 1. Install an external `reefshift` package if available, or
 2. Create a local `reefshift/utils/config.py` module with appropriate path configurations
 
-See `src/models/hb_beta_model.py` for the import statement.
+Hierarchical beta model: `from src.models import hbb` (implementation in `src/models/hbb/`). CLI: `python -m src.models.hbb.cli`.
