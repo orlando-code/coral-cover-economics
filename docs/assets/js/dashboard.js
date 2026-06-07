@@ -18,6 +18,8 @@
         let countryBoundaries = null;
         let renderTimeout = null;  // For debouncing
         let isRendering = false;  // Prevent concurrent renders
+        let useVectorTilesForSites = false;
+        const siteFileCache = new Map();
         const VALUE_TYPES = ['tourism', 'fisheries', 'coastal_protection'];
         const VALUE_TYPE_LABELS = {
             all: 'All datasets',
@@ -32,6 +34,156 @@
         };
         
         const DATA_PATH = 'exported_data/';
+        const POINT_RADIUS_CONFIG = {
+            lowZoomMax: 2,  // max zoom for low radius
+            midZoomMax: 7,  // max zoom for mid radius
+            low: 1,  // low radius
+            mid: 2,  // mid radius
+            high: 4,  // high radius
+        };
+        // Display-only alignment tweak for point layers.
+        // Set small values (e.g., +/-0.0002) only if you observe a stable offset.
+        const POINT_ALIGNMENT_OFFSET = {
+            lat: 0.0,
+            lng: 0.0,
+        };
+
+        function getPointRadius(zoom) {
+            if (zoom < POINT_RADIUS_CONFIG.lowZoomMax) return POINT_RADIUS_CONFIG.low;
+            if (zoom < POINT_RADIUS_CONFIG.midZoomMax) return POINT_RADIUS_CONFIG.mid;
+            return POINT_RADIUS_CONFIG.high;
+        }
+
+        function applyPointAlignmentOffset(latlng) {
+            if (!latlng) return latlng;
+            const dLat = Number(POINT_ALIGNMENT_OFFSET.lat || 0);
+            const dLng = Number(POINT_ALIGNMENT_OFFSET.lng || 0);
+            if (dLat === 0 && dLng === 0) return latlng;
+            return L.latLng(latlng.lat + dLat, latlng.lng + dLng);
+        }
+
+        function lonLatToTile(lon, lat, zoom) {
+            const n = Math.pow(2, zoom);
+            const clampedLat = Math.max(Math.min(lat, 85.05112878), -85.05112878);
+            const x = Math.max(
+                0,
+                Math.min(
+                    n - 1,
+                    Math.floor(((lon + 180) / 360) * n)
+                )
+            );
+            const latRad = (clampedLat * Math.PI) / 180;
+            const y = Math.max(
+                0,
+                Math.min(
+                    n - 1,
+                    Math.floor(
+                        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
+                    )
+                )
+            );
+            return { x, y };
+        }
+
+        function getTileKeysForBounds(bounds, zoom) {
+            if (!bounds) return [];
+            const north = bounds.getNorth();
+            const south = bounds.getSouth();
+            const west = bounds.getWest();
+            const east = bounds.getEast();
+            const n = Math.pow(2, zoom);
+
+            const yMin = lonLatToTile(0, north, zoom).y;
+            const yMax = lonLatToTile(0, south, zoom).y;
+
+            const lonRanges = west <= east
+                ? [{ west, east }]
+                : [{ west, east: 180 }, { west: -180, east }];
+
+            const keys = new Set();
+            lonRanges.forEach((range) => {
+                const xMin = lonLatToTile(range.west, 0, zoom).x;
+                const xMax = lonLatToTile(range.east, 0, zoom).x;
+                for (let x = xMin; x <= xMax; x++) {
+                    const wrappedX = ((x % n) + n) % n;
+                    for (let y = yMin; y <= yMax; y++) {
+                        if (y >= 0 && y < n) {
+                            keys.add(`${zoom}/${wrappedX}/${y}`);
+                        }
+                    }
+                }
+            });
+            return Array.from(keys);
+        }
+
+        async function fetchGeoJsonWithCache(filename) {
+            if (siteFileCache.has(filename)) {
+                return siteFileCache.get(filename);
+            }
+            const response = await fetch(DATA_PATH + filename);
+            if (!response.ok) {
+                return null;
+            }
+            const parsed = await response.json();
+            siteFileCache.set(filename, parsed);
+            return parsed;
+        }
+
+        async function loadDatasetWidePointTileFeatures({
+            datasetKey,
+            scenarioDatasetKey,
+            tileKeys,
+            datasetTileIndex,
+        }) {
+            const datasetEntry = datasetTileIndex?.[datasetKey];
+            if (!datasetEntry) {
+                return [];
+            }
+            const geometryFiles = datasetEntry.geometry || {};
+            const attributeFiles = datasetEntry.attributes || {};
+            const keysToLoad = tileKeys && tileKeys.length > 0
+                ? tileKeys
+                : Object.keys(geometryFiles);
+
+            const perTileFeatures = await Promise.all(
+                keysToLoad.map(async (tileKey) => {
+                    const geomFile = geometryFiles[tileKey];
+                    const attrFile = attributeFiles[tileKey];
+                    if (!geomFile || !attrFile) {
+                        return [];
+                    }
+                    const [geomData, attrData] = await Promise.all([
+                        fetchGeoJsonWithCache(geomFile),
+                        fetchGeoJsonWithCache(attrFile),
+                    ]);
+                    if (!geomData || !Array.isArray(geomData.features)) {
+                        return [];
+                    }
+                    const scenarioColumns = attrData?.scenario_metrics?.[scenarioDatasetKey] || {};
+                    const getMetric = (name, idx) => {
+                        const arr = scenarioColumns?.[name];
+                        if (!Array.isArray(arr)) return 0;
+                        const value = Number(arr[idx] || 0);
+                        return Number.isFinite(value) ? value : 0;
+                    };
+                    return geomData.features.map((feature, idx) => ({
+                        type: 'Feature',
+                        geometry: feature.geometry,
+                        properties: {
+                            ...(feature.properties || {}),
+                            value_loss: getMetric('value_loss', idx),
+                            loss_fraction: getMetric('loss_fraction', idx),
+                            coral_change: getMetric('coral_change', idx),
+                            annual_loss: getMetric('annual_loss', idx),
+                            cumulative_loss: getMetric('cumulative_loss', idx),
+                            cumulative_loss_fraction: getMetric('cumulative_loss_fraction', idx),
+                        },
+                    }));
+                })
+            );
+
+            return perTileFeatures.flat();
+        }
 
         function getSelectedValueType(controlId, fallback = 'all') {
             const control = document.getElementById(controlId);
@@ -1546,16 +1698,14 @@
             // Re-render on zoom/move for viewport-based rendering
             let zoomMoveTimeout = null;
             map.on('zoomend moveend', () => {
-                if (currentSiteGeojson && !isRendering) {
+                if (!isRendering) {
                     clearTimeout(zoomMoveTimeout);
                     zoomMoveTimeout = setTimeout(() => {
-                        const scenario = document.getElementById('map-scenario')?.value;
-                        const isCumulative = scenario?.startsWith('cumulative_');
-                        const currentView = {
-                            center: map.getCenter(),
-                            zoom: map.getZoom()
-                        };
-                        renderSites(currentSiteGeojson, isCumulative, currentView);
+                        // Reload chunked GeoJSON on viewport changes.
+                        // In vector tile mode, tile loading is handled natively by Leaflet.VectorGrid.
+                        if (!useVectorTilesForSites) {
+                            loadSiteData();
+                        }
                     }, 300);  // Debounce zoom/move events
                 }
             });
@@ -1670,39 +1820,155 @@
                 return;
             }
             setMapEmptyState('');
-            const buildFilename = (datasetKey) => `sites_${datasetKey}_${scenarioKey}_${sanitizedModel}.json`;
+            const buildScenarioKey = (datasetKey) => `${datasetKey}_${scenarioKey}_${sanitizedModel}`;
             const datasetsToLoad = selectedValueTypes;
-            const filenames = datasetsToLoad.map(buildFilename);
+            const scenarioDatasetKeys = datasetsToLoad.map(buildScenarioKey);
+            const vectorTileIndex = siteManifest?.vector_tile_scenarios || {};
+            const pointChunkIndex = siteManifest?.site_point_chunks || {};
+            const chunkZoom = Number(siteManifest?.site_point_chunk_zoom);
+            const datasetTileIndex = isCumulative
+                ? (siteManifest?.site_dataset_tiles_cumulative || {})
+                : (siteManifest?.site_dataset_tiles_annual || {});
+            const datasetTileZoom = Number(
+                isCumulative
+                    ? siteManifest?.site_dataset_tile_zoom_cumulative
+                    : siteManifest?.site_dataset_tile_zoom_annual
+            );
+            const effectiveTileZoom = Number.isFinite(datasetTileZoom) ? datasetTileZoom : chunkZoom;
+            const visibleTileKeys = Number.isFinite(effectiveTileZoom)
+                ? getTileKeysForBounds(map.getBounds(), effectiveTileZoom)
+                : [];
+            const minPointMapZoom = Number(siteManifest?.site_dataset_min_map_zoom ?? 4);
+            const canLoadDatasetWidePointsAtZoom = map.getZoom() >= minPointMapZoom;
+            const canUseDatasetWideTiles = Boolean(
+                scenarioDatasetKeys.length > 0 &&
+                canLoadDatasetWidePointsAtZoom &&
+                datasetsToLoad.every((datasetKey) => {
+                    const entry = datasetTileIndex?.[datasetKey];
+                    return entry && entry.geometry && entry.attributes;
+                })
+            );
+
+            const canUseVectorTiles = Boolean(
+                L?.vectorGrid &&
+                scenarioDatasetKeys.length > 0 &&
+                !canUseDatasetWideTiles &&
+                scenarioDatasetKeys.every((k) => Boolean(vectorTileIndex[k]?.url_template))
+            );
+
+            if (canUseVectorTiles) {
+                useVectorTilesForSites = true;
+                console.log('Loading site data using vector tiles', {
+                    scenario,
+                    model,
+                    selectedValueTypes,
+                    scenarioDatasetKeys,
+                });
+                renderVectorTileSites(
+                    scenarioDatasetKeys,
+                    vectorTileIndex,
+                    isCumulative,
+                    currentView
+                );
+                isInitialMapLoad = false;
+                return;
+            }
+
+            useVectorTilesForSites = false;
+
+            const filesToFetch = new Set();
+            scenarioDatasetKeys.forEach((scenarioDatasetKey) => {
+                filesToFetch.add(`sites_${scenarioDatasetKey}.json`);
+                if (canUseDatasetWideTiles) {
+                    return;
+                }
+                const tileMap = pointChunkIndex[scenarioDatasetKey];
+                if (tileMap && visibleTileKeys.length > 0) {
+                    visibleTileKeys.forEach((tileKey) => {
+                        const chunkFile = tileMap[tileKey];
+                        if (chunkFile) {
+                            filesToFetch.add(chunkFile);
+                        }
+                    });
+                }
+            });
+            const filenames = Array.from(filesToFetch);
             
-            console.log('Loading site data:', { scenario, model, selectedValueTypes, isCumulative, scenarioKey, sanitizedModel, filenames });
+            console.log('Loading site data:', {
+                scenario,
+                model,
+                selectedValueTypes,
+                isCumulative,
+                scenarioKey,
+                sanitizedModel,
+                chunkZoom: effectiveTileZoom,
+                mapZoom: map.getZoom(),
+                minPointMapZoom,
+                canUseDatasetWideTiles,
+                requestedTiles: visibleTileKeys.length,
+                filenames,
+            });
             
             try {
-                const geojsons = await Promise.all(
-                    filenames.map(async (filename) => {
-                        const response = await fetch(DATA_PATH + filename);
-                        if (!response.ok) return null;
-                        return response.json();
-                    })
-                );
-                const validGeojsons = geojsons.filter(g => g && Array.isArray(g.features));
-                if (validGeojsons.length === 0) {
+                const [baseGeojsons, datasetWidePointFeatures] = await Promise.all([
+                    Promise.all(
+                        scenarioDatasetKeys.map((scenarioDatasetKey) =>
+                            fetchGeoJsonWithCache(`sites_${scenarioDatasetKey}.json`)
+                        )
+                    ),
+                    canUseDatasetWideTiles
+                        ? Promise.all(
+                            datasetsToLoad.map((datasetKey) =>
+                                loadDatasetWidePointTileFeatures({
+                                    datasetKey,
+                                    scenarioDatasetKey: buildScenarioKey(datasetKey),
+                                    tileKeys: visibleTileKeys,
+                                    datasetTileIndex,
+                                })
+                            )
+                        )
+                        : Promise.resolve([]),
+                ]);
+                const validBaseGeojsons = baseGeojsons.filter(g => g && Array.isArray(g.features));
+                let features = validBaseGeojsons.flatMap((g) => g.features || []);
+
+                if (canUseDatasetWideTiles) {
+                    features = features.concat(datasetWidePointFeatures.flat());
+                } else {
+                    const extraGeojsons = await Promise.all(
+                        filenames
+                            .filter((name) => !name.startsWith('sites_'))
+                            .map((filename) => fetchGeoJsonWithCache(filename))
+                    );
+                    const validExtraGeojsons = extraGeojsons.filter(g => g && Array.isArray(g.features));
+                    features = features.concat(validExtraGeojsons.flatMap((g) => g.features || []));
+                }
+
+                if (features.length === 0) {
                     console.error('No site datasets found for selection', { filenames });
                     siteLayer.clearLayers();
                     currentSiteGeojson = null;
-                    setMapEmptyState('No map data found for selected datasets.');
-                    updateMapLegend(scale, showChoropleth, null, 'No datasets with available map data');
+                    if (!canLoadDatasetWidePointsAtZoom && datasetsToLoad.some((k) => Boolean(datasetTileIndex?.[k]))) {
+                        setMapEmptyState(`Zoom in to at least ${minPointMapZoom} to load point datasets.`);
+                        updateMapLegend(scale, showChoropleth, null, 'Point datasets load when zoomed in');
+                    } else {
+                        setMapEmptyState('No map data found for selected datasets.');
+                        updateMapLegend(scale, showChoropleth, null, 'No datasets with available map data');
+                    }
                     return;
                 }
                 setMapEmptyState('');
                 const geojson = {
                     type: 'FeatureCollection',
-                    features: validGeojsons.flatMap(g => g.features || []),
+                    features,
                 };
                 
                 if (!geojson || !geojson.features || geojson.features.length === 0) {
-                    console.warn('GeoJSON has no features');
+                    console.warn('GeoJSON has no features for current viewport');
                     siteLayer.clearLayers();
                     currentSiteGeojson = null;
+                    setMapEmptyState('No features available in the current map view.');
+                    updateMapLegend(scale, showChoropleth, null, 'No features in current viewport');
                     return;
                 }
                 
@@ -1912,6 +2178,112 @@
                 features: filteredFeatures
             };
         }
+
+        function renderVectorTileSites(scenarioDatasetKeys, vectorTileIndex, isCumulative = false, preserveView = null) {
+            if (!map || !siteLayer) {
+                return;
+            }
+            if (isRendering) {
+                return;
+            }
+            isRendering = true;
+            siteLayer.clearLayers();
+            currentSiteGeojson = null;
+
+            const metric = document.getElementById('map-metric').value;
+            const scale = getColorScale(isCumulative, metric);
+            const showChoropleth = document.getElementById('map-choropleth-toggle').checked;
+            const zoom = map.getZoom();
+            const lossType = isCumulative ? 'Cumulative' : 'Annual';
+
+            const formatMoney = (val) => {
+                if (val >= 1e6) return `$${(val / 1e6).toFixed(2)}M`;
+                if (val >= 1e3) return `$${(val / 1e3).toFixed(1)}k`;
+                return `$${val.toFixed(0)}`;
+            };
+
+            const getFeatureColorValue = (props) => {
+                const lossFraction = Number(props?.loss_fraction || 0);
+                const lossValue = isCumulative
+                    ? Number(props?.cumulative_loss || 0)
+                    : Number(props?.value_loss || props?.annual_loss || 0);
+                return metric === 'loss_percent' ? lossFraction : lossValue;
+            };
+
+            const styleByGeometry = (properties, z, geometryDimension) => {
+                const colorValue = getFeatureColorValue(properties || {});
+                const fillColor = getColorFromScale(colorValue, scale);
+                // Use a geometry-agnostic style so points remain visible even if
+                // geometryDimension semantics vary across vector tile sources.
+                return {
+                    radius: getPointRadius(z),
+                    fill: true,
+                    fillColor: fillColor,
+                    fillOpacity: 0.75,
+                    color: '#0f172a',
+                    weight: 0.8,
+                    opacity: 0.95,
+                };
+            };
+
+            try {
+                scenarioDatasetKeys.forEach((scenarioKey) => {
+                    const entry = vectorTileIndex[scenarioKey];
+                    if (!entry?.url_template) return;
+
+                    const layerName = entry.layer || 'sites';
+                    const tileUrl = DATA_PATH + entry.url_template;
+                    const vectorLayer = L.vectorGrid.protobuf(tileUrl, {
+                        interactive: true,
+                        pane: 'sitePointPane',
+                        maxNativeZoom: Number(entry.max_zoom || 14),
+                        vectorTileLayerStyles: {
+                            [layerName]: styleByGeometry
+                        }
+                    });
+
+                    vectorLayer.on('click', (e) => {
+                        const props = e.layer?.properties || {};
+                        const lossFraction = Number(props.loss_fraction || 0);
+                        const lossValue = isCumulative
+                            ? Number(props.cumulative_loss || 0)
+                            : Number(props.value_loss || props.annual_loss || 0);
+                        const popupContent = `
+                            <div class="popup-content">
+                                <strong>${props.country || 'Unknown'}</strong><br>
+                                Dataset: ${formatValueType(props.value_type || 'unknown')}<br>
+                                <span style="color: #94a3b8;">${describeValueType(props.value_type)}</span><br>
+                                Original Value (annual): ${formatMoney(Number(props.original_value || 0))}<br>
+                                ${lossType} Loss: ${formatMoney(lossValue)} (${(lossFraction * 100).toFixed(1)}%)<br>
+                                Coral change: ${(Number(props.coral_change || 0) * 100).toFixed(1)}pp
+                            </div>
+                        `;
+                        L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(map);
+                    });
+
+                    siteLayer.addLayer(vectorLayer);
+                });
+
+                updateMapLegend(
+                    scale,
+                    showChoropleth,
+                    null,
+                    'Vector tiles mode (zoom/pan loaded natively)'
+                );
+
+                if (!preserveView) {
+                    map.setView(map.getCenter(), zoom);
+                }
+                if (showChoropleth) {
+                    renderChoropleth();
+                }
+                bringPointLayersToFront();
+            } catch (error) {
+                console.error('Error rendering vector tiles:', error);
+            } finally {
+                isRendering = false;
+            }
+        }
         
         function renderSites(geojson, isCumulative = false, preserveView = null) {
             if (!geojson || !geojson.features || geojson.features.length === 0) {
@@ -2034,14 +2406,15 @@
                 const props = feature.properties || {};
                 const colorValue = getFeatureColorValue(props);
                 const fillColor = getColorFromScale(colorValue, scale);
-                return L.circleMarker(latlng, {
+                return L.circleMarker(applyPointAlignmentOffset(latlng), {
                     pane: 'sitePointPane',
-                    radius: zoom < 4 ? 3 : zoom < 7 ? 4.5 : 6,
+                    radius: getPointRadius(zoom),
                     fillColor,
                     color: '#0f172a',
                     weight: 0.8,
                     opacity: 0.95,
                     fillOpacity: 0.8,
+                    stroke: false
                 });
             };
             
@@ -2131,7 +2504,14 @@
                             map.setView([0, 0], 2);
                         }
                     } else if (preserveView) {
-                        map.setView(preserveView.center, preserveView.zoom);
+                        const currentCenter = map.getCenter();
+                        const centerChanged =
+                            Math.abs(currentCenter.lat - preserveView.center.lat) > 1e-9 ||
+                            Math.abs(currentCenter.lng - preserveView.center.lng) > 1e-9;
+                        const zoomChanged = map.getZoom() !== preserveView.zoom;
+                        if (centerChanged || zoomChanged) {
+                            map.setView(preserveView.center, preserveView.zoom);
+                        }
                     }
                     
                     // Update choropleth if it's enabled

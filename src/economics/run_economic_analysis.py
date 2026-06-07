@@ -60,9 +60,9 @@ from src.economics.data_loader import (
 from src.economics.plotting import (
     generate_figure_set,
     generate_verification_plots,
-    plot_composite_economic_layers,
     plot_annual_loss_trajectories,
     plot_annual_value_trajectories,
+    plot_composite_economic_layers,
     plot_coral_cover_trajectories,
     plot_cumulative_loss_trajectories,
     plot_gdp_impact_scenario_comparison,
@@ -101,6 +101,7 @@ CONFIG = {
     "save_formats": ["png", "html"],
     "top_n_countries": 20,
     "export_web_data": True,
+    "sample_fraction": 1.0,
 }
 
 # =============================================================================
@@ -108,7 +109,19 @@ CONFIG = {
 # =============================================================================
 
 
-def load_previous_results(run_name: str, verbose: bool = True):
+def _validate_sample_fraction(sample_fraction: float) -> float:
+    """Validate and normalize sampling fraction."""
+    if sample_fraction is None:
+        return 1.0
+    sample_fraction = float(sample_fraction)
+    if not (0 < sample_fraction <= 1):
+        raise ValueError("sample_fraction must be in the range (0, 1].")
+    return sample_fraction
+
+
+def load_previous_results(
+    run_name: str, verbose: bool = True, sample_fraction: float = 1
+):
     """
     Load previous results from a saved run.
 
@@ -118,6 +131,8 @@ def load_previous_results(run_name: str, verbose: bool = True):
         Name of the run directory (e.g., "run_20260119_105256")
     verbose : bool
         Print loading progress
+    sample_fraction : float
+        Fraction of site-level rows to keep when loading result GeoDataFrames.
 
     Returns
     -------
@@ -137,7 +152,8 @@ def load_previous_results(run_name: str, verbose: bool = True):
     if verbose:
         print(f"  Loading from: {run_dir}")
 
-    results = AnalysisResults.load(run_dir / "results")
+    sample_fraction = _validate_sample_fraction(sample_fraction)
+    results = AnalysisResults.load(run_dir / "results", sample_fraction=sample_fraction)
     cumulative_results = load_cumulative_results(run_dir, verbose=verbose)
 
     if verbose:
@@ -836,9 +852,7 @@ def step_generate_outputs(
             )
         if "by_country_by_dataset" in data:
             for dataset_key, table in data["by_country_by_dataset"].items():
-                table.to_csv(
-                    subdirs["summary"] / f"{dataset_key}_input_by_country.csv"
-                )
+                table.to_csv(subdirs["summary"] / f"{dataset_key}_input_by_country.csv")
 
     combined_results = build_combined_result_country_table(results)
     if not combined_results.empty:
@@ -933,6 +947,7 @@ def step_export_web_data(
     if output_dir is None:
         output_dir = Path("docs/exported_data")
     output_dir.mkdir(parents=True, exist_ok=True)
+    sample_fraction = _validate_sample_fraction(sample_fraction)
 
     # Export using pre-computed results (no re-running the pipeline!)
     if verbose:
@@ -964,7 +979,7 @@ def step_export_web_data(
 # =============================================================================
 
 
-def run_pipeline(verbose: bool = True):
+def run_pipeline(verbose: bool = True, sample_fraction: float | None = None):
     """
     Run the complete analysis pipeline.
 
@@ -977,6 +992,10 @@ def run_pipeline(verbose: bool = True):
     print("# CORAL REEF ECONOMICS ANALYSIS PIPELINE")
     print("#" * 60)
     print(f"\nStarted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if sample_fraction is None:
+        sample_fraction = CONFIG.get("sample_fraction", 1.0)
+    sample_fraction = _validate_sample_fraction(sample_fraction)
 
     # Step 1: Load data
     data = step_load_data(verbose)
@@ -1009,7 +1028,13 @@ def run_pipeline(verbose: bool = True):
         print_cumulative_summary(cumulative)
 
     if CONFIG.get("export_web_data", False):
-        step_export_web_data(results, cumulative, data, verbose=verbose)
+        step_export_web_data(
+            results,
+            cumulative,
+            data,
+            sample_fraction=sample_fraction,
+            verbose=verbose,
+        )
 
     print("\n" + "#" * 60)
     print("# PIPELINE COMPLETE")
@@ -1064,6 +1089,12 @@ def main():
         default=None,
         help="Load previous results from a run directory (e.g., 'run_20260119_105256')",
     )
+    parser.add_argument(
+        "--sample-fraction",
+        type=float,
+        default=1,
+        help="Fraction of data to sample for web visualization",
+    )
 
     args = parser.parse_args()
 
@@ -1081,13 +1112,18 @@ def main():
         CONFIG["models"] = {m: {} for m in args.models}
     if args.export_web_data:
         CONFIG["export_web_data"] = args.export_web_data
+    CONFIG["sample_fraction"] = _validate_sample_fraction(args.sample_fraction)
 
     # Load previous results if requested
     if args.load_run:
         print(f"\n{'=' * 60}")
         print(f"LOADING PREVIOUS RESULTS: {args.load_run}")
         print(f"{'=' * 60}\n")
-        loaded = load_previous_results(args.load_run, verbose=not args.quiet)
+        loaded = load_previous_results(
+            args.load_run,
+            verbose=not args.quiet,
+            sample_fraction=CONFIG["sample_fraction"],
+        )
         print("\n✓ Results loaded successfully!")
         print("\nTo use these results, access them via:")
         print("  - loaded['results']: AnalysisResults object")
@@ -1097,7 +1133,7 @@ def main():
         return loaded
 
     # Run pipeline
-    run_pipeline(verbose=not args.quiet)
+    run_pipeline(verbose=not args.quiet, sample_fraction=CONFIG["sample_fraction"])
 
 
 if __name__ == "__main__":

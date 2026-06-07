@@ -132,7 +132,7 @@ def load_coral_cover_data(
         Container with DataFrame and column metadata.
     """
     if filepath is None:
-        filepath = config.sully_data_dir / "data_for_maps.csv"
+        filepath = config.sully_og_dir / "data_for_maps.csv"
 
     df = pd.read_csv(filepath).rename(columns=str.lower)
 
@@ -371,8 +371,10 @@ def load_tourism_data(
         Container with GeoDataFrame and metadata.
     """
     dataset_key = "tourism"
-    cached = None if refresh_cache else _load_cached_economic_data(
-        dataset_key, cache_path, verbose=verbose
+    cached = (
+        None
+        if refresh_cache
+        else _load_cached_economic_data(dataset_key, cache_path, verbose=verbose)
     )
     if cached is not None:
         return cached
@@ -610,8 +612,10 @@ def load_fisheries_data(
 ) -> EconomicValueData:
     """Load reef fisheries points, deriving and caching them from predicted catch."""
     dataset_key = "fisheries"
-    cached = None if refresh_cache else _load_cached_economic_data(
-        dataset_key, cache_path, verbose=verbose
+    cached = (
+        None
+        if refresh_cache
+        else _load_cached_economic_data(dataset_key, cache_path, verbose=verbose)
     )
     if cached is not None:
         return cached
@@ -712,9 +716,7 @@ def _summarise_generic_economic_data(
     print(f"  Total: {total:,.2f}")
     if "country" in gdf.columns:
         top = (
-            gdf.groupby("country")[spec.value_column]
-            .sum()
-            .sort_values(ascending=False)
+            gdf.groupby("country")[spec.value_column].sum().sort_values(ascending=False)
         )
         print("\n  🏆 Top 10 Countries by Value:")
         for i, (country, value) in enumerate(top.head(10).items(), 1):
@@ -760,18 +762,17 @@ def load_shoreline_protection_data(
     """
     del countries_shapefile, eez_path  # Kept for backwards-compatible signature.
     dataset_key = "coastal_protection"
-    cached = None if refresh_cache else _load_cached_economic_data(
-        dataset_key, cache_path, verbose=verbose
+    cached = (
+        None
+        if refresh_cache
+        else _load_cached_economic_data(dataset_key, cache_path, verbose=verbose)
     )
     if cached is not None:
         return cached
 
     if geoparquet_path is None:
         candidates = [
-            config.economics_data_dir
-            / "test"
-            / "geoparquet"
-            / "GDP_spared_PT.parquet",
+            config.economics_data_dir / "test" / "geoparquet" / "GDP_spared_PT.parquet",
             config.economics_data_dir
             / "test_holistic"
             / "geoparquet"
@@ -824,7 +825,9 @@ def _validate_protection_data(gdf: gpd.GeoDataFrame) -> None:
     print(
         f"  Countries: {gdf['country'].nunique() if 'country' in gdf.columns else 'N/A'}"
     )
-    value_col = "gdp_spared_pt" if "gdp_spared_pt" in gdf.columns else "gdp_spared_class"
+    value_col = (
+        "gdp_spared_pt" if "gdp_spared_pt" in gdf.columns else "gdp_spared_class"
+    )
     if value_col in gdf.columns:
         print(f"  Values: {gdf[value_col].nunique()} unique")
 
@@ -1147,7 +1150,9 @@ def compute_combined_country_aggregations(
     long_df = pd.concat(rows, ignore_index=True)
     combined = (
         long_df.groupby(["country", "iso_a3"], dropna=False)
-        .agg(composite_value=("dataset_value", "sum"), n_datasets=("dataset", "nunique"))
+        .agg(
+            composite_value=("dataset_value", "sum"), n_datasets=("dataset", "nunique")
+        )
         .reset_index()
         .set_index("iso_a3")
     )
@@ -1164,9 +1169,7 @@ def compute_combined_country_aggregations(
         print("📊 COMBINED COUNTRY AGGREGATIONS")
         print(f"{'─' * 60}")
         print(f"  Countries: {len(combined)}")
-        print(
-            "  Composite value sums all configured layers; units are layer-specific."
-        )
+        print("  Composite value sums all configured layers; units are layer-specific.")
         print(f"  Total composite value: {combined['composite_value'].sum():,.2f}")
         print(f"{'─' * 60}\n")
 

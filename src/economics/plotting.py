@@ -4,8 +4,8 @@ Plotting utilities for coral reef economics analysis.
 Provides both static (matplotlib) and interactive (plotly) visualizations.
 """
 
-import warnings
 import json
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -32,17 +32,16 @@ from .depreciation_models import (
     TippingPointModel,
 )
 
-# =============================================================================
-# STYLE CONFIGURATION
-# =============================================================================
+# -- Style configuration ------------------------------------------------------
 
-# Color palette (colorblind-friendly)
+# Colourblind-friendly colour palette
 COLOURS = {
     "rcp45": plot_utils.get_wa_colormap(n_colours=100, index=0),  # Blue
     "rcp85": plot_utils.get_wa_colormap(n_colours=100, index=-1),  # Red
-    "tourism": "#2ecc71",  # Green
-    "protection": "#9b59b6",  # Purple
-    "neutral": "#7f8c8d",  # Gray
+    "neutral": "#7f8c8d",
+    "linear": "#3498db",
+    "compound": "#e74c3c",
+    "tipping_point": "#9b59b6",
 }
 
 # Scenario display names
@@ -162,9 +161,7 @@ GDP_IMPACT_COMPARISON_CONFIG = {
 country_mapping = {
     "N. Mariana Is.": "Northern Mariana Islands",
 }
-# =============================================================================
-# UTILS
-# =============================================================================
+# -- Helpers ---------------------------------------------------------
 
 
 def parse_scenario(scenario_name, model_name):
@@ -211,9 +208,7 @@ def sort_key(item):
     return (rcp, year, model)
 
 
-# =============================================================================
-# MODEL COMPARISON PLOTS
-# =============================================================================
+# -- Depreciation model plots ---------------------------------------------------------
 
 
 def plot_model_comparison(
@@ -275,46 +270,6 @@ def plot_model_comparison(
                 non_tipping_point_model=m,
                 save_path=save_path / f"{save_name}.png" if save_path else None,
             )
-
-    # if delta_cc_range is None:
-    #     delta_cc_range = np.linspace(0, -1.0, 101)  # 0 to -100pp
-
-    # if ax is None:
-    #     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
-    # else:
-    #     fig = ax.figure
-
-    # # Convert to percentage points for display
-    # x_values = delta_cc_range * 100  # Now in percentage points
-
-    # for model in models:
-    #     # Handle tipping point model which requires original_cc
-    #     if model.model_type == "tipping_point":
-    #         # Use default original_cc for comparison plots
-    #         threshold = getattr(model, "threshold_cc", 0.1)
-    #         remaining = model.calculate(
-    #             delta_cc_range, value, original_cc=0.5, threshold=threshold
-    #         )
-    #     else:
-    #         remaining = model.calculate(delta_cc_range, value)
-    #     loss_pct = 100 * (value - remaining) / value
-    #     ax.plot(np.abs(x_values), loss_pct, label=model.name, linewidth=2)
-
-    # ax.set_xlabel("Coral Cover Decrease (percentage points)", fontsize=12)
-    # ax.set_ylabel("Value Loss (%)", fontsize=12)
-    # ax.set_title("Depreciation Model Comparison", fontsize=14)
-    # ax.legend(loc="upper left")
-    # ax.grid(True, alpha=0.3)
-    # ax.set_xlim(0, 100)
-    # ax.set_ylim(0, 100)
-
-    # plt.tight_layout()
-
-    # if save_path:
-    #     fig.savefig(save_path, dpi=150, bbox_inches="tight")
-    #     print(f"Saved: {save_path}")
-
-    # return fig
 
 
 def plot_non_tipping_point_model(
@@ -537,9 +492,7 @@ def plot_tipping_point_model(
     return fig
 
 
-# =============================================================================
-# STATIC (MATPLOTLIB) PLOTS
-# =============================================================================
+# -- Static matplotlib plots ---------------------------------------------------------
 
 
 def plot_country_losses(
@@ -1221,9 +1174,7 @@ def plot_loss_distribution(
     return fig
 
 
-# =============================================================================
-# INTERACTIVE (PLOTLY) PLOTS
-# =============================================================================
+# -- Interactive plotly plots ---------------------------------------------------------
 
 
 def plot_choropleth_interactive(
@@ -1410,9 +1361,7 @@ def plot_model_comparison_interactive(
     return fig
 
 
-# =============================================================================
-# REPORT GENERATION
-# =============================================================================
+# -- Generate report plots ---------------------------------------------------------
 
 
 def generate_figure_set(
@@ -1480,9 +1429,7 @@ def generate_figure_set(
     return saved_files
 
 
-# =============================================================================
-# VERIFICATION PLOTS (from original notebook)
-# =============================================================================
+# -- Verification plots (from economics_verification.ipynb) ---------------------------------------------------------
 
 
 def plot_gdp_percentage_bar(
@@ -1522,7 +1469,7 @@ def plot_gdp_percentage_bar(
     ax.barh(
         df[country_column].values[::-1],
         df[gdp_pct_column].values[::-1],
-        color="#3498db",
+        color=COLOURS["linear"],
         alpha=0.8,
     )
     ax.grid(True, axis="x", alpha=0.3)
@@ -2332,7 +2279,6 @@ def plot_spatial_distribution_interactive(
         The interactive folium map.
     """
     import folium
-
     from shapely.geometry import box
 
     if bbox:
@@ -2711,9 +2657,7 @@ def generate_verification_plots(
     return saved_files
 
 
-# =============================================================================
-# DEPRECIATION AS % OF GDP PLOTS
-# =============================================================================
+# -- Depreciation as % of GDP plots Example text ---------------------------------------------------------
 
 
 def plot_loss_as_gdp_pct_bar(
@@ -2929,9 +2873,7 @@ def plot_loss_as_gdp_pct_choropleth(
     return fig
 
 
-# =============================================================================
-# TRAJECTORY AND CUMULATIVE IMPACT PLOTS
-# =============================================================================
+# -- Trajectory and cumulative impact plots ---------------------------------------------------------
 
 
 def plot_coral_cover_trajectories(
@@ -2956,10 +2898,10 @@ def plot_coral_cover_trajectories(
 
     # Color and style mappings
     scenario_colors = {
-        "RCP45": "#3498db",
-        "RCP85": "#e74c3c",
-        "rcp45": "#3498db",
-        "rcp85": "#e74c3c",
+        "RCP45": COLOURS["linear"],
+        "RCP85": COLOURS["compound"],
+        "rcp45": COLOURS["linear"],
+        "rcp85": COLOURS["compound"],
     }
     method_styles = {"linear": "-", "exponential": "--"}
 
@@ -3024,10 +2966,10 @@ def plot_annual_value_trajectories(
     fig, ax = plt.subplots(figsize=(12, 7))
 
     scenario_colors = {
-        "RCP45": "#3498db",
-        "RCP85": "#e74c3c",
-        "rcp45": "#3498db",
-        "rcp85": "#e74c3c",
+        "RCP45": COLOURS["linear"],
+        "RCP85": COLOURS["compound"],
+        "rcp45": COLOURS["linear"],
+        "rcp85": COLOURS["compound"],
     }
     method_styles = {"linear": "-", "exponential": "--"}
 
@@ -3221,10 +3163,10 @@ def plot_annual_loss_trajectories(
         ax2 = None
 
     scenario_colors = {
-        "RCP45": "#3498db",
-        "RCP85": "#e74c3c",
-        "rcp45": "#3498db",
-        "rcp85": "#e74c3c",
+        "RCP45": COLOURS["linear"],
+        "RCP85": COLOURS["compound"],
+        "rcp45": COLOURS["linear"],
+        "rcp85": COLOURS["compound"],
     }
     method_styles = {"linear": "-", "exponential": "--"}
 
@@ -3263,7 +3205,7 @@ def plot_annual_loss_trajectories(
                 linewidth=2,
                 label=f"{label} - Value Lost",
                 alpha=0.7,
-                linestyle="-",
+                # linestyle="-",
             )
             # Opportunity cost (stays high after collapse)
             ax2.plot(
@@ -3274,7 +3216,7 @@ def plot_annual_loss_trajectories(
                 linewidth=2,
                 label=f"{label} - Opportunity Cost",
                 alpha=0.7,
-                linestyle=":",
+                # linestyle=":",
             )
 
     ax1.set_ylabel("Total Annual Loss ($ Billion/year)", fontsize=12)
@@ -3346,10 +3288,10 @@ def plot_trajectory_comparison_interactive(
     )
 
     scenario_colors = {
-        "RCP45": "#3498db",
-        "RCP85": "#e74c3c",
-        "rcp45": "#3498db",
-        "rcp85": "#e74c3c",
+        "RCP45": COLOURS["linear"],
+        "RCP85": COLOURS["compound"],
+        "rcp45": COLOURS["linear"],
+        "rcp85": COLOURS["compound"],
     }
     method_dashes = {"linear": "solid", "exponential": "dash"}
 
@@ -3647,9 +3589,9 @@ def plot_cumulative_loss_scenario_comparison(
     # Model legend (colors to distinguish models - no hatching)
     model_handles = []
     model_colors = {
-        "Linear": "#3498db",  # Blue
-        "Compound": "#e74c3c",  # Red
-        "Tipping Point": "#9b59b6",  # Purple
+        "Linear": COLOURS["linear"],  # Blue
+        "Compound": COLOURS["compound"],  # Red
+        "Tipping Point": COLOURS["tipping_point"],  # Purple
     }
     for model in model_order:
         model_color = model_colors.get(model, "grey")
