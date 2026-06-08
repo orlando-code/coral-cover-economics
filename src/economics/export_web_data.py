@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
+
 try:
     from rich.console import Console
     from rich.panel import Panel
@@ -31,7 +32,6 @@ from src.economics import run_economic_analysis
 from src.economics.analysis import AnalysisResults
 from src.economics.cumulative_impact import CumulativeImpactResult
 from src.utils import make_json_safe
-
 
 POINT_TILE_ZOOM = 5
 VECTOR_TILE_MIN_ZOOM = 0
@@ -55,11 +55,8 @@ RETRYABLE_WRITE_ERRNOS = {5, 35, 54, 89}
 # 810K individual fishery points to ~10-15K occupied 1° cells — a ~50-100×
 # reduction in data volume with no meaningful loss for global-scale maps.
 #
-# Resolution choice: 1.0° (≈111 km) for large datasets, 0.5° for smaller.
-# Override at call time via grid_resolution parameter.
-GRID_RESOLUTION_LARGE = 0.5   # fisheries/coastal-protection are sent to a back pane
-GRID_RESOLUTION_SMALL = 0.5   # tourism foreground resolution
-GRID_LARGE_THRESHOLD = 100_000
+# Grid cell size is set by the caller (CLI: --cell-resolution in
+# run_economic_analysis.py) and written to manifest.json for the frontend.
 
 # ---------------------------------------------------------------------------
 # Compact site geometry format
@@ -89,12 +86,17 @@ def _quantize_geometry(geom_dict: dict, decimals: int = POLYGON_COORD_DECIMALS) 
         return geom_dict
 
     def _round_coords(coords):
-        if isinstance(coords, (list, tuple)) and coords and isinstance(
-            coords[0], (list, tuple)
+        if (
+            isinstance(coords, (list, tuple))
+            and coords
+            and isinstance(coords[0], (list, tuple))
         ):
             return [_round_coords(c) for c in coords]
         if isinstance(coords, (list, tuple)) and len(coords) >= 2:
-            return [round(float(coords[0]), decimals), round(float(coords[1]), decimals)]
+            return [
+                round(float(coords[0]), decimals),
+                round(float(coords[1]), decimals),
+            ]
         return coords
 
     return {
@@ -105,7 +107,11 @@ def _quantize_geometry(geom_dict: dict, decimals: int = POLYGON_COORD_DECIMALS) 
 
 def _quantize_for_type(geom_dict: dict) -> dict:
     geom_type = (geom_dict or {}).get("type", "")
-    decimals = POINT_COORD_DECIMALS if geom_type in {"Point", "MultiPoint"} else POLYGON_COORD_DECIMALS
+    decimals = (
+        POINT_COORD_DECIMALS
+        if geom_type in {"Point", "MultiPoint"}
+        else POLYGON_COORD_DECIMALS
+    )
     return _quantize_geometry(geom_dict, decimals=decimals)
 
 
@@ -114,7 +120,11 @@ def _lonlat_to_tile(lon: float, lat: float, zoom: int) -> tuple[int, int]:
     n = 2**zoom
     x = int((lon + 180.0) / 360.0 * n)
     lat_rad = math.radians(lat)
-    y = int((1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
+    y = int(
+        (1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi)
+        / 2.0
+        * n
+    )
     x = max(0, min(n - 1, x))
     y = max(0, min(n - 1, y))
     return x, y
@@ -126,9 +136,17 @@ def _point_tile_key_from_geom(geom_dict: dict, zoom: int) -> str:
         return f"{zoom}/0/0"
 
     # For MultiPoint, use centroid-ish average to assign a stable tile.
-    if (geom_dict or {}).get("type") == "MultiPoint" and isinstance(coords, list) and coords:
-        lons = [float(c[0]) for c in coords if isinstance(c, (list, tuple)) and len(c) >= 2]
-        lats = [float(c[1]) for c in coords if isinstance(c, (list, tuple)) and len(c) >= 2]
+    if (
+        (geom_dict or {}).get("type") == "MultiPoint"
+        and isinstance(coords, list)
+        and coords
+    ):
+        lons = [
+            float(c[0]) for c in coords if isinstance(c, (list, tuple)) and len(c) >= 2
+        ]
+        lats = [
+            float(c[1]) for c in coords if isinstance(c, (list, tuple)) and len(c) >= 2
+        ]
         lon = float(np.mean(lons)) if lons else 0.0
         lat = float(np.mean(lats)) if lats else 0.0
     else:
@@ -496,17 +514,13 @@ def _sanitize_key(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _auto_resolution(n_sites: int) -> float:
-    return GRID_RESOLUTION_LARGE if n_sites > GRID_LARGE_THRESHOLD else GRID_RESOLUTION_SMALL
-
-
 def _build_polygon_geojson(
     ref_gdf: Any,
     grid_index: Dict[str, Any],
-    simplify_tolerance: float = 0.002,
+    cell_resolution: float,
 ) -> Dict[str, Any]:
     """
-    Union the actual polygon geometries within each 0.5° grid cell and return
+    Union the actual polygon geometries within each grid cell and return
     a GeoJSON FeatureCollection whose feature `id` matches the cell index used
     by the companion metrics file.
 
@@ -515,8 +529,12 @@ def _build_polygon_geojson(
     JS can look up per-cell metrics by array position.
     """
     from collections import defaultdict
-    from shapely.ops import unary_union
+
     import shapely.geometry as sg
+    from shapely.ops import unary_union
+
+    # Scale simplification with cell size (0.004 × resolution ≈ 0.002° at 0.5°).
+    simplify_tolerance = cell_resolution * 0.004
 
     row_to_cell = grid_index["row_to_cell"]
     cells = grid_index["cells"]
@@ -539,11 +557,7 @@ def _build_polygon_geojson(
         ]
         if not valid_geoms:
             continue
-        merged = (
-            valid_geoms[0]
-            if len(valid_geoms) == 1
-            else unary_union(valid_geoms)
-        )
+        merged = valid_geoms[0] if len(valid_geoms) == 1 else unary_union(valid_geoms)
         simplified = merged.simplify(simplify_tolerance, preserve_topology=True)
         if simplified is None or simplified.is_empty:
             continue
@@ -564,7 +578,7 @@ def _build_polygon_geojson(
     return {
         "type": "FeatureCollection",
         "geom_type": "polygon",
-        "grid_resolution_deg": grid_index.get("resolution", 0.5),
+        "grid_resolution_deg": cell_resolution,
         "n_cells": n_cells,
         "n_features": len(features),
         "features": features,
@@ -588,8 +602,11 @@ def _build_grid_index(
         n_cells     : int
     """
     import warnings as _warnings
+
     with _warnings.catch_warnings():
-        _warnings.filterwarnings("ignore", message=".*geographic CRS.*centroid.*", category=UserWarning)
+        _warnings.filterwarnings(
+            "ignore", message=".*geographic CRS.*centroid.*", category=UserWarning
+        )
         centroids = gdf_wgs84.geometry.centroid
     raw_lons = centroids.x.to_numpy()
     raw_lats = centroids.y.to_numpy()
@@ -675,6 +692,7 @@ def export_gridded_site_results(
     results: "AnalysisResults",
     output_dir: Path,
     mode: str,
+    cell_resolution: float,
     cumulative_results: Optional[Dict[str, "CumulativeImpactResult"]] = None,
 ) -> None:
     """
@@ -688,7 +706,13 @@ def export_gridded_site_results(
     Typical reduction: 810 K fishery points → ~12 K grid cells at 1° resolution.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-    _log_section(f"Gridded site export [{mode}] → {output_dir}")
+    cell_resolution = float(cell_resolution)
+    if cell_resolution <= 0:
+        raise ValueError("cell_resolution must be > 0.")
+    _log_section(
+        f"Gridded site export [{mode}] → {output_dir} "
+        f"(cell_resolution={cell_resolution}°)"
+    )
 
     # Build cumulative lookup if needed
     cumulative_lookup: Dict[tuple, float] = {}
@@ -702,7 +726,9 @@ def export_gridded_site_results(
                 if ty in cr.years:
                     idx = np.where(cr.years == ty)[0]
                     if len(idx):
-                        cumulative_lookup[(cr.value_type, sc, ty, mn)] = cr.cumulative_losses[idx[0]]
+                        cumulative_lookup[(cr.value_type, sc, ty, mn)] = (
+                            cr.cumulative_losses[idx[0]]
+                        )
 
     # Group by value_type
     by_vt: Dict[str, list] = {}
@@ -734,9 +760,8 @@ def export_gridded_site_results(
             .to_numpy()
         )
 
-        resolution = _auto_resolution(n_sites)
+        resolution = cell_resolution
         grid_index = _build_grid_index(ref_gdf, countries, orig_val, resolution)
-        grid_index["resolution"] = resolution  # expose for _build_polygon_geojson
         row_to_cell = grid_index["row_to_cell"]
         n_cells = grid_index["n_cells"]
 
@@ -750,7 +775,7 @@ def export_gridded_site_results(
         geom_path = output_dir / grid_file
         if has_polygons:
             print(f"  {vt}: building polygon union per grid cell …", flush=True)
-            geom_data = _build_polygon_geojson(ref_gdf, grid_index)
+            geom_data = _build_polygon_geojson(ref_gdf, grid_index, cell_resolution)
             geom_data["value_type"] = vt
             geom_data["n_sites_raw"] = n_sites
         else:
@@ -770,16 +795,28 @@ def export_gridded_site_results(
             gdf = result.gdf
 
             annual_loss = (
-                gdf.get("value_loss", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
+                gdf.get("value_loss", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
             )
             orig_val_r = (
-                gdf.get("original_value", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
+                gdf.get("original_value", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
             )
             loss_fraction = (
-                gdf.get("loss_fraction", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
+                gdf.get("loss_fraction", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
             )
             coral_change = (
-                gdf.get("coral_change", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
+                gdf.get("coral_change", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
             )
 
             if mode == "cumulative":
@@ -796,7 +833,9 @@ def export_gridded_site_results(
                     cum_loss = np.zeros(len(gdf), dtype=float)
                     cum_frac = np.zeros(len(gdf), dtype=float)
                 rcp_str = rcp
-                skey = _sanitize_key(f"{vt}_cumulative_{rcp_str}_{yr}_{result.model.name}")
+                skey = _sanitize_key(
+                    f"{vt}_cumulative_{rcp_str}_{yr}_{result.model.name}"
+                )
                 metric_arrays = {
                     "value_loss": annual_loss,
                     "loss_fraction": loss_fraction,
@@ -852,6 +891,7 @@ def export_gridded_site_results(
     manifest_path = output_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     manifest[f"gridded_sites_{mode}"] = manifest_update
+    manifest["cell_resolution_deg"] = cell_resolution
     _write_json_file(manifest_path, manifest, indent=2)
 
 
@@ -865,7 +905,9 @@ def _centroid_lonlat(geom) -> tuple[float, float]:
     """Return (lon, lat) centroid for any geometry type."""
     try:
         c = geom.centroid
-        return round(float(c.x), POINT_COORD_DECIMALS), round(float(c.y), POINT_COORD_DECIMALS)
+        return round(float(c.x), POINT_COORD_DECIMALS), round(
+            float(c.y), POINT_COORD_DECIMALS
+        )
     except Exception:
         return 0.0, 0.0
 
@@ -922,7 +964,9 @@ def _build_scenario_metric_arrays(
     Returns {metric: [float, ...]} aligned to the site geometry list.
     """
     n_sites = max(geom_key_to_idx.values()) + 1 if geom_key_to_idx else 0
-    result_metrics: Dict[str, list[float]] = {m: [0.0] * n_sites for m in SITE_METRIC_FIELDS}
+    result_metrics: Dict[str, list[float]] = {
+        m: [0.0] * n_sites for m in SITE_METRIC_FIELDS
+    }
 
     gdf_wgs84 = gdf.to_crs("EPSG:4326")
     for row_idx, geom in enumerate(gdf_wgs84.geometry.values):
@@ -1014,10 +1058,30 @@ def export_compact_site_results(
         for result in vt_results:
             gdf = result.gdf
 
-            annual_loss = gdf.get("value_loss", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
-            original_value = gdf.get("original_value", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
-            loss_fraction = gdf.get("loss_fraction", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
-            coral_change = gdf.get("coral_change", pd.Series(0, index=gdf.index)).fillna(0).astype(float).to_numpy()
+            annual_loss = (
+                gdf.get("value_loss", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
+            )
+            original_value = (
+                gdf.get("original_value", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
+            )
+            loss_fraction = (
+                gdf.get("loss_fraction", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
+            )
+            coral_change = (
+                gdf.get("coral_change", pd.Series(0, index=gdf.index))
+                .fillna(0)
+                .astype(float)
+                .to_numpy()
+            )
 
             if mode == "cumulative":
                 scenario = result.scenario.lower()
@@ -1028,7 +1092,9 @@ def export_compact_site_results(
                 )
                 total_annual_loss = result.total_loss
                 if total_cumulative is not None and total_annual_loss > 0:
-                    cumulative_loss = (annual_loss / total_annual_loss) * total_cumulative
+                    cumulative_loss = (
+                        annual_loss / total_annual_loss
+                    ) * total_cumulative
                     with np.errstate(divide="ignore", invalid="ignore"):
                         cumulative_fraction = np.where(
                             original_value > 0, cumulative_loss / original_value, 0.0
@@ -1073,7 +1139,9 @@ def export_compact_site_results(
             "metric_fields": list(SITE_METRIC_FIELDS),
             "scenarios": scenario_metrics,
         }
-        _write_json_file(output_dir / metrics_file, metrics_payload, separators=(",", ":"))
+        _write_json_file(
+            output_dir / metrics_file, metrics_payload, separators=(",", ":")
+        )
 
         sites_manifest[value_type] = {
             "geom_file": geom_file,
@@ -1180,8 +1248,7 @@ def _build_vector_tile_manifest_entries(
     max_workers = min(4, len(scenario_geojson_files))
     with ThreadPoolExecutor(max_workers=max_workers or 1) as executor:
         futures = [
-            executor.submit(_build_one, item)
-            for item in scenario_geojson_files.items()
+            executor.submit(_build_one, item) for item in scenario_geojson_files.items()
         ]
         for future in as_completed(futures):
             scenario_key, entry = future.result()
@@ -1333,12 +1400,17 @@ def export_cumulative_site_results(
     cumulative_results: Dict[str, CumulativeImpactResult],
     output_dir: Path,
     sample_fraction: float = 1,
+    cell_resolution: float = 0.5,
 ) -> None:
     """Export cumulative site-level results as a spatial grid aggregation."""
     output_dir.mkdir(parents=True, exist_ok=True)
     _log_section(f"Exporting gridded cumulative site results → {output_dir}")
     export_gridded_site_results(
-        results, output_dir, mode="cumulative", cumulative_results=cumulative_results
+        results,
+        output_dir,
+        mode="cumulative",
+        cell_resolution=cell_resolution,
+        cumulative_results=cumulative_results,
     )
     exported_scenarios = [
         _sanitize_key(
@@ -1358,17 +1430,19 @@ def export_site_results(
     results: AnalysisResults,
     output_dir: Path,
     sample_fraction: float = 0.1,
+    cell_resolution: float = 0.5,
 ) -> None:
     """Export site-level results as a spatial grid aggregation.
 
-    Sites are snapped to a regular lat/lon grid (1° for large datasets,
-    0.5° for smaller ones) and metrics averaged per cell.  This replaces
-    both the per-scenario GeoJSON approach and the tile system, producing
-    files that are 50–200× smaller than the per-site alternatives.
+    Sites are snapped to a regular lat/lon grid at ``cell_resolution`` degrees
+    and metrics averaged per cell.  This replaces the per-scenario GeoJSON
+    approach and the tile system.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     _log_section(f"Exporting gridded site results → {output_dir}")
-    export_gridded_site_results(results, output_dir, mode="annual")
+    export_gridded_site_results(
+        results, output_dir, mode="annual", cell_resolution=cell_resolution
+    )
     # Collect scenario keys for manifest only
     exported_scenarios = [
         _sanitize_key(f"{r.value_type}_{r.scenario}_{r.model.name}")
@@ -1581,7 +1655,11 @@ def export_gdp_impact(
     print(f"Exported GDP impact data: {len(gdp_impacts)} records")
 
 
-def run_export(output_dir: Optional[Path] = None, sample_fraction: float = 0.1) -> Path:
+def run_export(
+    output_dir: Optional[Path] = None,
+    sample_fraction: float = 0.1,
+    cell_resolution: float = 0.5,
+) -> Path:
     """Run the full export pipeline."""
     if output_dir is None:
         output_dir = Path("docs/exported_data")
@@ -1595,7 +1673,9 @@ def run_export(output_dir: Optional[Path] = None, sample_fraction: float = 0.1) 
     # Run the analysis pipeline
     print("\nRunning analysis pipeline...")
     pipeline_results = run_economic_analysis.run_pipeline(
-        verbose=False, sample_fraction=sample_fraction
+        verbose=False,
+        sample_fraction=sample_fraction,
+        cell_resolution=cell_resolution,
     )
 
     results = pipeline_results["results"]
@@ -1605,7 +1685,12 @@ def run_export(output_dir: Optional[Path] = None, sample_fraction: float = 0.1) 
     # Export all data
     print("\nExporting data...")
     export_country_results(results, output_dir)
-    export_site_results(results, output_dir, sample_fraction=sample_fraction)
+    export_site_results(
+        results,
+        output_dir,
+        sample_fraction=sample_fraction,
+        cell_resolution=cell_resolution,
+    )
     export_trajectory_data(cumulative, output_dir)
     export_summary_stats(results, cumulative, output_dir)
     export_model_comparison(output_dir)

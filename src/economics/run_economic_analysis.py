@@ -103,6 +103,7 @@ CONFIG = {
     "top_n_countries": 20,
     "export_web_data": True,
     "sample_fraction": 1.0,
+    "cell_resolution": 0.5,
 }
 
 # =============================================================================
@@ -118,6 +119,17 @@ def _validate_sample_fraction(sample_fraction: float) -> float:
     if not (0 < sample_fraction <= 1):
         raise ValueError("sample_fraction must be in the range (0, 1].")
     return sample_fraction
+
+
+def _validate_cell_resolution(cell_resolution: float) -> float:
+    """Validate and normalize cell resolution (degrees)."""
+    try:
+        value = float(cell_resolution)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("cell_resolution must be a positive float.") from exc
+    if value <= 0:
+        raise ValueError("cell_resolution must be > 0.")
+    return value
 
 
 def load_previous_results(
@@ -929,6 +941,7 @@ def step_export_web_data(
     data: dict,
     output_dir: Path = None,
     sample_fraction: float = 1.0,
+    cell_resolution: float = 0.5,
     verbose: bool = True,
 ):
     """Step 7: Export data for web visualization using pre-computed results."""
@@ -952,19 +965,30 @@ def step_export_web_data(
         output_dir = Path("docs/exported_data")
     output_dir.mkdir(parents=True, exist_ok=True)
     sample_fraction = _validate_sample_fraction(sample_fraction)
+    cell_resolution = _validate_cell_resolution(cell_resolution)
 
     # Export using pre-computed results (no re-running the pipeline!)
     if verbose:
         print("\n  Exporting data for web visualization...")
+        print(f"  Grid cell resolution: {cell_resolution}°")
 
     export_country_results(results, output_dir)
-    export_site_results(results, output_dir, sample_fraction=sample_fraction)
+    export_site_results(
+        results,
+        output_dir,
+        sample_fraction=sample_fraction,
+        cell_resolution=cell_resolution,
+    )
 
     if cumulative_results:
         export_trajectory_data(cumulative_results, output_dir)
         export_cumulative_country_results(results, cumulative_results, output_dir)
         export_cumulative_site_results(
-            results, cumulative_results, output_dir, sample_fraction=sample_fraction
+            results,
+            cumulative_results,
+            output_dir,
+            sample_fraction=sample_fraction,
+            cell_resolution=cell_resolution,
         )
 
     export_summary_stats(results, cumulative_results or {}, output_dir)
@@ -983,7 +1007,11 @@ def step_export_web_data(
 # =============================================================================
 
 
-def run_pipeline(verbose: bool = True, sample_fraction: float | None = None):
+def run_pipeline(
+    verbose: bool = True,
+    sample_fraction: float | None = None,
+    cell_resolution: float | None = None,
+):
     """
     Run the complete analysis pipeline.
 
@@ -1000,6 +1028,10 @@ def run_pipeline(verbose: bool = True, sample_fraction: float | None = None):
     if sample_fraction is None:
         sample_fraction = CONFIG.get("sample_fraction", 1.0)
     sample_fraction = _validate_sample_fraction(sample_fraction)
+
+    if cell_resolution is None:
+        cell_resolution = CONFIG.get("cell_resolution", 0.5)
+    cell_resolution = _validate_cell_resolution(cell_resolution)
 
     # Step 1: Load data
     data = step_load_data(verbose)
@@ -1036,6 +1068,7 @@ def run_pipeline(verbose: bool = True, sample_fraction: float | None = None):
             results,
             cumulative,
             data,
+            cell_resolution=cell_resolution,
             sample_fraction=sample_fraction,
             verbose=verbose,
         )
@@ -1099,6 +1132,12 @@ def main():
         default=1,
         help="Fraction of data to sample for web visualization",
     )
+    parser.add_argument(
+        "--cell-resolution",
+        type=float,
+        default=0.5,
+        help="Resolution of the cell grid for web visualization",
+    )
 
     args = parser.parse_args()
 
@@ -1117,6 +1156,7 @@ def main():
     if args.export_web_data:
         CONFIG["export_web_data"] = args.export_web_data
     CONFIG["sample_fraction"] = _validate_sample_fraction(args.sample_fraction)
+    CONFIG["cell_resolution"] = _validate_cell_resolution(args.cell_resolution)
 
     # Load previous results if requested
     if args.load_run:
@@ -1137,7 +1177,11 @@ def main():
         return loaded
 
     # Run pipeline
-    run_pipeline(verbose=not args.quiet, sample_fraction=CONFIG["sample_fraction"])
+    run_pipeline(
+        verbose=not args.quiet,
+        sample_fraction=CONFIG["sample_fraction"],
+        cell_resolution=CONFIG["cell_resolution"],
+    )
 
 
 if __name__ == "__main__":
