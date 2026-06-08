@@ -3,6 +3,7 @@
     "tourism": {
       "grid_file": "sites_grid_tourism.json",
       "metrics_file": "sites_metrics_annual_tourism.json",
+      "geom_type": "polygon",
       "grid_resolution_deg": 0.5,
       "n_cells": 3497,
       "n_sites_raw": 63180,
@@ -11,16 +12,18 @@
     "fisheries": {
       "grid_file": "sites_grid_fisheries.json",
       "metrics_file": "sites_metrics_annual_fisheries.json",
-      "grid_resolution_deg": 1.0,
-      "n_cells": 1537,
+      "geom_type": "grid",
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3266,
       "n_sites_raw": 810182,
       "n_scenarios": 12
     },
     "coastal_protection": {
       "grid_file": "sites_grid_coastal_protection.json",
       "metrics_file": "sites_metrics_annual_coastal_protection.json",
-      "grid_resolution_deg": 1.0,
-      "n_cells": 1243,
+      "geom_type": "grid",
+      "grid_resolution_deg": 0.5,
+      "n_cells": 2471,
       "n_sites_raw": 313487,
       "n_scenarios": 12
     }
@@ -68,6 +71,7 @@
     "tourism": {
       "grid_file": "sites_grid_tourism.json",
       "metrics_file": "sites_metrics_cumulative_tourism.json",
+      "geom_type": "polygon",
       "grid_resolution_deg": 0.5,
       "n_cells": 3497,
       "n_sites_raw": 63180,
@@ -76,16 +80,18 @@
     "fisheries": {
       "grid_file": "sites_grid_fisheries.json",
       "metrics_file": "sites_metrics_cumulative_fisheries.json",
-      "grid_resolution_deg": 1.0,
-      "n_cells": 1537,
+      "geom_type": "grid",
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3266,
       "n_sites_raw": 810182,
       "n_scenarios": 12
     },
     "coastal_protection": {
       "grid_file": "sites_grid_coastal_protection.json",
       "metrics_file": "sites_metrics_cumulative_coastal_protection.json",
-      "grid_resolution_deg": 1.0,
-      "n_cells": 1243,
+      "geom_type": "grid",
+      "grid_resolution_deg": 0.5,
+      "n_cells": 2471,
       "n_sites_raw": 313487,
       "n_scenarios": 12
     }

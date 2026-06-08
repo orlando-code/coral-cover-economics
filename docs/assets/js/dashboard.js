@@ -14,6 +14,10 @@
         let map = null;
         let isInitialMapLoad = true;
         let siteLayer = null;
+        let siteGridLayer = null;
+        let siteTourismLayer = null;
+        let siteGridRenderer = null;
+        let siteTourismRenderer = null;
         let choroplethLayer = null;
         let countryBoundaries = null;
         let renderTimeout = null;  // For debouncing
@@ -127,6 +131,122 @@
             const parsed = await response.json();
             siteFileCache.set(filename, parsed);
             return parsed;
+        }
+
+        /**
+         * Load pre-aggregated grid-cell features for the new compact export format.
+         * Geometry is stored once per value_type; metrics are columnar arrays per scenario.
+         */
+        async function loadGriddedSiteFeatures({
+            datasetKey,
+            scenarioDatasetKey,
+            griddedEntry,
+        }) {
+            if (!griddedEntry?.grid_file || !griddedEntry?.metrics_file) {
+                return [];
+            }
+
+            const [gridData, metricsData] = await Promise.all([
+                fetchGeoJsonWithCache(griddedEntry.grid_file),
+                fetchGeoJsonWithCache(griddedEntry.metrics_file),
+            ]);
+
+            const isPolygonGeojson =
+                gridData?.type === 'FeatureCollection' && gridData?.geom_type === 'polygon';
+            const hasGridCells = Array.isArray(gridData?.cells) && gridData.cells.length > 0;
+
+            if (!isPolygonGeojson && !hasGridCells) {
+                console.warn('Gridded data missing for', datasetKey, griddedEntry);
+                return [];
+            }
+            if (!metricsData?.scenarios) {
+                console.warn('Metrics data missing for', datasetKey);
+                return [];
+            }
+
+            const scenarioMetrics = metricsData.scenarios[scenarioDatasetKey];
+            if (!scenarioMetrics) {
+                console.warn(
+                    'No gridded metrics for scenario',
+                    scenarioDatasetKey,
+                    'available:',
+                    Object.keys(metricsData.scenarios)
+                );
+                return [];
+            }
+
+            const resolution = Number(gridData.grid_resolution_deg) || 0.5;
+            const getMetric = (name, idx) => {
+                const arr = scenarioMetrics[name];
+                if (!Array.isArray(arr)) return 0;
+                const value = Number(arr[idx] ?? 0);
+                return Number.isFinite(value) ? value : 0;
+            };
+
+            // ── Polygon path (e.g. tourism reef polygons) ──────────────────────
+            if (isPolygonGeojson) {
+                return gridData.features
+                    .map((feature) => {
+                        const ci = feature.id ?? feature.properties?.i;
+                        if (ci == null) return null;
+                        const valueLoss = getMetric('value_loss', ci);
+                        const lossFraction = getMetric('loss_fraction', ci);
+                        const originalValue = Number(feature.properties?.ov ?? 0);
+                        if (originalValue <= 0 && valueLoss <= 0 && lossFraction <= 0) {
+                            return null;
+                        }
+                        return {
+                            ...feature,
+                            properties: {
+                                site_id: ci,
+                                country: feature.properties?.co || '',
+                                value_type: datasetKey,
+                                original_value: originalValue,
+                                n_sites: Number(feature.properties?.n ?? 1),
+                                value_loss: valueLoss,
+                                loss_fraction: lossFraction,
+                                coral_change: getMetric('coral_change', ci),
+                                annual_loss: getMetric('annual_loss', ci),
+                                cumulative_loss: getMetric('cumulative_loss', ci),
+                                cumulative_loss_fraction: getMetric('cumulative_loss_fraction', ci),
+                            },
+                        };
+                    })
+                    .filter(Boolean);
+            }
+
+            // ── Grid-cell path (fisheries, coastal protection) ─────────────────
+            return gridData.cells
+                .map((cell, idx) => {
+                    const valueLoss = getMetric('value_loss', idx);
+                    const lossFraction = getMetric('loss_fraction', idx);
+                    const originalValue = Number(cell.ov ?? 0);
+                    if (originalValue <= 0 && valueLoss <= 0 && lossFraction <= 0) {
+                        return null;
+                    }
+                    return {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [Number(cell.lon), Number(cell.lat)],
+                        },
+                        properties: {
+                            site_id: cell.i,
+                            country: cell.co || '',
+                            value_type: datasetKey,
+                            original_value: originalValue,
+                            n_sites: Number(cell.n ?? 1),
+                            grid_resolution_deg: resolution,
+                            value_loss: valueLoss,
+                            loss_fraction: lossFraction,
+                            coral_change: getMetric('coral_change', idx),
+                            annual_loss: getMetric('annual_loss', idx),
+                            cumulative_loss: getMetric('cumulative_loss', idx),
+                            cumulative_loss_fraction: getMetric('cumulative_loss_fraction', idx),
+                        },
+                    };
+                })
+                .filter(Boolean);
         }
 
         async function loadDatasetWidePointTileFeatures({
@@ -1680,15 +1800,28 @@
                 maxZoom: 18
             }).addTo(map);
 
-            // Explicit pane ordering to keep points above choropleths.
+            // Pane ordering (Leaflet tilePane = 200):
+            //   siteBackPane    250 – fisheries/coastal grid cells
+            //   choroplethPane  380 – country choropleth
+            //   sitePointPane   500 – legacy point markers
+            //   sitePolygonPane 700 – tourism reef polygons (always top geometry)
+            map.createPane('siteBackPane');
+            map.getPane('siteBackPane').style.zIndex = 250;
             map.createPane('choroplethPane');
             map.getPane('choroplethPane').style.zIndex = 380;
-            map.createPane('sitePolygonPane');
-            map.getPane('sitePolygonPane').style.zIndex = 460;
             map.createPane('sitePointPane');
-            map.getPane('sitePointPane').style.zIndex = 640;
+            map.getPane('sitePointPane').style.zIndex = 500;
+            map.createPane('sitePolygonPane');
+            map.getPane('sitePolygonPane').style.zIndex = 700;
+
+            // Dedicated renderers pinned to their panes so canvas batching cannot
+            // paint grid cells above tourism polygons.
+            siteGridRenderer = L.canvas({ pane: 'siteBackPane', padding: 0.5 });
+            siteTourismRenderer = L.svg({ pane: 'sitePolygonPane' });
             
             choroplethLayer = L.layerGroup();
+            siteGridLayer = L.layerGroup().addTo(map);
+            siteTourismLayer = L.layerGroup().addTo(map);
             siteLayer = L.layerGroup().addTo(map);
             
             // Initialize legend with default settings (annual loss %, non-cumulative)
@@ -1739,15 +1872,16 @@
             }
         }
 
-        function bringPointLayersToFront() {
-            if (!siteLayer) return;
-            siteLayer.eachLayer((layer) => {
-                const geomType = layer?.feature?.geometry?.type;
-                const isPoint = geomType === 'Point' || geomType === 'MultiPoint';
-                if (isPoint && typeof layer.bringToFront === 'function') {
-                    layer.bringToFront();
-                }
-            });
+        function clearSiteDataLayers() {
+            if (siteGridLayer) siteGridLayer.clearLayers();
+            if (siteTourismLayer) siteTourismLayer.clearLayers();
+            if (siteLayer) siteLayer.clearLayers();
+        }
+
+        function bringTourismLayersToFront() {
+            if (siteTourismLayer) {
+                siteTourismLayer.bringToFront();
+            }
         }
         
         async function loadSiteData() {
@@ -1808,7 +1942,7 @@
             const scale = getColorScale(isCumulative, metric);
             const showChoropleth = document.getElementById('map-choropleth-toggle').checked;
             if (selectedValueTypes.length === 0) {
-                siteLayer.clearLayers();
+                clearSiteDataLayers();
                 currentSiteGeojson = null;
                 setMapEmptyState('Select at least one dataset to view map values.');
                 updateMapLegend(scale, showChoropleth, null, 'No datasets selected');
@@ -1823,6 +1957,50 @@
             const buildScenarioKey = (datasetKey) => `${datasetKey}_${scenarioKey}_${sanitizedModel}`;
             const datasetsToLoad = selectedValueTypes;
             const scenarioDatasetKeys = datasetsToLoad.map(buildScenarioKey);
+
+            // Prefer compact gridded export (sites_grid_*.json + sites_metrics_*.json).
+            const griddedManifest = isCumulative
+                ? (siteManifest?.gridded_sites_cumulative || {})
+                : (siteManifest?.gridded_sites_annual || {});
+            const canUseGridded = datasetsToLoad.every((k) => Boolean(griddedManifest[k]));
+
+            if (canUseGridded) {
+                try {
+                    console.log('Loading gridded site data', {
+                        scenario,
+                        model,
+                        scenarioDatasetKeys,
+                        datasetsToLoad,
+                    });
+                    const featureLists = await Promise.all(
+                        datasetsToLoad.map((datasetKey) =>
+                            loadGriddedSiteFeatures({
+                                datasetKey,
+                                scenarioDatasetKey: buildScenarioKey(datasetKey),
+                                griddedEntry: griddedManifest[datasetKey],
+                            })
+                        )
+                    );
+                    const features = featureLists.flat();
+                    if (features.length === 0) {
+                        setMapEmptyState('No map data found for selected datasets.');
+                        updateMapLegend(scale, showChoropleth, null, 'No gridded data for selection');
+                        clearSiteDataLayers();
+                        currentSiteGeojson = null;
+                        return;
+                    }
+                    setMapEmptyState('');
+                    console.log(`✓ Loaded ${features.length} gridded cell features`);
+                    renderSites({ type: 'FeatureCollection', features }, isCumulative, currentView);
+                    isInitialMapLoad = false;
+                    return;
+                } catch (error) {
+                    console.error('Error loading gridded site data:', error);
+                    setMapEmptyState('Error loading gridded map data.');
+                    return;
+                }
+            }
+
             const vectorTileIndex = siteManifest?.vector_tile_scenarios || {};
             const pointChunkIndex = siteManifest?.site_point_chunks || {};
             const chunkZoom = Number(siteManifest?.site_point_chunk_zoom);
@@ -1946,7 +2124,7 @@
 
                 if (features.length === 0) {
                     console.error('No site datasets found for selection', { filenames });
-                    siteLayer.clearLayers();
+                    clearSiteDataLayers();
                     currentSiteGeojson = null;
                     if (!canLoadDatasetWidePointsAtZoom && datasetsToLoad.some((k) => Boolean(datasetTileIndex?.[k]))) {
                         setMapEmptyState(`Zoom in to at least ${minPointMapZoom} to load point datasets.`);
@@ -1965,7 +2143,7 @@
                 
                 if (!geojson || !geojson.features || geojson.features.length === 0) {
                     console.warn('GeoJSON has no features for current viewport');
-                    siteLayer.clearLayers();
+                    clearSiteDataLayers();
                     currentSiteGeojson = null;
                     setMapEmptyState('No features available in the current map view.');
                     updateMapLegend(scale, showChoropleth, null, 'No features in current viewport');
@@ -1980,7 +2158,7 @@
             } catch (error) {
                 console.error('Error loading site data:', error);
                 console.error('Error details:', error.message, error.stack);
-                siteLayer.clearLayers();
+                clearSiteDataLayers();
                 currentSiteGeojson = null;
             }
         }
@@ -2143,9 +2321,20 @@
             return geometry;
         }
         
+        // Extra cells kept around the viewport so partially visible grid cells / polygons
+        // are not dropped when panning or zooming.
+        const VIEWPORT_CELL_BUFFER = 2;
+        const GRID_CELL_SIZE_DEG = 0.5;
+
         // Filter features by viewport bounds
         function filterFeaturesByViewport(geojson, mapBounds) {
             if (!mapBounds) return geojson;
+
+            const pad = VIEWPORT_CELL_BUFFER * GRID_CELL_SIZE_DEG;
+            const west = mapBounds.getWest() - pad;
+            const east = mapBounds.getEast() + pad;
+            const south = mapBounds.getSouth() - pad;
+            const north = mapBounds.getNorth() + pad;
             
             const filteredFeatures = geojson.features.filter(feature => {
                 if (!feature.geometry || !feature.geometry.coordinates) return false;
@@ -2168,9 +2357,7 @@
                 
                 processCoords(feature.geometry.coordinates);
                 
-                // Check if feature intersects with viewport (with padding for edge cases)
-                return !(maxLon < mapBounds.getWest() || minLon > mapBounds.getEast() ||
-                         maxLat < mapBounds.getSouth() || minLat > mapBounds.getNorth());
+                return !(maxLon < west || minLon > east || maxLat < south || minLat > north);
             });
             
             return {
@@ -2187,7 +2374,7 @@
                 return;
             }
             isRendering = true;
-            siteLayer.clearLayers();
+            clearSiteDataLayers();
             currentSiteGeojson = null;
 
             const metric = document.getElementById('map-metric').value;
@@ -2277,7 +2464,7 @@
                 if (showChoropleth) {
                     renderChoropleth();
                 }
-                bringPointLayersToFront();
+                bringTourismLayersToFront();
             } catch (error) {
                 console.error('Error rendering vector tiles:', error);
             } finally {
@@ -2288,7 +2475,7 @@
         function renderSites(geojson, isCumulative = false, preserveView = null) {
             if (!geojson || !geojson.features || geojson.features.length === 0) {
                 console.warn('No features to render');
-                siteLayer.clearLayers();
+                clearSiteDataLayers();
                 isRendering = false;
                 return;
             }
@@ -2305,7 +2492,7 @@
             }
             isRendering = true;
             
-            siteLayer.clearLayers();
+            clearSiteDataLayers();
             currentSiteGeojson = geojson;
             
             const metric = document.getElementById('map-metric').value;
@@ -2394,6 +2581,7 @@
                 
                 return {
                     pane: 'sitePolygonPane',
+                    renderer: siteTourismRenderer,
                     fillColor: fillColor,
                     color: '#1a2332',
                     weight: zoom < 5 ? 0.5 : 1,  // Thinner lines at low zoom
@@ -2402,11 +2590,31 @@
                 };
             };
 
+            const DATASET_FILL_OPACITY = { coastal_protection: 0.65, fisheries: 0.75, tourism: 0.88 };
+
             const pointToLayer = (feature, latlng) => {
                 const props = feature.properties || {};
                 const colorValue = getFeatureColorValue(props);
                 const fillColor = getColorFromScale(colorValue, scale);
-                return L.circleMarker(applyPointAlignmentOffset(latlng), {
+                const gridRes = Number(props.grid_resolution_deg);
+                if (Number.isFinite(gridRes) && gridRes > 0) {
+                    // Fisheries/coastal-protection only: exact-fit rectangles in siteBackPane.
+                    const half = gridRes / 2;
+                    const bounds = [
+                        [latlng.lat - half, latlng.lng - half],
+                        [latlng.lat + half, latlng.lng + half],
+                    ];
+                    return L.rectangle(bounds, {
+                        pane: 'siteBackPane',
+                        renderer: siteGridRenderer,
+                        fillColor,
+                        color: 'transparent',
+                        weight: 0,
+                        fillOpacity: DATASET_FILL_OPACITY[props.value_type] ?? 0.72,
+                    });
+                }
+                const aligned = applyPointAlignmentOffset(latlng);
+                return L.circleMarker(aligned, {
                     pane: 'sitePointPane',
                     radius: getPointRadius(zoom),
                     fillColor,
@@ -2426,10 +2634,13 @@
                     (props.cumulative_loss || 0) :
                     (props.value_loss || props.annual_loss || 0);
                 
+                // const layerLabel = props.n_sites > 1
+                //     ? `Grid cell (${props.n_sites} sites)`
+                //     : (isPointGeometry(feature.geometry) ? 'Point layer' : 'Polygon layer');
                 const popupContent = `
                     <div class="popup-content">
                         <strong>${props.country || 'Unknown'}</strong><br>
-                        Dataset: ${formatValueType(props.value_type || 'unknown')} (${isPointGeometry(feature.geometry) ? 'Point layer' : 'Polygon layer'})<br>
+                        Dataset: ${formatValueType(props.value_type || 'unknown')}<br>
                         <span style="color: #94a3b8;">${describeValueType(props.value_type)}</span><br>
                         Original Value (annual): ${formatMoney(props.original_value || 0)}<br>
                         ${lossType} Loss: ${formatMoney(lossValue)} (${(lossFraction * 100).toFixed(1)}%)<br>
@@ -2449,38 +2660,44 @@
                 }))
             } : filteredGeoJSON;
             
+            // Split grid points and tourism polygons into separate layer groups so
+            // pane/renderer z-order is respected (canvas batching otherwise stacks
+            // grid cells above reef polygons).
+            const gridFeatures = simplifiedGeoJSON.features.filter((f) =>
+                isPointGeometry(f.geometry)
+            );
+            const tourismFeatures = simplifiedGeoJSON.features.filter((f) =>
+                !isPointGeometry(f.geometry)
+            );
+
             // Render features using requestAnimationFrame for smooth rendering
             requestAnimationFrame(() => {
                 try {
-                    const geoJsonLayer = L.geoJSON(simplifiedGeoJSON, {
-                        style: styleFunction,
-                        pointToLayer: pointToLayer,
-                        onEachFeature: onEachFeature
-                    });
-                    
-                    // Batch add layers with explicit z-order:
-                    // polygons first, then point layers on top.
                     let layerCount = 0;
-                    const polygonLayers = [];
-                    const pointLayers = [];
-                    geoJsonLayer.eachLayer(function(layer) {
-                        const geomType = layer?.feature?.geometry?.type;
-                        const isPoint = geomType === 'Point' || geomType === 'MultiPoint';
-                        if (isPoint) {
-                            pointLayers.push(layer);
-                        } else {
-                            polygonLayers.push(layer);
-                        }
-                        layerCount++;
-                    });
 
-                    polygonLayers.forEach((layer) => siteLayer.addLayer(layer));
-                    pointLayers.forEach((layer) => {
-                        siteLayer.addLayer(layer);
-                        if (typeof layer.bringToFront === 'function') {
-                            layer.bringToFront();
-                        }
-                    });
+                    if (gridFeatures.length > 0) {
+                        const gridGeoJson = L.geoJSON(
+                            { type: 'FeatureCollection', features: gridFeatures },
+                            { pointToLayer, onEachFeature }
+                        );
+                        gridGeoJson.eachLayer((layer) => {
+                            siteGridLayer.addLayer(layer);
+                            layerCount++;
+                        });
+                    }
+
+                    if (tourismFeatures.length > 0) {
+                        const tourismGeoJson = L.geoJSON(
+                            { type: 'FeatureCollection', features: tourismFeatures },
+                            { style: styleFunction, onEachFeature }
+                        );
+                        tourismGeoJson.eachLayer((layer) => {
+                            siteTourismLayer.addLayer(layer);
+                            layerCount++;
+                        });
+                    }
+
+                    bringTourismLayersToFront();
                     
                     console.log(`✓ Added ${layerCount} layers to map (simplified, zoom: ${zoom})`);
                     
@@ -2519,7 +2736,7 @@
                         renderChoropleth();
                     }
                     // Ensure points stay on top after any redraw.
-                    bringPointLayersToFront();
+                    bringTourismLayersToFront();
                 } catch (error) {
                     console.error('Error rendering sites:', error);
                 } finally {
@@ -2704,7 +2921,7 @@
             choroplethLayer.addLayer(styledGeoJson);
             choroplethLayer.addTo(map);
             // Reassert point precedence after choropleth draw.
-            bringPointLayersToFront();
+            bringTourismLayersToFront();
             
             // Add or update legend control
             addChoroplethLegend();
