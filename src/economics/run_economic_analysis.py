@@ -39,6 +39,7 @@ from src.economics.analysis import (
     AnalysisResults,
     calculate_depreciation,
     print_summary,
+    slim_result_gdf,
     validate_alignment,
     validate_depreciation_formula,
 )
@@ -372,6 +373,9 @@ def step_run_analysis(aligned_data: dict, models: list, verbose: bool = True):
                         warnings.warn(
                             f"    Could not add spatial cumulative losses: {e}"
                         )
+
+                # Slim the GDF immediately: drop heavy alignment/input columns.
+                result.gdf = slim_result_gdf(result.gdf)
 
                 key = f"{value_type}_{scenario}_{model.name}"
                 all_results.add(key, result)
