@@ -74,7 +74,7 @@ results/
 *.log
 *.bak
 *.cache
-.matplotlib_cache/
+.matplotlib-cache/
 
 # OS
 .DS_Store

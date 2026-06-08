@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-07T23:29:28.089579",
+  "generated": "2026-06-08T00:06:18.766349",
   "snapshot_results": [
     {
       "scenario": "y_future_rcp45_2050",
@@ -358,21 +358,6 @@
       "total_cumulative_loss_trillions": 0.6256159927114548
     },
     {
-      "key": "tourism_rcp85_exponential_Linear (3.81%/pp)",
-      "value_type": "tourism",
-      "scenario": "rcp85",
-      "interpolation": "exponential",
-      "model": "Linear (3.81%/pp)",
-      "period": "2013-2100",
-      "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 22.14888725842882,
-      "cover_change_pp": -10.895244319658332,
-      "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 19.97811608793708,
-      "annual_loss_at_end_billions": 0.14655329309066947,
-      "total_cumulative_loss_trillions": 0.6382519757346828
-    },
-    {
       "key": "tourism_rcp45_exponential_Linear (3.81%/pp)",
       "value_type": "tourism",
       "scenario": "rcp45",
@@ -386,6 +371,21 @@
       "final_value_billions": 27.619235180796675,
       "annual_loss_at_end_billions": 0.04760850849150221,
       "total_cumulative_loss_trillions": 0.36041900364740087
+    },
+    {
+      "key": "tourism_rcp85_exponential_Linear (3.81%/pp)",
+      "value_type": "tourism",
+      "scenario": "rcp85",
+      "interpolation": "exponential",
+      "model": "Linear (3.81%/pp)",
+      "period": "2013-2100",
+      "baseline_cover_pct": 33.04413157808715,
+      "final_cover_pct": 22.14888725842882,
+      "cover_change_pp": -10.895244319658332,
+      "baseline_value_billions": 34.34247243885314,
+      "final_value_billions": 19.97811608793708,
+      "annual_loss_at_end_billions": 0.14655329309066947,
+      "total_cumulative_loss_trillions": 0.6382519757346828
     },
     {
       "key": "tourism_rcp85_linear_Compound (3.81%/pp)",
@@ -448,21 +448,6 @@
       "total_cumulative_loss_trillions": 0.557198996277385
     },
     {
-      "key": "tourism_rcp85_linear_Tipping Point (threshold=10%)",
-      "value_type": "tourism",
-      "scenario": "rcp85",
-      "interpolation": "linear",
-      "model": "Tipping Point (threshold=10%)",
-      "period": "2013-2100",
-      "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 22.14888725842882,
-      "cover_change_pp": -10.895244319658332,
-      "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 18.213810871197193,
-      "annual_loss_at_end_billions": 0.5041375373002291,
-      "total_cumulative_loss_trillions": 0.7353901451724086
-    },
-    {
       "key": "tourism_rcp45_linear_Tipping Point (threshold=10%)",
       "value_type": "tourism",
       "scenario": "rcp45",
@@ -478,10 +463,10 @@
       "total_cumulative_loss_trillions": 0.4605083187958515
     },
     {
-      "key": "tourism_rcp85_exponential_Tipping Point (threshold=10%)",
+      "key": "tourism_rcp85_linear_Tipping Point (threshold=10%)",
       "value_type": "tourism",
       "scenario": "rcp85",
-      "interpolation": "exponential",
+      "interpolation": "linear",
       "model": "Tipping Point (threshold=10%)",
       "period": "2013-2100",
       "baseline_cover_pct": 33.04413157808715,
@@ -489,8 +474,8 @@
       "cover_change_pp": -10.895244319658332,
       "baseline_value_billions": 34.34247243885314,
       "final_value_billions": 18.213810871197193,
-      "annual_loss_at_end_billions": 0.4916551128924168,
-      "total_cumulative_loss_trillions": 0.7496412926049107
+      "annual_loss_at_end_billions": 0.5041375373002291,
+      "total_cumulative_loss_trillions": 0.7353901451724086
     },
     {
       "key": "tourism_rcp45_exponential_Tipping Point (threshold=10%)",
@@ -506,6 +491,21 @@
       "final_value_billions": 26.247309681574546,
       "annual_loss_at_end_billions": 0.03756986698747225,
       "total_cumulative_loss_trillions": 0.4633421778039435
+    },
+    {
+      "key": "tourism_rcp85_exponential_Tipping Point (threshold=10%)",
+      "value_type": "tourism",
+      "scenario": "rcp85",
+      "interpolation": "exponential",
+      "model": "Tipping Point (threshold=10%)",
+      "period": "2013-2100",
+      "baseline_cover_pct": 33.04413157808715,
+      "final_cover_pct": 22.14888725842882,
+      "cover_change_pp": -10.895244319658332,
+      "baseline_value_billions": 34.34247243885314,
+      "final_value_billions": 18.213810871197193,
+      "annual_loss_at_end_billions": 0.4916551128924168,
+      "total_cumulative_loss_trillions": 0.7496412926049107
     },
     {
       "key": "fisheries_rcp45_linear_Linear (3.81%/pp)",
