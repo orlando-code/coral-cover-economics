@@ -68,6 +68,7 @@ docs/_build/
 figures/
 outputs/
 results/
+*.pptx
 
 # Temporary files
 *.tmp
