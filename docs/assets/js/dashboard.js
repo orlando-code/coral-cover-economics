@@ -9,6 +9,8 @@
         let gdpImpactData = null;
         let modelCurves = null;
         let siteManifest = null;
+        let siteGridResolutionDeg = null;
+        let currentMapColorScale = null;
         let currentSiteData = null;
         let currentSiteGeojson = null;
         let map = null;
@@ -175,7 +177,16 @@
                 return [];
             }
 
-            const resolution = Number(gridData.grid_resolution_deg) || 0.5;
+            const resolution = Number(
+                metricsData.grid_resolution_deg
+                    ?? gridData.grid_resolution_deg
+                    ?? griddedEntry?.grid_resolution_deg
+                    ?? siteGridResolutionDeg
+            );
+            if (!Number.isFinite(resolution) || resolution <= 0) {
+                console.warn('Missing grid_resolution_deg for', datasetKey);
+                return [];
+            }
             const getMetric = (name, idx) => {
                 const arr = scenarioMetrics[name];
                 if (!Array.isArray(arr)) return 0;
@@ -203,6 +214,7 @@
                                 value_type: datasetKey,
                                 original_value: originalValue,
                                 n_sites: Number(feature.properties?.n ?? 1),
+                                grid_resolution_deg: resolution,
                                 value_loss: valueLoss,
                                 loss_fraction: lossFraction,
                                 coral_change: getMetric('coral_change', ci),
@@ -440,6 +452,19 @@
                 }
                 modelCurves = curves;
                 siteManifest = manifest;
+                const manifestRes = Number(manifest?.cell_resolution_deg);
+                if (Number.isFinite(manifestRes) && manifestRes > 0) {
+                    siteGridResolutionDeg = manifestRes;
+                } else {
+                    const annual = manifest?.gridded_sites_annual || {};
+                    for (const entry of Object.values(annual)) {
+                        const res = Number(entry?.grid_resolution_deg);
+                        if (Number.isFinite(res) && res > 0) {
+                            siteGridResolutionDeg = res;
+                            break;
+                        }
+                    }
+                }
                 
                 console.log('Data loaded successfully:', {
                     summary: !!summary,
@@ -1945,7 +1970,7 @@
                 clearSiteDataLayers();
                 currentSiteGeojson = null;
                 setMapEmptyState('Select at least one dataset to view map values.');
-                updateMapLegend(scale, showChoropleth, null, 'No datasets selected');
+                updateMapLegend(scale, showChoropleth, 'No datasets selected');
                 if (choroplethLayer) {
                     map.removeLayer(choroplethLayer);
                     choroplethLayer = L.layerGroup();
@@ -1984,7 +2009,7 @@
                     const features = featureLists.flat();
                     if (features.length === 0) {
                         setMapEmptyState('No map data found for selected datasets.');
-                        updateMapLegend(scale, showChoropleth, null, 'No gridded data for selection');
+                        updateMapLegend(scale, showChoropleth, 'No gridded data for selection');
                         clearSiteDataLayers();
                         currentSiteGeojson = null;
                         return;
@@ -2128,10 +2153,10 @@
                     currentSiteGeojson = null;
                     if (!canLoadDatasetWidePointsAtZoom && datasetsToLoad.some((k) => Boolean(datasetTileIndex?.[k]))) {
                         setMapEmptyState(`Zoom in to at least ${minPointMapZoom} to load point datasets.`);
-                        updateMapLegend(scale, showChoropleth, null, 'Point datasets load when zoomed in');
+                        updateMapLegend(scale, showChoropleth, 'Point datasets load when zoomed in');
                     } else {
                         setMapEmptyState('No map data found for selected datasets.');
-                        updateMapLegend(scale, showChoropleth, null, 'No datasets with available map data');
+                        updateMapLegend(scale, showChoropleth, 'No datasets with available map data');
                     }
                     return;
                 }
@@ -2146,7 +2171,7 @@
                     clearSiteDataLayers();
                     currentSiteGeojson = null;
                     setMapEmptyState('No features available in the current map view.');
-                    updateMapLegend(scale, showChoropleth, null, 'No features in current viewport');
+                    updateMapLegend(scale, showChoropleth, 'No features in current viewport');
                     return;
                 }
                 
@@ -2163,61 +2188,153 @@
             }
         }
         
-        // Color scales for different metrics
-        const COLOR_SCALES = {
-            // Green to yellow to red scale
+        // Four-bin palette tuned for dark basemaps (green → lime → orange → red).
+        const MAP_LOSS_COLORS = ['#2d9f4f', '#b8d62e', '#ff8c42', '#e01a4f'];
+
+        const COLOR_SCALE_DEFAULTS = {
             loss_percent_annual: {
-                breaks: [0.1, 0.25, 0.5],
-                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
-                labels: ['< 10%', '10–25%', '25–50%', '> 50%'],
-                title: 'Annual Loss %'
+                breaks: [0.05, 0.15, 0.35],
+                labels: ['< 5%', '5–15%', '15–35%', '≥ 35%'],
+                title: 'Annual loss %',
             },
             loss_percent_cumulative: {
-                // For cumulative: use annual loss % which is in loss_fraction
-                breaks: [0.1, 0.25, 0.5],
-                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
-                labels: ['< 10%', '10–25%', '25–50%', '> 50%'],
-                title: 'Annual Loss % (at endpoint)'
+                breaks: [0.05, 0.15, 0.35],
+                labels: ['< 5%', '5–15%', '15–35%', '≥ 35%'],
+                title: 'Annual loss % (endpoint year)',
             },
             absolute_annual: {
-                breaks: [10000, 100000, 1000000],
-                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
-                labels: ['< $10k', '$10k–$100k', '$100k–$1000k', '> $1000k'],
-                title: 'Annual Loss ($)'
+                breaks: [50000, 500000, 5000000],
+                labels: ['< $50k', '$50k–$500k', '$500k–$5M', '≥ $5M'],
+                title: 'Annual loss (USD)',
             },
             absolute_cumulative: {
-                breaks: [10000, 100000, 1000000],
-                colors: ['#22c55e', '#eab308', '#E3B710', '#F11B00'],
-                labels: ['< $10k', '$10k–$100k', '$100k–$1000k', '> $1000k'],
-                title: 'Cumulative Loss ($)'
-            }
+                breaks: [500000, 5000000, 50000000],
+                labels: ['< $500k', '$500k–$5M', '$5M–$50M', '≥ $50M'],
+                title: 'Cumulative loss (USD)',
+            },
         };
-        
-        function getColorScale(isCumulative, metric) {
+
+        function getScaleKey(isCumulative, metric) {
             if (metric === 'loss_percent') {
-                return isCumulative ? COLOR_SCALES.loss_percent_cumulative : COLOR_SCALES.loss_percent_annual;
-            } else {
-                return isCumulative ? COLOR_SCALES.absolute_cumulative : COLOR_SCALES.absolute_annual;
+                return isCumulative ? 'loss_percent_cumulative' : 'loss_percent_annual';
             }
+            return isCumulative ? 'absolute_cumulative' : 'absolute_annual';
         }
-        
+
+        function getColorScale(isCumulative, metric) {
+            const key = getScaleKey(isCumulative, metric);
+            const defaults = COLOR_SCALE_DEFAULTS[key];
+            return {
+                ...defaults,
+                colors: MAP_LOSS_COLORS,
+                metric,
+                min: 0,
+                max: defaults.breaks[2],
+            };
+        }
+
+        function quantile(sorted, p) {
+            if (!sorted.length) return 0;
+            const idx = (sorted.length - 1) * p;
+            const lo = Math.floor(idx);
+            const hi = Math.ceil(idx);
+            if (lo === hi) return sorted[lo];
+            return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+        }
+
+        function formatMetricValue(value, metric) {
+            if (value == null || !Number.isFinite(value)) return 'n/a';
+            if (metric === 'loss_percent') {
+                return `${(value * 100).toFixed(1)}%`;
+            }
+            const abs = Math.abs(value);
+            if (abs >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+            if (abs >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+            if (abs >= 1e3) return `$${(value / 1e3).toFixed(0)}k`;
+            return `$${Number(value).toFixed(0)}`;
+        }
+
+        function buildColorScaleFromValues(values, metric, isCumulative) {
+            const defaults = getColorScale(isCumulative, metric);
+            const clean = values.filter((v) => Number.isFinite(v));
+            if (clean.length === 0) {
+                return { ...defaults, dataDriven: false };
+            }
+
+            const sorted = [...clean].sort((a, b) => a - b);
+            const min = sorted[0];
+            const max = sorted[sorted.length - 1];
+
+            if (min === max) {
+                return {
+                    ...defaults,
+                    breaks: [min, min, min],
+                    labels: [
+                        formatMetricValue(min, metric),
+                        '—',
+                        '—',
+                        formatMetricValue(max, metric),
+                    ],
+                    min,
+                    max,
+                    dataDriven: true,
+                };
+            }
+
+            let breaks = [
+                quantile(sorted, 0.25),
+                quantile(sorted, 0.5),
+                quantile(sorted, 0.75),
+            ];
+            const span = Math.max(max - min, Number.EPSILON);
+            const epsilon = span * 0.02;
+            for (let i = 0; i < breaks.length; i += 1) {
+                if (i > 0 && breaks[i] <= breaks[i - 1]) {
+                    breaks[i] = breaks[i - 1] + epsilon;
+                }
+            }
+            if (breaks[2] >= max) {
+                breaks[2] = max - epsilon;
+            }
+            if (breaks[1] >= breaks[2]) {
+                breaks[1] = (breaks[0] + breaks[2]) / 2;
+            }
+
+            const labels = [
+                `< ${formatMetricValue(breaks[0], metric)}`,
+                `${formatMetricValue(breaks[0], metric)} – ${formatMetricValue(breaks[1], metric)}`,
+                `${formatMetricValue(breaks[1], metric)} – ${formatMetricValue(breaks[2], metric)}`,
+                `≥ ${formatMetricValue(breaks[2], metric)}`,
+            ];
+
+            return {
+                breaks,
+                colors: MAP_LOSS_COLORS,
+                labels,
+                title: `${defaults.title} (visible data)`,
+                metric,
+                min,
+                max,
+                dataDriven: true,
+            };
+        }
+
         function getColorFromScale(value, scale) {
+            if (!Number.isFinite(value)) return scale.colors[0];
             if (value < scale.breaks[0]) return scale.colors[0];
             if (value < scale.breaks[1]) return scale.colors[1];
             if (value < scale.breaks[2]) return scale.colors[2];
             return scale.colors[3];
         }
-        
-        function formatLegendValue(value, scaleTitle = '') {
-            if (value == null || !Number.isFinite(value)) return 'n/a';
-            const title = (scaleTitle || '').toLowerCase();
-            if (title.includes('%')) {
-                return `${(value * 100).toFixed(1)}%`;
-            }
-            if (Math.abs(value) >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-            if (Math.abs(value) >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-            if (Math.abs(value) >= 1e3) return `$${(value / 1e3).toFixed(1)}k`;
-            return `$${Number(value).toFixed(0)}`;
+
+        function steppedGradientCss(colors) {
+            const n = colors.length;
+            const stops = colors.flatMap((color, i) => {
+                const start = ((i / n) * 100).toFixed(1);
+                const end = (((i + 1) / n) * 100).toFixed(1);
+                return [`${color} ${start}%`, `${color} ${end}%`];
+            });
+            return `linear-gradient(to right, ${stops.join(', ')})`;
         }
 
         function setMapEmptyState(message = '') {
@@ -2231,47 +2348,51 @@
             }
         }
 
-        function updateMapLegend(scale, showChoropleth = false, pointRange = null, statusMessage = '') {
+        function updateMapLegend(scale, showChoropleth = false, statusMessage = '') {
             const legendEl = document.getElementById('map-legend');
             if (!legendEl) return;
-            
-            let html = `<div class="legend-title" style="font-size: 0.8rem; color: var(--text-secondary); margin-right: 1rem;">${scale.title}</div>`;
-            
-            for (let i = 0; i < scale.colors.length; i++) {
+
+            const metric = scale.metric || 'loss_percent';
+            const subtitle = scale.dataDriven
+                ? 'Bins scaled to visible map extent'
+                : 'Default bins (no visible data)';
+
+            let html = `
+                <div class="legend-scale-header">
+                    <div class="legend-title">${scale.title}</div>
+                    <div class="legend-subtitle">${subtitle}</div>
+                </div>
+                <div class="legend-colorbar">
+                    <div class="legend-colorbar-gradient" style="background: ${steppedGradientCss(scale.colors)};"></div>
+                    <div class="legend-colorbar-labels">
+                        <span>${formatMetricValue(scale.min, metric)}</span>
+                        <span>${formatMetricValue(scale.max, metric)}</span>
+                    </div>
+                </div>`;
+
+            for (let i = 0; i < scale.colors.length; i += 1) {
                 html += `
                     <div class="legend-item">
                         <div class="legend-color" style="background: ${scale.colors[i]};"></div>
                         <span>${scale.labels[i]}</span>
                     </div>`;
             }
-            
+
             if (showChoropleth) {
                 html += `
-                    <div class="legend-separator" style="border-left: 1px solid var(--border); height: 24px; margin: 0 1rem;"></div>
+                    <div class="legend-separator"></div>
                     <div class="legend-item" id="choropleth-legend">
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Choropleth: Country-level aggregates</span>
-                    </div>`;
-            }
-
-            if (pointRange && Number.isFinite(pointRange.min) && Number.isFinite(pointRange.max)) {
-                html += `
-                    <div class="legend-colorbar">
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Point colourbar</div>
-                        <div class="legend-colorbar-gradient"></div>
-                        <div class="legend-colorbar-labels">
-                            <span>${formatLegendValue(pointRange.min, scale.title)}</span>
-                            <span>${formatLegendValue(pointRange.max, scale.title)}</span>
-                        </div>
+                        <span class="legend-note">Dashed fill = no country data</span>
                     </div>`;
             }
 
             if (statusMessage) {
                 html += `
                     <div class="legend-item">
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">${statusMessage}</span>
+                        <span class="legend-note">${statusMessage}</span>
                     </div>`;
             }
-            
+
             legendEl.innerHTML = html;
         }
         
@@ -2324,13 +2445,27 @@
         // Extra cells kept around the viewport so partially visible grid cells / polygons
         // are not dropped when panning or zooming.
         const VIEWPORT_CELL_BUFFER = 2;
-        const GRID_CELL_SIZE_DEG = 0.5;
+
+        function resolveGridCellSizeDeg(geojson) {
+            if (siteGridResolutionDeg) return siteGridResolutionDeg;
+            for (const feature of geojson?.features || []) {
+                const res = Number(feature?.properties?.grid_resolution_deg);
+                if (Number.isFinite(res) && res > 0) return res;
+            }
+            const annual = siteManifest?.gridded_sites_annual || {};
+            for (const entry of Object.values(annual)) {
+                const res = Number(entry?.grid_resolution_deg);
+                if (Number.isFinite(res) && res > 0) return res;
+            }
+            return null;
+        }
 
         // Filter features by viewport bounds
         function filterFeaturesByViewport(geojson, mapBounds) {
             if (!mapBounds) return geojson;
 
-            const pad = VIEWPORT_CELL_BUFFER * GRID_CELL_SIZE_DEG;
+            const cellSize = resolveGridCellSizeDeg(geojson);
+            const pad = cellSize ? VIEWPORT_CELL_BUFFER * cellSize : 0;
             const west = mapBounds.getWest() - pad;
             const east = mapBounds.getEast() + pad;
             const south = mapBounds.getSouth() - pad;
@@ -2451,12 +2586,7 @@
                     siteLayer.addLayer(vectorLayer);
                 });
 
-                updateMapLegend(
-                    scale,
-                    showChoropleth,
-                    null,
-                    'Vector tiles mode (zoom/pan loaded natively)'
-                );
+                updateMapLegend(scale, showChoropleth, 'Vector tiles mode (zoom/pan loaded natively)');
 
                 if (!preserveView) {
                     map.setView(map.getCenter(), zoom);
@@ -2496,7 +2626,6 @@
             currentSiteGeojson = geojson;
             
             const metric = document.getElementById('map-metric').value;
-            const scale = getColorScale(isCumulative, metric);
             const showChoropleth = document.getElementById('map-choropleth-toggle').checked;
             
             // Get current zoom level
@@ -2521,34 +2650,23 @@
                 return metric === 'loss_percent' ? lossFraction : lossValue;
             };
 
-            const pointValues = filteredGeoJSON.features
-                .filter((feature) => isPointGeometry(feature.geometry))
+            const visibleValues = filteredGeoJSON.features
                 .map((feature) => getFeatureColorValue(feature.properties || {}))
                 .filter((value) => Number.isFinite(value));
-            const pointValueTypes = [
+            const visibleValueTypes = [
                 ...new Set(
                     filteredGeoJSON.features
-                        .filter((feature) => isPointGeometry(feature.geometry))
                         .map((feature) => feature?.properties?.value_type)
                         .filter(Boolean)
                 ),
             ];
-            const pointRange = pointValues.length
-                ? { min: Math.min(...pointValues), max: Math.max(...pointValues) }
-                : null;
-            const pointDatasetMessage = pointValueTypes.length
-                ? `Points represent: ${pointValueTypes.map((vt) => formatValueType(vt)).join(', ')}`
-                : '';
-            
-            // Update legend
-            updateMapLegend(
-                scale,
-                showChoropleth,
-                pointRange,
-                pointValues.length
-                    ? pointDatasetMessage
-                    : (pointDatasetMessage || 'No point features in current viewport')
-            );
+            const scale = buildColorScaleFromValues(visibleValues, metric, isCumulative);
+            currentMapColorScale = scale;
+            const datasetMessage = visibleValueTypes.length
+                ? `Showing: ${visibleValueTypes.map((vt) => formatValueType(vt)).join(', ')}`
+                : 'No features in current viewport';
+
+            updateMapLegend(scale, showChoropleth, datasetMessage);
             
             // Format values for popup
             const formatMoney = (val) => {
@@ -2750,7 +2868,7 @@
             const scenario = document.getElementById('map-scenario').value;
             const isCumulative = scenario.startsWith('cumulative_');
             const metric = document.getElementById('map-metric').value;
-            const scale = getColorScale(isCumulative, metric);
+            const scale = currentMapColorScale || getColorScale(isCumulative, metric);
             
             if (enabled) {
                 renderChoropleth();
@@ -2759,8 +2877,7 @@
                     map.removeLayer(choroplethLayer);
                     choroplethLayer = L.layerGroup();
                 }
-                // Update legend without choropleth indicator
-                updateMapLegend(scale, false, null, '');
+                updateMapLegend(scale, false, '');
                 removeChoroplethLegend();
             }
         }
@@ -2790,12 +2907,8 @@
             }
             
             const model = document.getElementById('map-model').value;
-            const scale = getColorScale(isCumulative, metric);
-            
+
             console.log('Rendering choropleth for scenario:', scenario, 'model:', model, 'isCumulative:', isCumulative, 'metric:', metric);
-            
-            // Update legend with choropleth indicator
-            updateMapLegend(scale, true);
             
             // Normalize model names for matching
             const normalizeModelName = (name) => {
@@ -2823,6 +2936,22 @@
                 : filtered;
             
             console.log('Filtered countries:', filteredData.length);
+
+            let scale = currentMapColorScale;
+            if (!scale) {
+                const countryValues = filteredData.map((c) =>
+                    metric === 'loss_percent'
+                        ? (c.loss_fraction || 0)
+                        : (isCumulative ? (c.cumulative_loss || 0) : (c.value_loss || 0))
+                );
+                scale = buildColorScaleFromValues(countryValues, metric, isCumulative);
+                currentMapColorScale = scale;
+            }
+            updateMapLegend(
+                scale,
+                true,
+                `Countries: ${selectedValueTypes.map((vt) => formatValueType(vt)).join(', ')}`
+            );
             
             // Create lookup map by country name
             const countryMetrics = {};

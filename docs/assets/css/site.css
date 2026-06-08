@@ -531,30 +531,57 @@
         }
         
         .legend-color {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .legend-scale-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            margin-right: 1rem;
+            min-width: 180px;
+        }
+
+        .legend-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .legend-subtitle,
+        .legend-note {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-separator {
+            border-left: 1px solid var(--border);
+            height: 24px;
+            margin: 0 0.5rem;
         }
 
         .legend-colorbar {
             display: flex;
             flex-direction: column;
             gap: 0.35rem;
-            min-width: 220px;
+            min-width: 240px;
+            flex: 1 1 240px;
         }
 
         .legend-colorbar-gradient {
             width: 100%;
-            height: 10px;
-            border-radius: 999px;
+            height: 12px;
+            border-radius: 4px;
             border: 1px solid var(--border);
-            background: linear-gradient(to right, #22c55e 0%, #eab308 50%, #F11B00 100%);
         }
 
         .legend-colorbar-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
         }
         
