@@ -116,7 +116,7 @@ See `requirements.txt` for full list.
 
 ## References
 
-Chen et al. (2014) - "Evaluating the economic damage of climate change on global coral reefs"
+[Chen et al. (2015)](https://doi.org/10.1016/j.gloenvcha.2014.10.011) — "Evaluating the economic damage of climate change on global coral reefs"
 Spalding et al. (2017) – "Mapping the global value and distribution of coral reef tourism"
 Sully et al. (2022) - "Present and future bright and dark spots for coral reefs through climate change"
 

@@ -1550,6 +1550,9 @@ def export_summary_stats(
     print("Exported summary statistics")
 
 
+CHEN_PAPER_URL = "https://doi.org/10.1016/j.gloenvcha.2014.10.011"
+
+
 def export_model_comparison(output_dir: Path) -> None:
     """Export depreciation model curves and metadata for the models page."""
     from src.economics.depreciation_models import apply_depreciation_model, get_model
@@ -1640,12 +1643,13 @@ def export_model_comparison(output_dir: Path) -> None:
 
     metadata = {
         "reference_cover_pct": reference_cover * 100,
+        "chen_paper_url": CHEN_PAPER_URL,
         "x_axis": "Change in coral cover (ΔC_pp)",
         "y_axis": "Remaining economic value (% of baseline)",
         "models": {
             "chen_elasticity": {
-                "title": "Chen et al. elasticity (default “linear” model)",
-                "short": "Sector-specific relative-loss functions from Chen et al. (2014/2015).",
+                "title": "Chen et al. (2015) elasticity (default “linear” model)",
+                "short": "Sector-specific relative-loss functions from Chen et al. (2015).",
                 "equations": [
                     "Relative cover change: ΔC/C₀ = (C_final − C₀) / C₀",
                     "Tourism: V_rem = V₀ × max(0, 1 + 3.807 × ΔC/C₀)",
@@ -1667,7 +1671,7 @@ def export_model_comparison(output_dir: Path) -> None:
                 "notes": [
                     "ΔC_pp is coral cover change in percentage points (not relative).",
                     "Each percentage-point loss multiplies remaining value by (1 − r).",
-                    "Used for scenario comparison; not the Chen et al. default.",
+                    "Used for scenario comparison; not the Chen et al. (2015) default.",
                 ],
             },
             "tipping_point": {
