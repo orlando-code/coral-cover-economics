@@ -278,6 +278,7 @@ def plot_non_tipping_point_model(
     delta_cc_range: np.ndarray = None,
     ax: plt.Axes = None,
     save_path: Path = None,
+    title: str = None,
 ) -> plt.Figure:
     """
     Plot the value loss curve of a non-tipping point model as a function of coral cover change.
@@ -294,7 +295,8 @@ def plot_non_tipping_point_model(
         Matplotlib axes to plot on.
     save_path: Path
         Save path.
-
+    title: str
+        Title of the plot.
     Returns
     -------
     Figure
@@ -310,30 +312,84 @@ def plot_non_tipping_point_model(
     else:
         fig = ax.figure
 
-    # Choose color from a perceptually uniform colormap for visual clarity
-    color = plot_config.MODEL_COLORS[non_tipping_point_model.model_type]
+    from .depreciation_models import apply_depreciation_model, uses_chen_valuation
 
-    # Calculate value loss
-    ys = non_tipping_point_model.calculate(delta_cc_range, value)
+    reference_cover = 0.35
     cc_pct = delta_cc_range * 100  # percentage points
+    color = plot_config.MODEL_COLORS.get(non_tipping_point_model.model_type, "#3A9AB2")
 
-    # Plot the curve
-    ax.plot(
-        cc_pct,
-        ys,
-        color=color,
-        linewidth=3,
-        alpha=0.95,
-    )
+    if uses_chen_valuation(non_tipping_point_model):
+        sector_styles = [
+            ("tourism", color, "-", "Tourism (3.81%/rel%)"),
+            (
+                "fisheries",
+                "#22c55e",
+                ":",
+                "Fisheries/coastal protection (1:1 relative)",
+            ),
+        ]
+        for sector, line_color, linestyle, label in sector_styles:
+            ys = apply_depreciation_model(
+                non_tipping_point_model,
+                delta_cc_range,
+                value,
+                value_type=sector,
+                initial_cover=reference_cover,
+                original_cc=reference_cover,
+            )
+            ax.plot(
+                cc_pct,
+                100.0 * ys / value,
+                color=line_color,
+                linewidth=2.5,
+                linestyle=linestyle,
+                alpha=0.95,
+                label=label,
+            )
+        ax.legend(fontsize=plot_config.PAPER_CONFIG.tick_fontsize, frameon=False)
+        if title is None:
+            ax.set_title(
+                f"{non_tipping_point_model.name}\n"
+                f"(C₀ = {reference_cover * 100:.0f}% cover)",
+                fontsize=plot_config.PAPER_CONFIG.label_fontsize,
+            )
+        else:
+            ax.set_title(title, fontsize=plot_config.PAPER_CONFIG.label_fontsize)
+    else:
+        ys = apply_depreciation_model(
+            non_tipping_point_model,
+            delta_cc_range,
+            value,
+            value_type="tourism",
+            initial_cover=reference_cover,
+            original_cc=reference_cover,
+        )
+        ax.plot(
+            cc_pct,
+            100.0 * ys / value,
+            color=color,
+            linewidth=3,
+            alpha=0.95,
+            label=non_tipping_point_model.name,
+        )
+        ax.legend(fontsize=plot_config.PAPER_CONFIG.tick_fontsize, frameon=False)
+        if title is None:
+            ax.set_title(
+                f"{non_tipping_point_model.name}\n"
+                f"(C₀ = {reference_cover * 100:.0f}% cover)",
+                fontsize=plot_config.PAPER_CONFIG.label_fontsize,
+            )
+        else:
+            ax.set_title(title, fontsize=plot_config.PAPER_CONFIG.label_fontsize)
 
     ax.set_xlabel(
-        "Coral Cover Decrease (percentage points)",
+        "Change in coral cover (percentage points)",
         fontsize=plot_config.PAPER_CONFIG.label_fontsize,
     )
     ax.set_ylabel(
-        "Remaining Value (%)", fontsize=plot_config.PAPER_CONFIG.label_fontsize
+        "Remaining value (% of baseline)",
+        fontsize=plot_config.PAPER_CONFIG.label_fontsize,
     )
-    # ax.set_title(f"{non_tipping_point_model.name} Value Loss Curve", fontsize=14)
     ax.grid(True, alpha=0.3)
     ax.set_xlim(-45, ax.get_xlim()[1])
 
@@ -355,6 +411,7 @@ def plot_tipping_point_model(
     original_cc_values: list[float] = [0.1, 0.3, 0.5],
     ax: plt.Axes = None,
     save_path: Path = None,
+    title: str = None,
 ) -> plt.Figure:
     """
     Plot the value loss curve of a tipping point model as a function of coral cover change for different initial coral cover values.
@@ -371,7 +428,8 @@ def plot_tipping_point_model(
         Matplotlib axes to plot on.
     save_path: Path
         Save path.
-
+    title: str
+        Title of the plot.
     Returns
     -------
     Figure
@@ -1325,14 +1383,22 @@ def plot_model_comparison_interactive(
 
     for model in models:
         # Handle tipping point model which requires original_cc
-        if model.model_type == "tipping_point":
-            # Use default original_cc for comparison plots
-            threshold = getattr(model, "threshold_cc", 0.1)
-            remaining = model.calculate(
-                delta_cc_range, value, original_cc=0.5, threshold=threshold
-            )
-        else:
-            remaining = model.calculate(delta_cc_range, value)
+        from .depreciation_models import apply_depreciation_model
+
+        threshold = (
+            getattr(model, "threshold_cc", None)
+            if model.model_type == "tipping_point"
+            else None
+        )
+        remaining = apply_depreciation_model(
+            model,
+            delta_cc_range,
+            value,
+            value_type="tourism",
+            initial_cover=0.35,
+            original_cc=0.5,
+            threshold=threshold,
+        )
         loss_pct = 100 * (value - remaining) / value
 
         fig.add_trace(

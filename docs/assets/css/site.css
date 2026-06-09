@@ -584,6 +584,97 @@
             font-size: 0.78rem;
             color: var(--text-secondary);
         }
+
+        /* Models page */
+        .model-charts-row {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .model-chart-panel {
+            height: 500px;
+            flex: 1 1 420px;
+            max-width: 520px;
+            min-width: 300px;
+        }
+
+        .model-cover-control {
+            min-width: 260px;
+        }
+
+        .model-cover-control input[type="range"] {
+            flex: 1;
+            min-width: 140px;
+            height: 6px;
+            cursor: pointer;
+            accent-color: var(--accent-blue);
+            background: transparent;
+        }
+
+        .model-cover-value {
+            min-width: 3rem;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .model-descriptions-panel {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .model-descriptions-title {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .model-descriptions-grid {
+            display: grid;
+            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .model-description-card {
+            padding: 1rem 1.1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-primary);
+        }
+
+        .model-description-card h4 {
+            margin: 0 0 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .model-description-card .model-short {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            margin: 0 0 0.75rem;
+        }
+
+        .model-equation-list,
+        .model-notes-list {
+            margin: 0.5rem 0 0;
+            padding-left: 1.1rem;
+            color: var(--text-secondary);
+            font-size: 0.84rem;
+        }
+
+        .model-equation-list li {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            margin-bottom: 0.35rem;
+        }
+
+        .model-notes-list li {
+            margin-bottom: 0.3rem;
+        }
         
         /* Responsive */
         @media (max-width: 768px) {

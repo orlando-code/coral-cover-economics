@@ -19,7 +19,11 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from .depreciation_models import DepreciationModel, get_model
+from .depreciation_models import (
+    DepreciationModel,
+    apply_depreciation_model,
+    get_model,
+)
 
 # =============================================================================
 # GDF SLIMMING
@@ -347,6 +351,26 @@ class AnalysisResults:
 # =============================================================================
 
 
+_BASELINE_COVER_COLUMNS = (
+    "nearest_average_coral_cover",
+    "average_coral_cover",
+    "nearest_y_new",
+)
+
+
+def _baseline_cover_values(gdf: gpd.GeoDataFrame, default: float = 0.5) -> np.ndarray:
+    """Baseline coral cover (proportion 0–1) per row."""
+    for col in _BASELINE_COVER_COLUMNS:
+        if col in gdf.columns:
+            return gdf[col].fillna(default).astype(float).to_numpy()
+    warnings.warn(
+        "No baseline coral cover column found; using default "
+        f"initial_cover={default}. Expected one of: "
+        f"{', '.join(_BASELINE_COVER_COLUMNS)}"
+    )
+    return np.full(len(gdf), default, dtype=float)
+
+
 def calculate_depreciation(
     economic_gdf: gpd.GeoDataFrame,
     value_column: str,
@@ -402,44 +426,18 @@ def calculate_depreciation(
     original_value = result_gdf[value_column].fillna(0)
     coral_change = result_gdf[change_column].fillna(0)
 
-    # Calculate remaining value using model
-    # TippingPointModel requires additional parameters (original_cc, threshold)
-    if isinstance(model, type) and model.__name__ == "TippingPointModel":
-        # Handle if model is a class (shouldn't happen, but be safe)
-        model = model()
+    initial_cover = _baseline_cover_values(result_gdf)
+    threshold = getattr(model, "threshold_cc", None) if model.model_type == "tipping_point" else None
 
-    if model.model_type == "tipping_point":
-        # Find baseline coral cover column
-        baseline_cover_col = None
-        for col in [
-            "nearest_average_coral_cover",
-            "average_coral_cover",
-            "nearest_y_new",
-        ]:
-            if col in result_gdf.columns:
-                baseline_cover_col = col
-                break
-
-        if baseline_cover_col is None:
-            warnings.warn(
-                "TippingPointModel requires baseline coral cover, but no suitable column found. "
-                "Using default original_cc=0.5. Expected columns: "
-                "'nearest_average_coral_cover', 'average_coral_cover', or 'nearest_y_new'"
-            )
-            original_cc = np.full_like(coral_change, 0.5)
-        else:
-            original_cc = result_gdf[baseline_cover_col].fillna(0.5).values
-
-        # Use model's threshold_cc attribute, or default to 0.1
-        threshold = getattr(model, "threshold_cc", 0.1)
-
-        # Calculate with tipping point model parameters
-        remaining_value = model.calculate(
-            coral_change, original_value, original_cc=original_cc, threshold=threshold
-        )
-    else:
-        # Standard models (Linear, Compound, CoastalProtection) use simple signature
-        remaining_value = model.calculate(coral_change, original_value)
+    remaining_value = apply_depreciation_model(
+        model,
+        coral_change,
+        original_value,
+        value_type=value_type,
+        initial_cover=initial_cover,
+        original_cc=initial_cover,
+        threshold=threshold,
+    )
 
     # Store results
     result_gdf["original_value"] = original_value
@@ -674,17 +672,19 @@ def validate_depreciation_formula(model: DepreciationModel) -> None:
     ]
 
     print("\n   Test cases:")
+    test_initial_cover = 0.35
     for delta_cc, value, desc in test_cases:
-        # Handle tipping point model which requires original_cc
-        if model.model_type == "tipping_point":
-            threshold = getattr(model, "threshold_cc", 0.1)
-            # Use a reasonable default original_cc for testing
-            original_cc = 0.5 if delta_cc >= 0 else 0.5 + abs(delta_cc)
-            remaining = model.calculate(
-                delta_cc, value, original_cc=original_cc, threshold=threshold
-            )
-        else:
-            remaining = model.calculate(delta_cc, value)
+        threshold = getattr(model, "threshold_cc", None) if model.model_type == "tipping_point" else None
+        original_cc = 0.5 if delta_cc >= 0 else 0.5 + abs(float(delta_cc))
+        remaining = apply_depreciation_model(
+            model,
+            delta_cc,
+            value,
+            value_type="tourism",
+            initial_cover=test_initial_cover,
+            original_cc=original_cc,
+            threshold=threshold,
+        )
         loss = value - remaining
         loss_pct = 100 * loss / value if value > 0 else 0
         print(
