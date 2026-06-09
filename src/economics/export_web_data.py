@@ -1551,57 +1551,142 @@ def export_summary_stats(
 
 
 def export_model_comparison(output_dir: Path) -> None:
-    """Export depreciation model curves for visualization."""
-    from src.economics.depreciation_models import get_model
+    """Export depreciation model curves and metadata for the models page."""
+    from src.economics.depreciation_models import apply_depreciation_model, get_model
 
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Exporting model comparison to {output_dir}")
-    # Standard models (linear and compound)
-    models = {
-        "linear": get_model("linear"),
-        "compound": get_model("compound"),
-    }
 
-    # Generate curves for standard models
-    delta_cc_range = np.linspace(-50, 10, 100)  # -50% to +10% change
-    baseline = 100  # $100 baseline for easy percentage calculation
+    delta_cc_range = np.linspace(-50, 10, 120)  # percentage points
+    baseline = 100.0
+    reference_cover = 0.35
 
-    curves = {}
-    for name, model in models.items():
-        remaining = [model.calculate(d / 100, baseline) for d in delta_cc_range]
-        curves[name] = {
-            "name": model.name,
-            "delta_cc": delta_cc_range.tolist(),
+    def _curve(model, delta_pp, *, value_type="tourism", initial_cover=reference_cover):
+        remaining = [
+            float(
+                apply_depreciation_model(
+                    model,
+                    d / 100.0,
+                    baseline,
+                    value_type=value_type,
+                    initial_cover=initial_cover,
+                    original_cc=initial_cover,
+                )
+            )
+            for d in delta_pp
+        ]
+        return {
+            "delta_cc": delta_pp.tolist(),
             "remaining_value": remaining,
-            "loss_pct": [(baseline - r) for r in remaining],
+            "loss_pct": [baseline - r for r in remaining],
         }
 
-    # Export tipping point model data with multiple original_cc values
+    linear_model = get_model("linear")
+    compound_model = get_model("compound")
     tipping_point_model = get_model("tipping_point")
     threshold = getattr(tipping_point_model, "threshold_cc", 0.1)
-    original_cc_values = [0.1, 0.3, 0.5, 0.7]  # Different starting coral cover levels
 
-    tipping_point_curves = {}
-    for og_cc in original_cc_values:
+    curves: Dict[str, dict] = {}
+
+    curves["linear_tourism"] = {
+        "name": "Chen elasticity — tourism",
+        "model_key": "linear",
+        "value_type": "tourism",
+        "initial_cover": reference_cover,
+        **_curve(linear_model, delta_cc_range, value_type="tourism"),
+    }
+    curves["linear_fisheries"] = {
+        "name": "Chen elasticity — fisheries",
+        "model_key": "linear",
+        "value_type": "fisheries",
+        "initial_cover": reference_cover,
+        **_curve(linear_model, delta_cc_range, value_type="fisheries"),
+    }
+    curves["linear_coastal"] = {
+        "name": "Chen elasticity — coastal protection",
+        "model_key": "linear",
+        "value_type": "coastal_protection",
+        "initial_cover": reference_cover,
+        **_curve(linear_model, delta_cc_range, value_type="coastal_protection"),
+    }
+    curves["compound"] = {
+        "name": compound_model.name,
+        "model_key": "compound",
+        **_curve(compound_model, delta_cc_range),
+    }
+
+    # 0.10 is degenerate (initial cover = threshold → any loss triggers collapse).
+    # Use covers meaningfully above threshold so each line shows a real cliff.
+    for og_cc in (0.15, 0.25, 0.40, 0.60):
         remaining = [
-            tipping_point_model.calculate(
-                d / 100, baseline, original_cc=og_cc, threshold=threshold
+            float(
+                tipping_point_model.calculate(
+                    d / 100.0,
+                    baseline,
+                    original_cc=og_cc,
+                    threshold=threshold,
+                )
             )
             for d in delta_cc_range
         ]
-        tipping_point_curves[f"tipping_point_{og_cc}"] = {
+        curves[f"tipping_point_{og_cc}"] = {
             "name": f"{int(og_cc * 100)}% initial cover",
+            "model_key": "tipping_point",
+            "original_cc": og_cc,
             "delta_cc": delta_cc_range.tolist(),
             "remaining_value": remaining,
-            "loss_pct": [(baseline - r) for r in remaining],
-            "original_cc": og_cc,
+            "loss_pct": [baseline - r for r in remaining],
         }
 
-    # Combine all curves
-    all_curves = {**curves, **tipping_point_curves}
+    metadata = {
+        "reference_cover_pct": reference_cover * 100,
+        "x_axis": "Change in coral cover (ΔC_pp)",
+        "y_axis": "Remaining economic value (% of baseline)",
+        "models": {
+            "chen_elasticity": {
+                "title": "Chen et al. elasticity (default “linear” model)",
+                "short": "Sector-specific relative-loss functions from Chen et al. (2014/2015).",
+                "equations": [
+                    "Relative cover change: ΔC/C₀ = (C_final − C₀) / C₀",
+                    "Tourism: V_rem = V₀ × max(0, 1 + 3.807 × ΔC/C₀)",
+                    "Fisheries & coastal protection: V_rem = V₀ × (1 + ΔC/C₀)",
+                ],
+                "notes": [
+                    "ΔC is the absolute change in live coral cover (proportion); C₀ is site baseline cover.",
+                    "Tourism loss scales with relative decline (elasticity ≈ 3.81% value loss per 1% relative cover loss).",
+                    "Fisheries and coastal protection follow a 1:1 proportional response to relative cover change.",
+                    f"Curves shown at C₀ = {reference_cover * 100:.0f}% reference cover.",
+                ],
+            },
+            "compound": {
+                "title": compound_model.name,
+                "short": "Sensitivity model: compound loss per absolute percentage-point decline.",
+                "equations": [
+                    "V_rem = V₀ × (1 − r)^|ΔC_pp|,  r = 0.0381",
+                ],
+                "notes": [
+                    "ΔC_pp is coral cover change in percentage points (not relative).",
+                    "Each percentage-point loss multiplies remaining value by (1 − r).",
+                    "Used for scenario comparison; not the Chen et al. default.",
+                ],
+            },
+            "tipping_point": {
+                "title": tipping_point_model.name,
+                "short": "Collapse scenario: gradual compound loss, then catastrophic threshold breach.",
+                "equations": [
+                    "Pre-threshold: V_rem = V₀ × (1 − r)^|ΔC_pp|",
+                    f"Post-threshold (C₀ + ΔC < {threshold * 100:.0f}%): V_rem ← V_rem × (1 − λ),  λ = {tipping_point_model.post_threshold_loss:.0%}",
+                ],
+                "notes": [
+                    "Threshold θ and catastrophic fraction λ are configurable.",
+                    "Initial cover C₀ shifts when the reef crosses the tipping threshold.",
+                ],
+            },
+        },
+    }
 
-    _write_json_file(output_dir / "model_curves.json", all_curves, indent=2)
-
+    payload = {"metadata": metadata, "curves": curves}
+    _write_json_file(output_dir / "model_curves.json", payload, indent=2)
     print("Exported model comparison curves")
 
 

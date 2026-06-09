@@ -88,7 +88,7 @@ CONFIG = {
     ],
     # Depreciation models to compare
     "models": {
-        "linear": {"rate_per_percent": 0.0381},  # Chen et al. default
+        "linear": {},  # Chen et al. sector-specific elasticity (default)
         "compound": {"rate_per_percent": 0.0381},
         "tipping_point": {"threshold_cc": 0.10, "post_threshold_loss": 1.0},
     },
@@ -1135,7 +1135,7 @@ def main():
     parser.add_argument(
         "--cell-resolution",
         type=float,
-        default=0.5,
+        default=0.1,
         help="Resolution of the cell grid for web visualization",
     )
 
