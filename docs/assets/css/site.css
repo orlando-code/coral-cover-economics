@@ -659,6 +659,18 @@
             margin: 0 0 0.75rem;
         }
 
+        .model-description-card a,
+        .chart-subtitle a {
+            color: var(--accent-blue);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .model-description-card a:hover,
+        .chart-subtitle a:hover {
+            color: #5eb8cc;
+        }
+
         .model-equation-list,
         .model-notes-list {
             margin: 0.5rem 0 0;

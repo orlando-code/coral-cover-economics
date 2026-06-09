@@ -43,7 +43,7 @@
         let DATA_PATH = 'exported_data/';
         // Increment DATA_VERSION whenever exported_data/ files are regenerated to
         // prevent browsers serving stale JSON from the HTTP cache.
-        const DATA_VERSION = '2';
+        const DATA_VERSION = '3';
 
         const PAGE_IDS = ['overview', 'map', 'trajectories', 'gdp', 'models'];
         const PAGE_TITLES = {
@@ -1761,6 +1761,7 @@
 
         const MODEL_DELTA_AXIS_TITLE = 'Change in coral cover (ΔC<sub>pp</sub>)';
         const MODEL_HOVER_DELTA = 'ΔC<sub>pp</sub>: %{x:.1f}';
+        const CHEN_PAPER_URL = 'https://doi.org/10.1016/j.gloenvcha.2014.10.011';
         const CHEN_TOURISM_ELASTICITY = 3.8069;
         const COMPOUND_RATE = 0.0381;
         const TIPPING_THRESHOLD = 0.10;
@@ -1864,6 +1865,21 @@
             return [xMin, 5];
         }
 
+        function chenPaperLink(label = 'Chen et al. (2015)') {
+            return `<a href="${CHEN_PAPER_URL}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        }
+
+        function linkChenCitations(text) {
+            const raw = String(text);
+            if (raw.includes('<a ') || raw.includes(CHEN_PAPER_URL)) {
+                return raw;
+            }
+            return raw.replace(
+                /Chen et al\.(?:\s*\(\d{4}(?:\/\d{4})?\))?/g,
+                (match) => chenPaperLink(match)
+            );
+        }
+
         function plotModelChart(elementId, traces, layout) {
             const el = document.getElementById(elementId);
             if (!el) {
@@ -1879,8 +1895,8 @@
 
             const fallback = {
                 chen_elasticity: {
-                    title: 'Chen et al. elasticity (default “linear” model)',
-                    short: 'Sector-specific relative-loss functions from Chen et al. (2014/2015).',
+                    title: 'Chen et al. (2015) elasticity (default “linear” model)',
+                    short: 'Sector-specific relative-loss functions from Chen et al. (2015).',
                     equations: [
                         'Relative cover change: ΔC/C₀ = (C_final − C₀) / C₀',
                         'Tourism: V_rem = V₀ × max(0, 1 + 3.807 × ΔC/C₀)',
@@ -1915,10 +1931,12 @@
             };
 
             const formatModelText = (text) =>
-                String(text)
-                    .replace(/ΔC_pp/g, 'ΔC<sub>pp</sub>')
-                    .replace(/C₀/g, 'C<sub>0</sub>')
-                    .replace(/C_0/g, 'C<sub>0</sub>');
+                linkChenCitations(
+                    String(text)
+                        .replace(/ΔC_pp/g, 'ΔC<sub>pp</sub>')
+                        .replace(/C₀/g, 'C<sub>0</sub>')
+                        .replace(/C_0/g, 'C<sub>0</sub>')
+                );
 
             container.innerHTML = Object.entries(models)
                 .map(([key, info]) => {
@@ -1930,8 +1948,8 @@
                         .join('');
                     return `
                         <div class="model-description-card">
-                            <h4 style="color: ${accent[key] || 'var(--text-primary)'}">${info.title}</h4>
-                            <p class="model-short">${info.short || ''}</p>
+                            <h4 style="color: ${accent[key] || 'var(--text-primary)'}">${formatModelText(info.title)}</h4>
+                            <p class="model-short">${formatModelText(info.short || '')}</p>
                             ${eqList ? `<ul class="model-equation-list">${eqList}</ul>` : ''}
                             ${noteList ? `<ul class="model-notes-list">${noteList}</ul>` : ''}
                         </div>`;
@@ -1949,7 +1967,7 @@
             const subtitleEl = document.getElementById('model-chart-subtitle');
             if (subtitleEl) {
                 subtitleEl.innerHTML =
-                    `Chen elasticity curves for initial cover C<sub>0</sub> = ${refCover}% (adjust above). ` +
+                    `${chenPaperLink()} elasticity curves for initial cover C<sub>0</sub> = ${refCover}% (adjust above). ` +
                     'Compound depreciation is independent of C<sub>0</sub>; ' +
                     'the tipping-point chart compares fixed scenarios and highlights your selected C<sub>0</sub>.';
             }

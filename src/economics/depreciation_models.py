@@ -6,8 +6,8 @@ is the default ``linear`` model.  Compound and tipping-point models remain avail
 for sensitivity analysis.
 
 Reference:
-- Chen et al. (2014/2015): tourism elasticity ~3.81% value loss per 1% relative coral loss
-  DOI: 10.1016/j.gloenvcha.2014.10.011
+- Chen et al. (2015): tourism elasticity ~3.81% value loss per 1% relative coral loss
+  https://doi.org/10.1016/j.gloenvcha.2014.10.011
 """
 
 from abc import ABC, abstractmethod
