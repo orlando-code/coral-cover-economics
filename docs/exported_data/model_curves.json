@@ -1,12 +1,13 @@
 {
   "metadata": {
     "reference_cover_pct": 35.0,
-    "x_axis": "Change in coral cover (percentage points, \u0394C_pp)",
+    "chen_paper_url": "https://doi.org/10.1016/j.gloenvcha.2014.10.011",
+    "x_axis": "Change in coral cover (\u0394C_pp)",
     "y_axis": "Remaining economic value (% of baseline)",
     "models": {
       "chen_elasticity": {
-        "title": "Chen et al. elasticity (default \u201clinear\u201d model)",
-        "short": "Sector-specific relative-loss functions from Chen et al. (2014/2015).",
+        "title": "Chen et al. (2015) elasticity (default \u201clinear\u201d model)",
+        "short": "Sector-specific relative-loss functions from Chen et al. (2015).",
         "equations": [
           "Relative cover change: \u0394C/C\u2080 = (C_final \u2212 C\u2080) / C\u2080",
           "Tourism: V_rem = V\u2080 \u00d7 max(0, 1 + 3.807 \u00d7 \u0394C/C\u2080)",
@@ -28,7 +29,7 @@
         "notes": [
           "\u0394C_pp is coral cover change in percentage points (not relative).",
           "Each percentage-point loss multiplies remaining value by (1 \u2212 r).",
-          "Used for scenario comparison; not the Chen et al. default."
+          "Used for scenario comparison; not the Chen et al. (2015) default."
         ]
       },
       "tipping_point": {
