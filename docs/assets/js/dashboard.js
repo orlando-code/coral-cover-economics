@@ -39,7 +39,21 @@
             coastal_protection: 'Coastal protection value represented at site points.',
         };
         
-        const DATA_PATH = 'exported_data/';
+        let APP_BASE_PATH = '';
+        let DATA_PATH = 'exported_data/';
+        // Increment DATA_VERSION whenever exported_data/ files are regenerated to
+        // prevent browsers serving stale JSON from the HTTP cache.
+        const DATA_VERSION = '2';
+
+        const PAGE_IDS = ['overview', 'map', 'trajectories', 'gdp', 'models'];
+        const PAGE_TITLES = {
+            overview: 'Overview',
+            map: 'Map',
+            trajectories: 'Trajectories',
+            gdp: 'Country-level Impact',
+            models: 'Models',
+        };
+        const DEFAULT_PAGE = 'overview';
         const POINT_RADIUS_CONFIG = {
             lowZoomMax: 2,  // max zoom for low radius
             midZoomMax: 7,  // max zoom for mid radius
@@ -425,16 +439,107 @@
             });
         }
         
+        function initAppBasePath() {
+            const parts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+            const last = parts[parts.length - 1] || '';
+
+            if (PAGE_IDS.includes(last)) {
+                APP_BASE_PATH = parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : '';
+            } else if (parts.length === 1) {
+                APP_BASE_PATH = `/${parts[0]}`;
+            } else {
+                APP_BASE_PATH = '';
+            }
+
+            DATA_PATH = APP_BASE_PATH ? `${APP_BASE_PATH}/exported_data/` : 'exported_data/';
+        }
+
+        function getPageFromPath() {
+            const parts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+            const last = parts[parts.length - 1] || '';
+            return PAGE_IDS.includes(last) ? last : DEFAULT_PAGE;
+        }
+
+        function buildPageUrl(page) {
+            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
+            if (targetPage === DEFAULT_PAGE) {
+                return APP_BASE_PATH ? `${APP_BASE_PATH}/` : '/';
+            }
+            return APP_BASE_PATH ? `${APP_BASE_PATH}/${targetPage}` : `/${targetPage}`;
+        }
+
+        function updateDocumentTitle(page) {
+            const section = PAGE_TITLES[page] || PAGE_TITLES[DEFAULT_PAGE];
+            document.title = `${section} | Coral Reef Economics`;
+        }
+
+        function updateNavLinks() {
+            document.querySelectorAll('.nav-link[data-page]').forEach((link) => {
+                link.href = buildPageUrl(link.dataset.page);
+            });
+            const brand = document.getElementById('nav-brand-home');
+            if (brand) {
+                brand.href = buildPageUrl(DEFAULT_PAGE);
+            }
+        }
+
+        function activatePage(page) {
+            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
+
+            document.querySelectorAll('.nav-link[data-page]').forEach((link) => {
+                link.classList.toggle('active', link.dataset.page === targetPage);
+            });
+
+            document.querySelectorAll('.page').forEach((section) => {
+                section.classList.remove('active');
+            });
+            const pageEl = document.getElementById(`page-${targetPage}`);
+            if (pageEl) {
+                pageEl.classList.add('active');
+            }
+
+            updateDocumentTitle(targetPage);
+
+            if (targetPage === 'map') {
+                setTimeout(() => {
+                    if (map) {
+                        map.invalidateSize();
+                    }
+                    loadSiteData();
+                }, 100);
+            } else if (targetPage === 'trajectories') {
+                renderTrajectoryPage();
+            } else if (targetPage === 'gdp') {
+                renderCountryChart();
+                renderGdpComparison();
+            } else if (targetPage === 'models') {
+                renderModelComparison();
+            }
+        }
+
+        function navigateToPage(page, { replace = false } = {}) {
+            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
+            const url = buildPageUrl(targetPage);
+            activatePage(targetPage);
+
+            if (replace) {
+                history.replaceState({ page: targetPage }, '', url);
+            } else {
+                history.pushState({ page: targetPage }, '', url);
+            }
+        }
+
         async function loadData() {
+            initAppBasePath();
             try {
                 const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts] = await Promise.all([
-                    fetch(DATA_PATH + 'summary.json').then(r => r.json()),
-                    fetch(DATA_PATH + 'trajectories.json').then(r => r.json()),
-                    fetch(DATA_PATH + 'country_results.json').then(r => r.json()),
-                    fetch(DATA_PATH + 'cumulative_country_results.json').then(r => r.json()).catch(() => []),
-                    fetch(DATA_PATH + 'model_curves.json').then(r => r.json()),
-                    fetch(DATA_PATH + 'manifest.json').then(r => r.json()),
-                    fetch(DATA_PATH + 'gdp_impacts.json').then(r => r.json()).catch(() => null),
+                    fetch(DATA_PATH + `summary.json?v=${DATA_VERSION}`).then(r => r.json()),
+                    fetch(DATA_PATH + `trajectories.json?v=${DATA_VERSION}`).then(r => r.json()),
+                    fetch(DATA_PATH + `country_results.json?v=${DATA_VERSION}`).then(r => r.json()),
+                    fetch(DATA_PATH + `cumulative_country_results.json?v=${DATA_VERSION}`).then(r => r.json()).catch(() => []),
+                    fetch(DATA_PATH + `model_curves.json?v=${DATA_VERSION}`).then(r => r.json()),
+                    fetch(DATA_PATH + `manifest.json?v=${DATA_VERSION}`).then(r => r.json()),
+                    fetch(DATA_PATH + `gdp_impacts.json?v=${DATA_VERSION}`).then(r => r.json()).catch(() => null),
                 ]);
                 
                 summaryData = summary;
@@ -506,32 +611,23 @@
             renderOverviewTrajectory('cumulative_loss');
             renderModelComparison();
             initializeMap();
-            
-            // Set up event listeners
+
             setupNavigation();
+            updateNavLinks();
+            navigateToPage(getPageFromPath(), { replace: true });
             setupControls();
-            
-            // Load site data if map page is active
-            setTimeout(() => {
-                const mapPage = document.getElementById('page-map');
-                if (mapPage && mapPage.classList.contains('active')) {
-                    loadSiteData();
-                }
-            }, 500);
         }
-        
+
         function setupNavigation() {
             const menuToggle = document.getElementById('nav-menu-toggle');
             const mobileMenu = document.getElementById('nav-mobile-menu');
-            
-            // Toggle mobile menu
+
             if (menuToggle && mobileMenu) {
                 menuToggle.addEventListener('click', () => {
                     menuToggle.classList.toggle('active');
                     mobileMenu.classList.toggle('active');
                 });
-                
-                // Close mobile menu when clicking outside
+
                 document.addEventListener('click', (e) => {
                     if (!menuToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
                         menuToggle.classList.remove('active');
@@ -539,39 +635,35 @@
                     }
                 });
             }
-            
-            // Handle navigation clicks
-            document.querySelectorAll('.nav-link').forEach(link => {
+
+            document.querySelectorAll('.nav-link[data-page]').forEach((link) => {
                 link.addEventListener('click', (e) => {
-                    const page = e.target.dataset.page;
-                    
-                    // Close mobile menu
+                    e.preventDefault();
+                    const page = link.dataset.page;
+                    if (!page) {
+                        return;
+                    }
+
                     if (menuToggle && mobileMenu) {
                         menuToggle.classList.remove('active');
                         mobileMenu.classList.remove('active');
                     }
-                    
-                    // Update nav
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    // Show page
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    document.getElementById('page-' + page).classList.add('active');
-                    
-                    // Initialize page-specific content
-                    if (page === 'map') {
-                        setTimeout(() => {
-                            if (map) map.invalidateSize();
-                            loadSiteData();
-                        }, 100);
-                    } else if (page === 'trajectories') {
-                        renderTrajectoryPage();
-                    } else if (page === 'gdp') {
-                        renderCountryChart();
-                        renderGdpComparison();
-                    }
+
+                    navigateToPage(page);
                 });
+            });
+
+            const brand = document.getElementById('nav-brand-home');
+            if (brand) {
+                brand.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navigateToPage(DEFAULT_PAGE);
+                });
+            }
+
+            window.addEventListener('popstate', (event) => {
+                const page = event.state?.page || getPageFromPath();
+                activatePage(page);
             });
         }
         
@@ -664,6 +756,14 @@
             document.getElementById('gdp-value-type').addEventListener('change', renderGdpComparison);
             document.getElementById('gdp-comparison-metric').addEventListener('change', renderGdpComparison);
             document.getElementById('gdp-comparison-limit').addEventListener('change', renderGdpComparison);
+
+            const modelCoverSlider = document.getElementById('model-initial-cover');
+            if (modelCoverSlider) {
+                modelCoverSlider.addEventListener('input', () => {
+                    syncModelCoverControl();
+                    renderModelComparison();
+                });
+            }
         }
         
         // ============================================================
@@ -1651,125 +1751,364 @@
             Plotly.newPlot('gdp-comparison-chart', traces, layout, {responsive: true});
         }
         
+        function getModelCurvesPayload() {
+            if (!modelCurves) return { curves: {}, metadata: null };
+            if (modelCurves.curves) {
+                return { curves: modelCurves.curves, metadata: modelCurves.metadata || null };
+            }
+            return { curves: modelCurves, metadata: null };
+        }
+
+        const MODEL_DELTA_AXIS_TITLE = 'Change in coral cover (ΔC<sub>pp</sub>)';
+        const MODEL_HOVER_DELTA = 'ΔC<sub>pp</sub>: %{x:.1f}';
+        const CHEN_TOURISM_ELASTICITY = 3.8069;
+        const COMPOUND_RATE = 0.0381;
+        const TIPPING_THRESHOLD = 0.10;
+        const TIPPING_PRE_RATE = 0.0381;
+
+        function getModelInitialCoverPct(metadata) {
+            const slider = document.getElementById('model-initial-cover');
+            if (slider && slider.value !== '') {
+                return Number(slider.value);
+            }
+            return metadata?.reference_cover_pct ?? 35;
+        }
+
+        function syncModelCoverControl() {
+            const output = document.getElementById('model-initial-cover-value');
+            const slider = document.getElementById('model-initial-cover');
+            const pct = getModelInitialCoverPct();
+            if (output) {
+                output.textContent = `${pct}%`;
+            }
+            if (slider) {
+                slider.setAttribute('aria-valuenow', String(pct));
+            }
+        }
+
+        function getModelDeltaPpRange(curves) {
+            const compound = curves?.compound;
+            if (compound?.delta_cc?.length) {
+                return compound.delta_cc;
+            }
+            const values = [];
+            for (let x = -50; x <= 10; x += 0.5) {
+                values.push(x);
+            }
+            return values;
+        }
+
+        function computeChenRemaining(deltaPp, initialCoverPct, sector) {
+            const c0 = initialCoverPct / 100;
+            const delta = deltaPp / 100;
+            if (c0 <= 0) {
+                return 0;
+            }
+            const relative = delta / c0;
+            const fracChange = sector === 'tourism'
+                ? relative * CHEN_TOURISM_ELASTICITY
+                : relative;
+            return Math.max(0, 100 * (1 + fracChange));
+        }
+
+        function computeChenCurve(deltaPpArray, initialCoverPct, sector) {
+            return deltaPpArray.map((deltaPp) =>
+                computeChenRemaining(deltaPp, initialCoverPct, sector)
+            );
+        }
+
+        function computeCompoundRemaining(deltaPp) {
+            if (deltaPp >= 0) {
+                return 100;
+            }
+            return Math.max(0, 100 * Math.pow(1 - COMPOUND_RATE, Math.abs(deltaPp)));
+        }
+
+        function computeCompoundCurve(deltaPpArray) {
+            return deltaPpArray.map(computeCompoundRemaining);
+        }
+
+        function computeTippingRemaining(deltaPp, initialCoverPct) {
+            const c0 = initialCoverPct / 100;
+            const delta = deltaPp / 100;
+            let remaining = deltaPp < 0
+                ? 100 * Math.pow(1 - TIPPING_PRE_RATE, Math.abs(deltaPp))
+                : 100;
+            const remainingCc = Math.max(c0 + delta, 0);
+            if (remainingCc < TIPPING_THRESHOLD) {
+                remaining *= 0;
+            }
+            return Math.max(0, remaining);
+        }
+
+        function computeTippingCurve(deltaPpArray, initialCoverPct) {
+            return deltaPpArray.map((deltaPp) =>
+                computeTippingRemaining(deltaPp, initialCoverPct)
+            );
+        }
+
+        function findTourismCliffPp(initialCoverPct) {
+            return -initialCoverPct / CHEN_TOURISM_ELASTICITY;
+        }
+
+        function findTippingCliffPp(initialCoverPct) {
+            return -(initialCoverPct - TIPPING_THRESHOLD * 100);
+        }
+
+        function getChenChartXRange(initialCoverPct) {
+            const tourismCliff = Math.abs(findTourismCliffPp(initialCoverPct));
+            const xMin = -Math.min(
+                55,
+                Math.max(12, Math.ceil(tourismCliff) + 8, Math.min(initialCoverPct, 30))
+            );
+            return [xMin, 5];
+        }
+
+        function plotModelChart(elementId, traces, layout) {
+            const el = document.getElementById(elementId);
+            if (!el) {
+                return;
+            }
+            const plotFn = el.data ? Plotly.react : Plotly.newPlot;
+            plotFn(elementId, traces, layout, { responsive: true });
+        }
+
+        function renderModelDescriptions(metadata) {
+            const container = document.getElementById('model-descriptions');
+            if (!container) return;
+
+            const fallback = {
+                chen_elasticity: {
+                    title: 'Chen et al. elasticity (default “linear” model)',
+                    short: 'Sector-specific relative-loss functions from Chen et al. (2014/2015).',
+                    equations: [
+                        'Relative cover change: ΔC/C₀ = (C_final − C₀) / C₀',
+                        'Tourism: V_rem = V₀ × max(0, 1 + 3.807 × ΔC/C₀)',
+                        'Fisheries & coastal protection: V_rem = V₀ × (1 + ΔC/C₀)',
+                    ],
+                    notes: [
+                        'Tourism uses relative cover elasticity; fisheries and coastal scale 1:1 with relative change.',
+                    ],
+                },
+                compound: {
+                    title: 'Compound (3.81%/pp)',
+                    short: 'Sensitivity model using compound loss per percentage-point decline.',
+                    equations: ['V_rem = V₀ × (1 − 0.0381)^|ΔC<sub>pp</sub>|'],
+                    notes: ['ΔC<sub>pp</sub> is absolute change in percentage points.'],
+                },
+                tipping_point: {
+                    title: 'Tipping Point (10% threshold)',
+                    short: 'Collapse scenario with catastrophic loss below a cover threshold.',
+                    equations: [
+                        'Pre-threshold: V_rem = V₀ × (1 − 0.0381)^|ΔC<sub>pp</sub>|',
+                        'Post-threshold: V_rem ← V_rem × (1 − λ)',
+                    ],
+                    notes: ['Tipping threshold depends on initial coral cover.'],
+                },
+            };
+
+            const models = metadata?.models || fallback;
+            const accent = {
+                chen_elasticity: 'var(--accent-blue)',
+                compound: 'var(--accent-coral)',
+                tipping_point: '#dc2626',
+            };
+
+            const formatModelText = (text) =>
+                String(text)
+                    .replace(/ΔC_pp/g, 'ΔC<sub>pp</sub>')
+                    .replace(/C₀/g, 'C<sub>0</sub>')
+                    .replace(/C_0/g, 'C<sub>0</sub>');
+
+            container.innerHTML = Object.entries(models)
+                .map(([key, info]) => {
+                    const eqList = (info.equations || [])
+                        .map((eq) => `<li>${formatModelText(eq)}</li>`)
+                        .join('');
+                    const noteList = (info.notes || [])
+                        .map((note) => `<li>${formatModelText(note)}</li>`)
+                        .join('');
+                    return `
+                        <div class="model-description-card">
+                            <h4 style="color: ${accent[key] || 'var(--text-primary)'}">${info.title}</h4>
+                            <p class="model-short">${info.short || ''}</p>
+                            ${eqList ? `<ul class="model-equation-list">${eqList}</ul>` : ''}
+                            ${noteList ? `<ul class="model-notes-list">${noteList}</ul>` : ''}
+                        </div>`;
+                })
+                .join('');
+        }
+
         function renderModelComparison() {
-            if (!modelCurves) return;
-            
-            // Standard models (linear and compound)
-            const standardTraces = Object.entries(modelCurves)
-                .filter(([key]) => key === 'linear' || key === 'compound')
-                .map(([key, curve]) => ({
-                    x: curve.delta_cc,
-                    y: curve.remaining_value,
-                    name: curve.name,
+            const { curves, metadata } = getModelCurvesPayload();
+            if (!curves || Object.keys(curves).length === 0) return;
+
+            const refCover = getModelInitialCoverPct(metadata);
+            syncModelCoverControl();
+
+            const subtitleEl = document.getElementById('model-chart-subtitle');
+            if (subtitleEl) {
+                subtitleEl.innerHTML =
+                    `Chen elasticity curves for initial cover C<sub>0</sub> = ${refCover}% (adjust above). ` +
+                    'Compound depreciation is independent of C<sub>0</sub>; ' +
+                    'the tipping-point chart compares fixed scenarios and highlights your selected C<sub>0</sub>.';
+            }
+            renderModelDescriptions(metadata);
+
+            const deltaPp = getModelDeltaPpRange(curves);
+            const tourismRemaining = computeChenCurve(deltaPp, refCover, 'tourism');
+            const fisheriesRemaining = computeChenCurve(deltaPp, refCover, 'fisheries');
+            const compoundRemaining = computeCompoundCurve(deltaPp);
+
+            const traceStyle = {
+                tourism: { color: '#3A9AB2', dash: 'solid', name: 'Chen elasticity — tourism' },
+                fisheries: { color: '#22c55e', dash: 'dot', name: 'Chen elasticity — fisheries/coastal protection' },
+                compound: { color: '#F11B00', dash: 'solid', name: 'Compound (3.81%/pp)' },
+            };
+
+            const standardTraces = ['tourism', 'fisheries', 'compound'].map((key) => {
+                const style = traceStyle[key];
+                const y = key === 'tourism'
+                    ? tourismRemaining
+                    : key === 'fisheries'
+                        ? fisheriesRemaining
+                        : compoundRemaining;
+                return {
+                    x: deltaPp,
+                    y,
+                    name: style.name,
                     hovertemplate:
-                        `${curve.name}<br>` +
-                        'Change in Coral Cover: %{x:.1f}pp<br>' +
-                        'Remaining Value: %{y:.1f}%<extra></extra>',
+                        `${style.name}<br>` +
+                        `${MODEL_HOVER_DELTA}<br>` +
+                        'Remaining value: %{y:.1f}%<extra></extra>',
                     mode: 'lines',
-                    line: {
-                        color: key === 'linear' ? '#3A9AB2' : '#F11B00',
-                        width: 3
-                    }
-                }));
-            
+                    line: { color: style.color, width: 3, dash: style.dash },
+                };
+            });
+
+            const tourismZeroX = findTourismCliffPp(refCover);
+            const coverZeroX = -refCover;
+            const [chenXMin, chenXMax] = getChenChartXRange(refCover);
+
+            const standardShapes = [
+                { type: 'line', x0: 0, x1: 0, y0: 0, y1: 105,
+                  line: { color: '#64748b', width: 1, dash: 'dot' } },
+                { type: 'line', x0: coverZeroX, x1: coverZeroX, y0: 0, y1: 105,
+                  line: { color: '#475569', width: 1, dash: 'longdash' } },
+                { type: 'line', x0: tourismZeroX, x1: tourismZeroX, y0: 0, y1: 105,
+                  line: { color: '#3A9AB2', width: 1, dash: 'dash' } },
+            ];
+
+            const standardAnnotations = [
+                { x: coverZeroX, y: 102, text: `C<sub>0</sub>→0`,
+                  showarrow: false, font: { color: '#64748b', size: 9 },
+                  xanchor: 'right', xshift: -4 },
+                { x: tourismZeroX, y: 55,
+                  text: `Tourism zero<br>(${tourismZeroX.toFixed(1)} pp)`,
+                  showarrow: true, arrowhead: 2, arrowsize: 0.8,
+                  arrowcolor: '#3A9AB2', ax: -35, ay: 0,
+                  font: { color: '#3A9AB2', size: 9 } },
+            ];
+
             const standardLayout = {
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 hoverlabel: { namelength: -1 },
                 autosize: true,
-                xaxis: { 
+                title: {
+                    text: 'Chen elasticity vs compound depreciation',
+                    font: { size: 14, color: '#e2e8f0' },
+                    x: 0.5,
+                },
+                xaxis: {
                     gridcolor: '#334155',
-                    title: 'Change in Coral Cover (percentage points)',
+                    title: MODEL_DELTA_AXIS_TITLE,
                     zeroline: true,
                     zerolinecolor: '#64748b',
-                    range: [-50, 0]
+                    range: [chenXMin, chenXMax],
                 },
-                yaxis: { 
+                yaxis: {
                     gridcolor: '#334155',
-                    title: 'Remaining Value (%)',
-                    range: [0, 100]
+                    title: metadata?.y_axis || 'Remaining value (% of baseline)',
+                    range: [0, 105],
                 },
-                legend: { 
-                    orientation: 'h', 
-                    y: -0.15
-                },
-                margin: { t: 20, r: 30, b: 70, l: 60 },
-                shapes: [{
-                    type: 'line',
-                    x0: 0, x1: 0,
-                    y0: 0, y1: 120,
-                    line: { color: '#64748b', width: 1, dash: 'dot' }
-                }]
+                legend: { orientation: 'h', y: -0.18 },
+                margin: { t: 50, r: 30, b: 80, l: 60 },
+                shapes: standardShapes,
+                annotations: standardAnnotations,
             };
-            
-            Plotly.newPlot('model-chart', standardTraces, standardLayout, {responsive: true});
-            
-            // Tipping point model with multiple original_cc values
-            const tippingPointTraces = Object.entries(modelCurves)
+
+            plotModelChart('model-chart', standardTraces, standardLayout);
+
+            const TP_COLORS = {
+                '0.15': '#ef4444',
+                '0.25': '#f97316',
+                '0.4': '#a78bfa',
+                '0.6': '#38bdf8',
+            };
+
+            const tippingPointTraces = Object.entries(curves)
                 .filter(([key]) => key.startsWith('tipping_point_'))
-                .sort(([key1], [key2]) => {
-                    const cc1 = modelCurves[key1].original_cc || 0;
-                    const cc2 = modelCurves[key2].original_cc || 0;
-                    return cc1 - cc2;
-                })
+                .sort(([, a], [, b]) => (a.original_cc || 0) - (b.original_cc || 0))
                 .map(([key, curve]) => {
                     const ogCc = curve.original_cc || 0.5;
-                    // Get color from reds colormap (darker for lower initial cover)
-                    // Limit redIntensity to avoid very dark colors (max 0.7 instead of 1.0)
-                    const redIntensity = Math.max(0.3, Math.min(0.7, 0.3 + (ogCc - 0.1) * 0.4 / 0.6));
-                    const color = `rgb(${Math.round(220 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))})`;
-                    
+                    const ogKey = String(ogCc);
+                    const color = TP_COLORS[ogKey]
+                        ?? `hsl(${Math.round(200 - ogCc * 180)}, 70%, 55%)`;
                     return {
                         x: curve.delta_cc,
                         y: curve.remaining_value,
                         name: curve.name,
                         hovertemplate:
                             `${curve.name}<br>` +
-                            'Change in Coral Cover: %{x:.1f}pp<br>' +
-                            'Remaining Value: %{y:.1f}%<extra></extra>',
+                            `${MODEL_HOVER_DELTA}<br>` +
+                            'Remaining value: %{y:.1f}%<extra></extra>',
                         mode: 'lines',
-                        line: {
-                            color: color,
-                            width: 3
-                        }
+                        opacity: 0.45,
+                        line: { color, width: 2, dash: 'dot' },
                     };
                 });
-            
-            // Add markers at tipping points
-            const tippingPointMarkers = Object.entries(modelCurves)
-                .filter(([key]) => key.startsWith('tipping_point_'))
-                .map(([key, curve]) => {
-                    const ogCc = curve.original_cc || 0.5;
-                    // Find where value drops to near zero (tipping point)
-                    const zeroIdx = curve.remaining_value.findIndex((v, i) => 
-                        i > 0 && v < 1 && curve.remaining_value[i - 1] > 1
-                    );
-                    if (zeroIdx === -1) return null;
-                    
-                    const redIntensity = Math.max(0.3, Math.min(1, 0.3 + (ogCc - 0.1) * 0.7 / 0.6));
-                    const color = `rgb(${Math.round(220 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))}, ${Math.round(38 * (1 - redIntensity))})`;
-                    
-                    return {
-                        x: [curve.delta_cc[zeroIdx]],
-                        y: [curve.remaining_value[zeroIdx]],
-                        name: `${curve.name} (tipping point)`,
-                        hovertemplate:
-                            `${curve.name} (tipping point)<br>` +
-                            'Change in Coral Cover: %{x:.1f}pp<br>' +
-                            'Remaining Value: %{y:.1f}%<extra></extra>',
-                        mode: 'markers',
-                        marker: {
-                            symbol: 'x',
-                            size: 12,
-                            color: 'black',
-                            line: { width: 1, color: 'black' }
-                        },
-                        showlegend: false
-                    };
-                })
-                .filter(t => t !== null);
-            
+
+            const selectedTipping = computeTippingCurve(deltaPp, refCover);
+            const selectedCliffX = findTippingCliffPp(refCover);
+            tippingPointTraces.push({
+                x: deltaPp,
+                y: selectedTipping,
+                name: `Selected C₀ (${refCover}%)`,
+                hovertemplate:
+                    `Selected C₀ (${refCover}%)<br>` +
+                    `${MODEL_HOVER_DELTA}<br>` +
+                    'Remaining value: %{y:.1f}%<extra></extra>',
+                mode: 'lines',
+                line: { color: '#f8fafc', width: 4 },
+            });
+
+            const tippingPointMarkers = [
+                {
+                    x: [selectedCliffX],
+                    y: [50],
+                    hovertemplate:
+                        `Selected C₀ — threshold crossed<br>` +
+                        `${MODEL_HOVER_DELTA}<extra></extra>`,
+                    mode: 'markers',
+                    marker: {
+                        symbol: 'line-ns',
+                        size: 16,
+                        color: '#f8fafc',
+                        line: { width: 2, color: '#f8fafc' },
+                    },
+                    showlegend: false,
+                },
+            ];
+
+            const tippingPointCliffShapes = [
+                { type: 'line', x0: 0, x1: 0, y0: 0, y1: 105,
+                  line: { color: '#64748b', width: 1, dash: 'dot' } },
+                { type: 'line', x0: selectedCliffX, x1: selectedCliffX, y0: 0, y1: 105,
+                  line: { color: 'rgba(248,250,252,0.45)', width: 1.5, dash: 'dash' } },
+            ];
+
             const tippingPointLayout = {
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
@@ -1777,36 +2116,36 @@
                 hoverlabel: { namelength: -1 },
                 autosize: true,
                 title: {
-                    text: 'Tipping Point Model: Effect of Initial Coral Cover',
+                    text: 'Tipping-point model: effect of initial cover',
                     font: { size: 14, color: '#e2e8f0' },
-                    x: 0.5
+                    x: 0.5,
                 },
-                xaxis: { 
+                xaxis: {
                     gridcolor: '#334155',
-                    title: 'Change in Coral Cover (percentage points)',
+                    title: MODEL_DELTA_AXIS_TITLE,
                     zeroline: true,
                     zerolinecolor: '#64748b',
-                    range: [-50, 0]
+                    range: [-55, 5],
                 },
-                yaxis: { 
+                yaxis: {
                     gridcolor: '#334155',
-                    title: 'Remaining Value (%)',
-                    range: [0, 100]
+                    title: metadata?.y_axis || 'Remaining value (% of baseline)',
+                    range: [0, 105],
                 },
-                legend: { 
-                    orientation: 'h', 
-                    y: -0.15
-                },
-                margin: { t: 50, r: 30, b: 70, l: 60 },
-                shapes: [{
-                    type: 'line',
-                    x0: 0, x1: 0,
-                    y0: 0, y1: 120,
-                    line: { color: '#64748b', width: 1, dash: 'dot' }
-                }]
+                legend: { orientation: 'h', y: -0.18 },
+                margin: { t: 50, r: 30, b: 80, l: 60 },
+                shapes: tippingPointCliffShapes,
+                annotations: [
+                    { x: -27, y: 102, xanchor: 'center', showarrow: false,
+                      text: 'System collapse threshold: 10% cover', font: { color: '#64748b', size: 9 } },
+                ],
             };
-            
-            Plotly.newPlot('tipping-point-chart', [...tippingPointTraces, ...tippingPointMarkers], tippingPointLayout, {responsive: true});
+
+            plotModelChart(
+                'tipping-point-chart',
+                [...tippingPointTraces, ...tippingPointMarkers],
+                tippingPointLayout
+            );
         }
         
         // ============================================================

@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from .depreciation_models import DepreciationModel, get_model
+from .depreciation_models import DepreciationModel, apply_depreciation_model, get_model
 
 # Forward reference for type hints
 if TYPE_CHECKING:
@@ -410,21 +410,16 @@ def calculate_cumulative_impact(
     # delta_cc is negative when cover decreases from baseline
     delta_cc_array = covers - baseline_cover
 
-    # Calculate remaining values for all years using vectorized model calculation
-    # Handle tipping point model which requires original_cc parameter
-    if model.model_type == "tipping_point":
-        threshold = getattr(model, "threshold_cc", 0.1)
-        # For tipping point, pass original_cc (baseline) and threshold
-        # The model will evaluate collapse based on remaining_cc = original_cc + delta_cc
-        annual_values = model.calculate(
-            delta_cc_array,
-            baseline_value,
-            original_cc=baseline_cover,
-            threshold=threshold,
-        )
-    else:
-        # Standard models (linear, compound) use simple signature
-        annual_values = model.calculate(delta_cc_array, baseline_value)
+    threshold = getattr(model, "threshold_cc", None) if model.model_type == "tipping_point" else None
+    annual_values = apply_depreciation_model(
+        model,
+        delta_cc_array,
+        baseline_value,
+        value_type=value_type,
+        initial_cover=baseline_cover,
+        original_cc=baseline_cover,
+        threshold=threshold,
+    )
 
     # Calculate annual losses with explicit separation:
     # 1. value_lost_this_year: Year-over-year decline in value (decreases as less value remains)
@@ -786,18 +781,16 @@ def calculate_cumulative_impacts_multi_scenario_per_site(
             )
 
             delta_cc_matrix = cover_matrix - chunk_baseline_covers[:, None]
-            if model.model_type == "tipping_point":
-                threshold = getattr(model, "threshold_cc", 0.1)
-                annual_values_chunk = model.calculate(
-                    delta_cc_matrix,
-                    chunk_baseline_values[:, None],
-                    original_cc=chunk_baseline_covers[:, None],
-                    threshold=threshold,
-                )
-            else:
-                annual_values_chunk = model.calculate(
-                    delta_cc_matrix, chunk_baseline_values[:, None]
-                )
+            threshold = getattr(model, "threshold_cc", None) if model.model_type == "tipping_point" else None
+            annual_values_chunk = apply_depreciation_model(
+                model,
+                delta_cc_matrix,
+                chunk_baseline_values[:, None],
+                value_type=value_type,
+                initial_cover=chunk_baseline_covers[:, None],
+                original_cc=chunk_baseline_covers[:, None],
+                threshold=threshold,
+            )
 
             annual_value_lost_chunk = np.zeros_like(annual_values_chunk)
             annual_value_lost_chunk[:, 0] = np.maximum(
@@ -1211,18 +1204,16 @@ def add_spatial_cumulative_losses(
 
         # Calculate annual value trajectory for each polygon/year.
         delta_cc_matrix = cover_matrix - valid_baseline_covers[:, None]
-        if model.model_type == "tipping_point":
-            threshold = getattr(model, "threshold_cc", 0.1)
-            annual_values = model.calculate(
-                delta_cc_matrix,
-                valid_baseline_values[:, None],
-                original_cc=valid_baseline_covers[:, None],
-                threshold=threshold,
-            )
-        else:
-            annual_values = model.calculate(
-                delta_cc_matrix, valid_baseline_values[:, None]
-            )
+        threshold = getattr(model, "threshold_cc", None) if model.model_type == "tipping_point" else None
+        annual_values = apply_depreciation_model(
+            model,
+            delta_cc_matrix,
+            valid_baseline_values[:, None],
+            value_type=value_type,
+            initial_cover=valid_baseline_covers[:, None],
+            original_cc=valid_baseline_covers[:, None],
+            threshold=threshold,
+        )
 
         annual_opportunity_cost = np.maximum(
             valid_baseline_values[:, None] - annual_values, 0.0

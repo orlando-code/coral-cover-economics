@@ -45,12 +45,15 @@ from .data_loader import (
     load_tourism_data,
 )
 from .depreciation_models import (
-    CoastalProtectionModel,
+    ChenExactModel,
     CompoundModel,
     DepreciationModel,
     LinearModel,
     TippingPointModel,
+    apply_depreciation_model,
+    chen_remaining_value,
     compare_models,
+    compute_coral_valuation_change,
     get_model,
     list_models,
 )
@@ -83,9 +86,12 @@ __all__ = [
     # Models
     "DepreciationModel",
     "LinearModel",
+    "ChenExactModel",
     "CompoundModel",
     "TippingPointModel",
-    "CoastalProtectionModel",
+    "compute_coral_valuation_change",
+    "chen_remaining_value",
+    "apply_depreciation_model",
     "get_model",
     "list_models",
     "compare_models",
