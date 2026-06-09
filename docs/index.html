@@ -16,7 +16,7 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="assets/css/site.css?v=10" />
+    <link rel="stylesheet" href="assets/css/site.css?v=12" />
 
 </head>
 <body>
@@ -27,17 +27,17 @@
                 <div class="nav-brand-icon">🪸</div>
                 <span>Reef Economics</span>
             </a> -->
-            <div class="nav-brand" style="justify-content: flex-start; display: flex; align-items: center;">
+            <a href="/" class="nav-brand" id="nav-brand-home" style="justify-content: flex-start; display: flex; align-items: center; text-decoration: none; color: inherit;">
                 <div class="nav-brand-icon">🪸</div>
                 <span class="nav-brand-text">Reef Economics</span>
-            </div>
+            </a>
 
             <div class="nav-links">
-                <a class="nav-link active" data-page="overview">Overview</a>
-                <a class="nav-link" data-page="map">Map</a>
-                <a class="nav-link" data-page="trajectories">Trajectories</a>
-                <a class="nav-link" data-page="gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="models">Models</a>
+                <a class="nav-link active" data-page="overview" href="/">Overview</a>
+                <a class="nav-link" data-page="map" href="/map">Map</a>
+                <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
+                <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
+                <a class="nav-link" data-page="models" href="/models">Models</a>
             </div>
             
             <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu">
@@ -47,11 +47,11 @@
             </button>
             
             <div class="nav-mobile-menu" id="nav-mobile-menu">
-                <a class="nav-link active" data-page="overview">Overview</a>
-                <a class="nav-link" data-page="map">Map</a>
-                <a class="nav-link" data-page="trajectories">Trajectories</a>
-                <a class="nav-link" data-page="gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="models">Models</a>
+                <a class="nav-link active" data-page="overview" href="/">Overview</a>
+                <a class="nav-link" data-page="map" href="/map">Map</a>
+                <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
+                <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
+                <a class="nav-link" data-page="models" href="/models">Models</a>
             </div>
         </div>
     </nav>
@@ -433,38 +433,25 @@
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Depreciation Model Comparison</h2>
-                            <p class="chart-subtitle">How economic value changes with coral cover loss</p>
+                            <p class="chart-subtitle">Chen et al. sector-specific valuation vs sensitivity scenarios</p>
+                        </div>
+                        <div class="controls">
+                            <div class="control-group model-cover-control">
+                                <label class="control-label" for="model-initial-cover">Initial cover C<sub>0</sub>:</label>
+                                <input type="range" id="model-initial-cover" min="10" max="70" step="1" value="35"
+                                    aria-valuemin="10" aria-valuemax="70" aria-valuenow="35">
+                                <output id="model-initial-cover-value" class="model-cover-value" for="model-initial-cover">35%</output>
+                            </div>
                         </div>
                     </div>
-                    <div style="display: flex; flex-direction: row; gap: 2rem; justify-content: center; align-items: flex-start;">
-                        <div id="model-chart" style="height: 500px; width: 70%; max-width: 500px;"></div>
-                        <div id="tipping-point-chart" style="height: 500px; width: 70%; max-width: 500px;"></div>
+                    <p id="model-chart-subtitle" class="chart-subtitle" style="margin-bottom: 1rem;"></p>
+                    <div class="model-charts-row">
+                        <div id="model-chart" class="model-chart-panel"></div>
+                        <div id="tipping-point-chart" class="model-chart-panel"></div>
                     </div>
-                    <div style="margin-top: 1.5rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: 12px;">
-                        <h3 style="margin-bottom: 1rem; font-size: 1rem;">Model Descriptions</h3>
-                        <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
-                            <div>
-                                <strong style="color: var(--accent-blue);">Linear Model (3.81%/pp)</strong>
-                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Economic value decreases by 3.81% for each percentage point decrease in coral cover. 
-                                    Based on Chen et al. (2014).
-                                </p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent-coral);">Compound Model (3.81%/pp)</strong>
-                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Value decreases compound with each percentage point of cover loss. 
-                                    Remaining value = V₀ × (1 - 0.0381)^|Δcover|
-                                </p>
-                            </div>
-                            <div>
-                                <strong style="color: #dc2626;">Tipping Point Model</strong>
-                                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                                    Models ecosystem collapse: gradual depreciation (3.81%/pp) until coral cover falls below 10%, 
-                                    then catastrophic loss (90% of remaining value). The tipping point depends on initial coral cover.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="model-descriptions-panel">
+                        <h3 class="model-descriptions-title">Model descriptions &amp; equations</h3>
+                        <div id="model-descriptions" class="model-descriptions-grid"></div>
                     </div>
                 </div>
             </section>
@@ -472,6 +459,6 @@
         </div>
     </main>
 
-    <script src="assets/js/dashboard.js?v=10"></script>
+    <script src="assets/js/dashboard.js?v=14"></script>
 </body>
 </html>

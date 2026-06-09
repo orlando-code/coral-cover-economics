@@ -1,15 +1,12 @@
 """
 Pluggable depreciation models for mapping coral cover change to economic value loss.
 
-All models follow the convention:
-- Input: delta_cc (change in coral cover, as proportion, NEGATIVE for decrease)
-- Input: value (current economic value, e.g., USD)
-- Output: remaining_value (value after depreciation)
-
-The models are designed to be easily swappable and comparable.
+Sector-specific Chen et al. valuation (tourism elasticity; fisheries/coastal 1:1 relative)
+is the default ``linear`` model.  Compound and tipping-point models remain available
+for sensitivity analysis.
 
 Reference:
-- Chen et al. (2014): "3.81% value decrease per 1% coral cover decrease"
+- Chen et al. (2014/2015): tourism elasticity ~3.81% value loss per 1% relative coral loss
   DOI: 10.1016/j.gloenvcha.2014.10.011
 """
 
@@ -19,84 +16,229 @@ from typing import Dict, Union
 
 import numpy as np
 
+# Chen et al. quadratic coefficients (Table 5) for exact_nonlinear tourism
+_CHEN_BETA1 = 429.665
+_CHEN_BETA2 = 214.167
+_CHEN_MEAN_TV = 108319.0
+
+_SECTOR_KEYS = {
+    "tourism": "tourism",
+    "fisheries": "fisheries",
+    "coastal_protection": "coastal_protection",
+}
+
+
+def compute_coral_valuation_change(
+    initial_cover: float,
+    final_cover: float,
+    baseline_tourism: float = 0.0,
+    baseline_fisheries: float = 0.0,
+    baseline_coastal_protection: float = 0.0,
+    method: str = "elasticity",
+) -> Dict:
+    """
+    Projected economic impact of coral cover change across three sectors (Chen et al.).
+
+    Parameters
+    ----------
+    initial_cover, final_cover : float
+        Live coral cover on a **percentage scale** (e.g. 35.0 for 35%).
+    baseline_* : float
+        Baseline economic value per sector (same currency units).
+    method : str
+        ``elasticity`` (default) or ``exact_nonlinear`` (quadratic tourism curve).
+
+    Returns
+    -------
+    dict
+        Per-sector percentage and absolute changes plus combined totals.
+    """
+    if initial_cover <= 0:
+        raise ValueError("Initial coral cover must be greater than 0%.")
+
+    relative_cover_change = (final_cover - initial_cover) / initial_cover
+
+    if method == "elasticity":
+        tourism_pct_change = relative_cover_change * 3.8069
+    elif method == "exact_nonlinear":
+        delta_tv = ( _CHEN_BETA1 * (final_cover - initial_cover)
+            + _CHEN_BETA2 * (final_cover**2 - initial_cover**2)
+        )
+        tourism_pct_change = delta_tv / _CHEN_MEAN_TV
+    else:
+        raise ValueError("method must be 'elasticity' or 'exact_nonlinear'")
+
+    tourism_abs_change = baseline_tourism * tourism_pct_change
+    fisheries_pct_change = relative_cover_change
+    fisheries_abs_change = baseline_fisheries * fisheries_pct_change
+    coastal_pct_change = relative_cover_change
+    coastal_abs_change = baseline_coastal_protection * coastal_pct_change
+
+    total_baseline = baseline_tourism + baseline_fisheries + baseline_coastal_protection
+    total_abs_change = tourism_abs_change + fisheries_abs_change + coastal_abs_change
+    total_pct_change = (total_abs_change / total_baseline) if total_baseline > 0 else 0.0
+
+    return {
+        "metadata": {
+            "initial_cover_pct": initial_cover,
+            "final_cover_pct": final_cover,
+            "relative_cover_change_pct": relative_cover_change * 100,
+            "calculation_method": method,
+        },
+        "tourism": {
+            "percentage_change": tourism_pct_change * 100,
+            "absolute_change": tourism_abs_change,
+        },
+        "fisheries": {
+            "percentage_change": fisheries_pct_change * 100,
+            "absolute_change": fisheries_abs_change,
+        },
+        "coastal_protection": {
+            "percentage_change": coastal_pct_change * 100,
+            "absolute_change": coastal_abs_change,
+        },
+        "total_combined": {
+            "percentage_change": total_pct_change * 100,
+            "absolute_change": total_abs_change,
+        },
+    }
+
+
+def _chen_fractional_change(
+    initial_cover: Union[float, np.ndarray],
+    delta_cc: Union[float, np.ndarray],
+    value_type: str,
+    method: str = "elasticity",
+) -> np.ndarray:
+    """
+    Fractional economic change (e.g. -0.38 = 38% loss) for one sector.
+
+    ``initial_cover`` and ``delta_cc`` are proportions on [0, 1] scale.
+    """
+    initial = np.asarray(initial_cover, dtype=float)
+    delta = np.asarray(delta_cc, dtype=float)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        relative = np.where(initial > 0, delta / initial, 0.0)
+
+    sector = _SECTOR_KEYS.get(value_type, value_type)
+
+    if sector == "tourism":
+        if method == "elasticity":
+            return relative * 3.8069
+        if method == "exact_nonlinear":
+            initial_pct = initial * 100.0
+            final_pct = (initial + delta) * 100.0
+            delta_tv = (
+                _CHEN_BETA1 * (final_pct - initial_pct)
+                + _CHEN_BETA2 * (final_pct**2 - initial_pct**2)
+            )
+            return np.where(_CHEN_MEAN_TV > 0, delta_tv / _CHEN_MEAN_TV, 0.0)
+        raise ValueError("method must be 'elasticity' or 'exact_nonlinear'")
+
+    if sector in ("fisheries", "coastal_protection"):
+        return relative
+
+    return relative
+
+
+def chen_remaining_value(
+    delta_cc: Union[float, np.ndarray],
+    value: Union[float, np.ndarray],
+    value_type: str,
+    initial_cover: Union[float, np.ndarray],
+    method: str = "elasticity",
+) -> np.ndarray:
+    """Remaining value after Chen sector-specific depreciation."""
+    frac_change = _chen_fractional_change(initial_cover, delta_cc, value_type, method)
+    remaining = np.asarray(value, dtype=float) * (1.0 + frac_change)
+    return np.maximum(remaining, 0.0)
+
+
+def uses_chen_valuation(model: "DepreciationModel") -> bool:
+    """True for models backed by compute_coral_valuation_change."""
+    return model.model_type in ("linear", "chen_exact")
+
+
+def apply_depreciation_model(
+    model: "DepreciationModel",
+    delta_cc: Union[float, np.ndarray],
+    value: Union[float, np.ndarray],
+    *,
+    value_type: str = "tourism",
+    initial_cover: Union[float, np.ndarray, None] = None,
+    original_cc: Union[float, np.ndarray, None] = None,
+    threshold: float = None,
+) -> Union[float, np.ndarray]:
+    """Call ``model.calculate`` with the keyword arguments required by its type."""
+    if model.model_type == "tipping_point":
+        baseline = original_cc if original_cc is not None else initial_cover
+        return model.calculate(
+            delta_cc,
+            value,
+            value_type=value_type,
+            initial_cover=initial_cover,
+            original_cc=baseline,
+            threshold=threshold,
+        )
+    if uses_chen_valuation(model):
+        if initial_cover is None:
+            raise ValueError(f"{model.name} requires initial_cover.")
+        return model.calculate(
+            delta_cc,
+            value,
+            value_type=value_type,
+            initial_cover=initial_cover,
+        )
+    return model.calculate(delta_cc, value, value_type=value_type)
+
 
 @dataclass
 class DepreciationModel(ABC):
-    """
-    Abstract base class for depreciation models: populate as necessary.
-
-    All models must implement:
-    - calculate(delta_cc, value) -> remaining_value
-    - name: human-readable name
-    - description: model description
-    """
+    """Abstract depreciation model."""
 
     @property
     @abstractmethod
     def name(self) -> str:
-        """Human-readable model name."""
         pass
 
     @property
     @abstractmethod
     def model_type(self) -> str:
-        """Model type for colour selection in plotting."""
         pass
 
     @property
     @abstractmethod
     def description(self) -> str:
-        """Model description for documentation."""
         pass
 
     @abstractmethod
     def calculate(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        *,
+        value_type: str = "tourism",
+        initial_cover: Union[float, np.ndarray, None] = None,
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        """
-        Calculate remaining value after coral cover change.
-
-        Parameters
-        ----------
-        delta_cc : float or array
-            Change in coral cover as a proportion (e.g., -0.10 = 10pp decrease).
-            NEGATIVE values indicate decrease.
-        value : float or array
-            Current economic value (e.g., USD).
-
-        Returns
-        -------
-        float or array
-            Remaining value after depreciation. Always >= 0.
-        """
         pass
 
-    def calculate_loss(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
+    def calculate_change(
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        """
-        Calculate value LOST (original - remaining).
+        return value - self.calculate(delta_cc, value, **kwargs)
 
-        Returns
-        -------
-        float or array
-            Value lost due to coral cover change.
-        """
-        return value - self.calculate(delta_cc, value)
-
-    def calculate_loss_fraction(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
+    def calculate_change_fraction(
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        """
-        Calculate fraction of value lost (0 to 1).
-
-        Returns
-        -------
-        float or array
-            Fraction of value lost (loss / original_value).
-        """
-        remaining = self.calculate(delta_cc, value)
-        # Avoid division by zero
+        remaining = self.calculate(delta_cc, value, **kwargs)
         with np.errstate(divide="ignore", invalid="ignore"):
             fraction = 1 - (remaining / value)
             fraction = np.where(value == 0, 0, fraction)
@@ -109,20 +251,17 @@ class DepreciationModel(ABC):
 @dataclass
 class LinearModel(DepreciationModel):
     """
-    Linear depreciation: value decreases proportionally to coral cover loss.
+    Chen et al. sector-specific valuation (registered as ``linear``).
 
-    Formula: remaining = value * (1 + rate_per_percent * delta_cc * 100)
-
-    Default: 3.81% value loss per 1 percentage point coral cover decrease.
-
-    Note: delta_cc is negative for decreases, so the formula adds a negative term.
+    - Tourism: 3.81% value loss per 1% **relative** coral cover loss (elasticity).
+    - Fisheries / coastal protection: 1:1 with relative coral cover change.
     """
 
-    rate_per_percent: float = 0.0381  # 3.81% value loss per 1pp cover decrease
+    method: str = "elasticity"
 
     @property
     def name(self) -> str:
-        return f"Linear ({self.rate_per_percent * 100:.2f}%/pp)"
+        return "Linear (3.81%/rel%)"
 
     @property
     def model_type(self) -> str:
@@ -131,43 +270,68 @@ class LinearModel(DepreciationModel):
     @property
     def description(self) -> str:
         return (
-            f"Linear depreciation: {self.rate_per_percent * 100:.2f}% value loss "
-            f"per 1 percentage point coral cover decrease. "
-            f"Based on Chen et al. (2014)."
+            "Chen et al. valuation: tourism elasticity 3.81% per 1% relative coral loss; "
+            "fisheries and coastal protection scale 1:1 with relative coral change."
         )
 
     def calculate(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        *,
+        value_type: str = "tourism",
+        initial_cover: Union[float, np.ndarray, None] = None,
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        # delta_cc is negative for decrease
-        # E.g., delta_cc = -0.10 means 10pp decrease
-        # Loss = value * rate * |delta_cc| * 100 = value * 0.0381 * 10 = 38.1% loss
+        if initial_cover is None:
+            raise ValueError(
+                f"{self.name} requires initial_cover (baseline coral cover, proportion 0–1)."
+            )
+        return chen_remaining_value(
+            delta_cc, value, value_type, initial_cover, method=self.method
+        )
 
-        # Convert proportion to percentage points
-        delta_cc_pp = delta_cc * 100  # e.g., -0.10 -> -10
 
-        # Calculate remaining value
-        # delta_cc_pp is negative for decrease, so rate_per_percent * delta_cc_pp is negative
-        # remaining = value * (1 + negative_number) = value * (1 - loss_fraction)
-        remaining = value * (1 + self.rate_per_percent * delta_cc_pp)
+@dataclass
+class ChenExactModel(DepreciationModel):
+    """Chen et al. quadratic tourism curve (exact_nonlinear); other sectors 1:1 relative."""
 
-        return np.maximum(remaining, 0)  # hard threshold at zero value
+    @property
+    def name(self) -> str:
+        return "Chen Exact (quadratic)"
+
+    @property
+    def model_type(self) -> str:
+        return "chen_exact"
+
+    @property
+    def description(self) -> str:
+        return (
+            "Chen et al. exact quadratic tourism meta-regression; "
+            "fisheries and coastal protection scale 1:1 with relative coral change."
+        )
+
+    def calculate(
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        *,
+        value_type: str = "tourism",
+        initial_cover: Union[float, np.ndarray, None] = None,
+        **kwargs,
+    ) -> Union[float, np.ndarray]:
+        if initial_cover is None:
+            raise ValueError(f"{self.name} requires initial_cover.")
+        return chen_remaining_value(
+            delta_cc, value, value_type, initial_cover, method="exact_nonlinear"
+        )
 
 
 @dataclass
 class CompoundModel(DepreciationModel):
-    """
-    Compound depreciation: each percentage point of coral cover loss compounds.
+    """Compound depreciation per percentage point of absolute coral cover loss."""
 
-    Formula: remaining = value * (1 - rate_per_percent) ^ |delta_cc * 100|
-
-    This models diminishing marginal value: the first 10% loss is more impactful
-    than the last 10%.
-
-    Default: 3.81% compounded loss per 1 percentage point coral cover decrease.
-    """
-
-    rate_per_percent: float = 0.0381  # 3.81% compounded per 1pp cover decrease
+    rate_per_percent: float = 0.0381
 
     @property
     def name(self) -> str:
@@ -180,57 +344,33 @@ class CompoundModel(DepreciationModel):
     @property
     def description(self) -> str:
         return (
-            f"Compound depreciation: value multiplied by (1 - {self.rate_per_percent * 100:.2f}%) "
-            f"for each percentage point of coral cover decrease. "
-            f"Models diminishing marginal loss."
+            f"Compound: value × (1 − {self.rate_per_percent * 100:.2f}%) "
+            f"per percentage point of absolute coral cover decrease."
         )
 
     def calculate(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
+        self,
+        delta_cc: Union[float, np.ndarray],
+        value: Union[float, np.ndarray],
+        *,
+        value_type: str = "tourism",
+        initial_cover: Union[float, np.ndarray, None] = None,
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        """Calculate remaining value after compound depreciation."""
-        # delta_cc is negative for decrease (e.g., -0.10 = 10pp decrease)
-        # We want: value * (1 - rate)^|delta_cc_pp|
-
-        delta_cc_pp = np.abs(delta_cc * 100)  # Always positive, in percentage points
-
-        # Only apply depreciation for coral cover DECREASE (delta_cc < 0)
-        # For increases (delta_cc > 0), we could model appreciation, but
-        # the default behavior is no change (conservative assumption)
+        delta_cc_pp = np.abs(np.asarray(delta_cc) * 100)
         is_decrease = np.asarray(delta_cc) < 0
-
         decay_factor = (1 - self.rate_per_percent) ** delta_cc_pp
-
-        # Apply decay only to decreases
         remaining = np.where(is_decrease, value * decay_factor, value)
-
         return np.maximum(remaining, 0)
 
 
 @dataclass
 class TippingPointModel(DepreciationModel):
-    """
-    Tipping point depreciation: gradual loss until threshold, then rapid collapse.
+    """Gradual compound loss until a coral cover threshold, then catastrophic loss."""
 
-    Models ecosystem collapse where:
-    - Below threshold: linear/gradual depreciation
-    - At/beyond threshold: catastrophic value loss
-
-    Parameters
-    ----------
-    threshold_cc : float
-        Coral cover threshold (proportion) below which collapse occurs.
-        E.g., 0.10 means collapse when cover drops below 10%.
-    pre_threshold_rate : float
-        Depreciation rate before threshold (per percentage point).
-    post_threshold_loss : float
-        Fraction of remaining value lost when threshold is crossed (0-1).
-        E.g., 0.9 means 90% of remaining value is lost.
-    """
-
-    threshold_cc: float = 0.10  # 10% coral cover threshold
-    pre_threshold_rate: float = 0.0381  # 3.81% loss per pp before threshold
-    post_threshold_loss: float = 1  # 80% of value lost at collapse
+    threshold_cc: float = 0.10
+    pre_threshold_rate: float = 0.0381
+    post_threshold_loss: float = 1.0
 
     @property
     def name(self) -> str:
@@ -243,8 +383,8 @@ class TippingPointModel(DepreciationModel):
     @property
     def description(self) -> str:
         return (
-            f"Tipping point model: {self.pre_threshold_rate * 100:.1f}% loss per pp "
-            f"until coral cover falls below {self.threshold_cc * 100:.0f}%, "
+            f"Tipping point: {self.pre_threshold_rate * 100:.1f}% compound loss per pp "
+            f"until cover < {self.threshold_cc * 100:.0f}%, "
             f"then {self.post_threshold_loss * 100:.0f}% catastrophic loss."
         )
 
@@ -252,137 +392,43 @@ class TippingPointModel(DepreciationModel):
         self,
         delta_cc: Union[float, np.ndarray],
         value: Union[float, np.ndarray],
-        threshold: float = None,  # If None, uses self.threshold_cc
-        original_cc: Union[float, np.ndarray] = 0.5,
+        *,
+        value_type: str = "tourism",
+        initial_cover: Union[float, np.ndarray, None] = None,
+        original_cc: Union[float, np.ndarray, None] = None,
+        threshold: float = None,
+        **kwargs,
     ) -> Union[float, np.ndarray]:
-        """
-        Calculate remaining value with tipping point behavior.
-
-        Parameters
-        ----------
-        delta_cc : float or array
-            Change in coral cover (negative for decrease).
-        value : float or array
-            Current economic value.
-        threshold : float, optional
-            Coral cover threshold. If None, uses self.threshold_cc.
-        original_cc : float or array, optional
-            Original/baseline coral cover. Default: 0.5.
-
-        Returns
-        -------
-        float or array
-            Remaining value after depreciation.
-        """
-        # Use model's threshold_cc if threshold not provided
         if threshold is None:
             threshold = self.threshold_cc
+        if original_cc is None:
+            original_cc = initial_cover if initial_cover is not None else 0.5
 
-        # delta_cc is negative for decrease (e.g., -0.10 = 10pp decrease)
-        delta_cc_pp = np.abs(delta_cc * 100)  # Always positive, in percentage points
-
-        # Only apply depreciation for coral cover DECREASE (delta_cc < 0)
+        delta_cc_pp = np.abs(np.asarray(delta_cc) * 100)
         is_decrease = np.asarray(delta_cc) < 0
-
-        # Baseline compound decline before threshold
         decay_factor = (1 - self.pre_threshold_rate) ** delta_cc_pp
-
-        # Apply depreciation
         remaining_value = np.where(is_decrease, value * decay_factor, value)
 
-        # Calculate remaining coral cover
         remaining_cc = np.maximum(original_cc + delta_cc, 0)
-
-        # Apply tipping point collapse: if remaining_cc < threshold, catastrophic loss
-        # Uses post_threshold_loss to determine how much value is lost
         collapse_mask = remaining_cc < threshold
         if np.any(collapse_mask):
-            # Apply catastrophic loss: lose post_threshold_loss fraction
             remaining_value = np.where(
                 collapse_mask,
                 remaining_value * (1 - self.post_threshold_loss),
                 remaining_value,
             )
-
         return np.maximum(remaining_value, 0)
 
 
-@dataclass
-class CoastalProtectionModel(DepreciationModel):
-    """
-    Model for coastal protection value loss.
-
-    Coastal protection depends on reef structure, which degrades differently
-    than tourism value. This model can be parameterized with different
-    assumptions about structural integrity loss.
-
-    Reference: Beck et al. (2018) - The global flood protection savings
-    provided by coral reefs.
-    """
-
-    structural_loss_rate: float = 0.05  # 5% protection loss per 1pp cover decrease
-    min_protection_fraction: float = (
-        0.20  # Reef provides min 20% protection even degraded
-    )
-
-    @property
-    def name(self) -> str:
-        return f"Coastal Protection ({self.structural_loss_rate * 100:.1f}%/pp)"
-
-    @property
-    def description(self) -> str:
-        return (
-            f"Coastal protection depreciation: {self.structural_loss_rate * 100:.1f}% "
-            f"protection loss per pp coral cover decrease. "
-            f"Minimum {self.min_protection_fraction * 100:.0f}% protection retained."
-        )
-
-    def calculate(
-        self, delta_cc: Union[float, np.ndarray], value: Union[float, np.ndarray]
-    ) -> Union[float, np.ndarray]:
-        delta_cc_pp = np.abs(delta_cc * 100)
-        is_decrease = np.asarray(delta_cc) < 0
-
-        # Calculate protection factor (fraction of protection remaining)
-        protection_factor = 1 - (self.structural_loss_rate * delta_cc_pp)
-        protection_factor = np.maximum(protection_factor, self.min_protection_fraction)
-
-        remaining = np.where(is_decrease, value * protection_factor, value)
-
-        return np.maximum(remaining, 0)
-
-
-# Registry of available models
 _MODEL_REGISTRY: Dict[str, type] = {
     "linear": LinearModel,
+    "chen_exact": ChenExactModel,
     "compound": CompoundModel,
     "tipping_point": TippingPointModel,
-    "coastal_protection": CoastalProtectionModel,
 }
 
 
 def get_model(name: str, **kwargs) -> DepreciationModel:
-    """
-    Get a depreciation model by name.
-
-    Parameters
-    ----------
-    name : str
-        Model name: 'linear', 'compound', 'tipping_point', 'coastal_protection'
-    **kwargs
-        Model-specific parameters (e.g., rate_per_percent, threshold_cc)
-
-    Returns
-    -------
-    DepreciationModel
-        Instantiated model.
-
-    Examples
-    --------
-    >>> model = get_model("compound", rate_per_percent=0.05)
-    >>> model.calculate(delta_cc=-0.10, value=1000)
-    598.74  # ~40% loss for 10pp decrease
-    """
     if name not in _MODEL_REGISTRY:
         raise ValueError(
             f"Unknown model '{name}'. Available: {list(_MODEL_REGISTRY.keys())}"
@@ -391,14 +437,6 @@ def get_model(name: str, **kwargs) -> DepreciationModel:
 
 
 def list_models() -> Dict[str, str]:
-    """
-    List available models with descriptions.
-
-    Returns
-    -------
-    dict
-        Model names mapped to descriptions.
-    """
     return {name: cls().description for name, cls in _MODEL_REGISTRY.items()}
 
 
@@ -406,29 +444,11 @@ def compare_models(
     delta_cc_range: np.ndarray = None,
     value: float = 100.0,
     models: list = None,
-    original_cc: float = 0.5,
+    original_cc: float = 0.35,
+    value_type: str = "tourism",
 ) -> dict:
-    """
-    Compare multiple models across a range of coral cover changes.
-
-    Parameters
-    ----------
-    delta_cc_range : array, optional
-        Range of delta_cc values to compare. Default: -1.0 to 0 in 0.01 steps.
-    value : float
-        Base value for comparison.
-    models : list, optional
-        List of model names or instances. Default: all registered models.
-    original_cc : float, optional
-        Original coral cover (for tipping point model). Default: 0.5.
-
-    Returns
-    -------
-    dict
-        Keys: model names, Values: arrays of remaining values.
-    """
     if delta_cc_range is None:
-        delta_cc_range = np.linspace(-1.0, 0, 101)  # 0 to 100pp decrease
+        delta_cc_range = np.linspace(-1.0, 0, 101)
 
     if models is None:
         models = list(_MODEL_REGISTRY.keys())
@@ -441,14 +461,24 @@ def compare_models(
         else:
             model = m
 
-        # TippingPointModel requires original_cc parameter
         if model.model_type == "tipping_point":
             threshold = getattr(model, "threshold_cc", 0.1)
             results[model.name] = model.calculate(
-                delta_cc_range, value, original_cc=original_cc, threshold=threshold
+                delta_cc_range,
+                value,
+                value_type=value_type,
+                initial_cover=original_cc,
+                original_cc=original_cc,
+                threshold=threshold,
+            )
+        elif uses_chen_valuation(model):
+            results[model.name] = model.calculate(
+                delta_cc_range,
+                value,
+                value_type=value_type,
+                initial_cover=original_cc,
             )
         else:
-            # Standard models use simple signature
             results[model.name] = model.calculate(delta_cc_range, value)
 
     return results
