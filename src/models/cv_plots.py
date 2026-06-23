@@ -15,6 +15,7 @@ from src.models.cv_methods import (
     ALL_CV_REGIMES,
     FoldSpec,
     build_all_folds,
+    is_in_sample_regime,
     pick_first_existing,
     year_series,
 )
@@ -28,6 +29,7 @@ _REGIME_LABELS = {
     "forward_repeat_sites": "Forward repeat sites (temporal holdout)",
     "spatial_kfold": "Spatial k-fold",
     "in_sample": "In-sample (train = test)",
+    "in_sample_multi_visit": "In-sample (multi-visit sites only)",
 }
 _FOLD_CMAP = plt.cm.tab10
 
@@ -95,15 +97,22 @@ def plot_regime_spatial_folds(
     ncols = min(3, n)
     nrows = int(np.ceil(n / ncols))
     regime = regime_folds[0].name
-    in_sample = regime == "in_sample"
+    in_sample = is_in_sample_regime(regime)
     fig, axes = plt.subplots(
         nrows, ncols, figsize=(4.5 * ncols, 4 * nrows), squeeze=False
     )
 
     for ax, fold in zip(axes.ravel(), regime_folds):
         if in_sample:
-            ax.scatter(lon, lat, color="#1f77b4", s=8, alpha=0.55, linewidths=0)
-            ax.set_title(f"All data (n={len(fold.test_idx):,})")
+            idx = fold.test_idx
+            ax.scatter(lon[idx], lat[idx], color="#1f77b4", s=8, alpha=0.55, linewidths=0)
+            if regime == "in_sample_multi_visit":
+                min_n = int(fold.meta.get("min_site_measurements", 1))
+                ax.set_title(
+                    f"Sites with >{min_n} visits (n={len(idx):,})"
+                )
+            else:
+                ax.set_title(f"All data (n={len(idx):,})")
         else:
             train_mask = np.zeros(len(df), dtype=bool)
             test_mask = np.zeros(len(df), dtype=bool)
@@ -596,6 +605,15 @@ def main() -> None:
     parser.add_argument("--k-folds", type=int, default=5)
     parser.add_argument("--spatial-bins", type=int, default=4)
     parser.add_argument(
+        "--in-sample-min-site-measurements",
+        type=int,
+        default=1,
+        help=(
+            "For in_sample_multi_visit: keep sites with strictly more than this "
+            "many rows (default: 1 → at least 2 visits per site)"
+        ),
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=None,
@@ -614,6 +632,7 @@ def main() -> None:
         k_folds=args.k_folds,
         seed=args.seed,
         spatial_bins=args.spatial_bins,
+        in_sample_min_site_measurements=args.in_sample_min_site_measurements,
     )
     if skipped:
         pd.DataFrame(skipped).to_csv(out / "skipped_regimes.csv", index=False)
