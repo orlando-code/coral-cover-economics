@@ -21,20 +21,31 @@ try:
 except ImportError:
     HAS_XGBOOST = False
 
-BaselineName = Literal["linear", "random_forest", "xgboost", "neural_network"]
+BaselineName = Literal[
+    "linear", "random_forest", "xgboost", "neural_network", "survey_mean"
+]
 
 BASELINE_MODEL_NAMES: tuple[BaselineName, ...] = (
     "linear",
     "random_forest",
     "xgboost",
     "neural_network",
+    "survey_mean",
 )
+
+PERSISTENCE_BASELINE_NAMES: frozenset[str] = frozenset({"survey_mean"})
+
+
+def is_persistence_baseline(name: str) -> bool:
+    return name in PERSISTENCE_BASELINE_NAMES
+
 
 DISPLAY_NAMES: dict[BaselineName, str] = {
     "linear": "Linear",
     "random_forest": "Random forest",
     "xgboost": "XGBoost",
     "neural_network": "Neural network",
+    "survey_mean": "Prior survey mean",
 }
 
 # String keys avoid skopt failures on tuple-valued categoricals.
@@ -271,6 +282,11 @@ def make_baseline_estimator(
             early_stopping=False,
             random_state=random_state,
         )
+    if name == "survey_mean":
+        raise ValueError(
+            "survey_mean is a persistence baseline; use predict_survey_mean_baseline() "
+            "or run via cross-validation with model name 'survey_mean'."
+        )
     raise ValueError(f"Unknown baseline model: {name}")
 
 
@@ -309,6 +325,8 @@ def baseline_param_grid(name: BaselineName) -> dict[str, list[Any]]:
             "learning_rate_init": [1e-4, 3e-4, 1e-3, 3e-3],
             "batch_size_key": ["64", "128", "256", "auto"],
         }
+    if name == "survey_mean":
+        return {}
     raise ValueError(f"Unknown baseline model: {name}")
 
 
