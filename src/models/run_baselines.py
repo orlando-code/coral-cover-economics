@@ -25,9 +25,11 @@ from src.models.baseline_features import (
 )
 from src.models.baseline_models import (
     BASELINE_MODEL_NAMES,
+    is_persistence_baseline,
     make_baseline_estimator,
     predict_coral_cover,
 )
+from src.models.baseline_persistence import predict_survey_mean_baseline
 from src.models.baseline_plots import (
     plot_metrics_comparison,
     plot_observed_vs_predicted,
@@ -84,36 +86,52 @@ def _cv_predictions_with_tuning(
     ):
         y_train, y_test = y[train_idx], y[test_idx]
         groups_train = groups[train_idx]
-        train_prep, test_prep, _ = prepare_baseline_fold_frames(
-            df.iloc[train_idx], df.iloc[test_idx]
-        )
 
-        base_est = make_baseline_estimator(name, random_state=seed)
-        pipe = make_baseline_pipeline(base_est)
+        if is_persistence_baseline(name):
+            y_fold_pred = predict_survey_mean_baseline(
+                df.iloc[train_idx],
+                df.iloc[test_idx],
+                y_train,
+            )
+            best_params: dict[str, object] = {}
+            tuning = {
+                "tuning_method": "none",
+                "n_trials_requested": 0,
+                "n_trials_completed": 0,
+                "best_cv_r2": np.nan,
+                "elapsed_sec": 0.0,
+            }
+        else:
+            train_prep, test_prep, _ = prepare_baseline_fold_frames(
+                df.iloc[train_idx], df.iloc[test_idx]
+            )
 
-        import warnings
+            base_est = make_baseline_estimator(name, random_state=seed)
+            pipe = make_baseline_pipeline(base_est)
 
-        warnings.filterwarnings(
-            "ignore",
-            message=r"`sklearn\\.utils\\.parallel\\.delayed`.*",
-        )
-        inner_n = _safe_inner_splits(groups_train, inner_splits)
-        inner_cv = GroupKFold(n_splits=inner_n)
-        best, best_params, tuning = tune_baseline_estimator(
-            pipe,
-            name,  # type: ignore[arg-type]
-            X_train=train_prep,
-            y_train=y_train,
-            groups_train=groups_train,
-            inner_cv=inner_cv,
-            n_iter=n_iter,
-            n_jobs=n_jobs,
-            seed=seed,
-            method=tuning_method,
-            verbose=verbose,
-        )
+            import warnings
 
-        y_fold_pred = predict_coral_cover(best, test_prep)
+            warnings.filterwarnings(
+                "ignore",
+                message=r"`sklearn\\.utils\\.parallel\\.delayed`.*",
+            )
+            inner_n = _safe_inner_splits(groups_train, inner_splits)
+            inner_cv = GroupKFold(n_splits=inner_n)
+            best, best_params, tuning = tune_baseline_estimator(
+                pipe,
+                name,  # type: ignore[arg-type]
+                X_train=train_prep,
+                y_train=y_train,
+                groups_train=groups_train,
+                inner_cv=inner_cv,
+                n_iter=n_iter,
+                n_jobs=n_jobs,
+                seed=seed,
+                method=tuning_method,
+                verbose=verbose,
+            )
+
+            y_fold_pred = predict_coral_cover(best, test_prep)
         y_pred[test_idx] = y_fold_pred
         m = regression_metrics(y_test, y_fold_pred)
         fold_metrics.append(m)

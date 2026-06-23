@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 
-from src.dataloading.build_model_ready_data import to_hbb_frame
+from src.dataloading.build_sully_model_ready_data import to_hbb_frame
 from src.models.hbb._config import CV_PREDICTORS
 from src.models.hbb.data import standardize_train_test
 from src.models.hbb.indices import make_dense_site_region
@@ -107,7 +107,9 @@ class HierarchicalGeographyEncoder(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         if y is None:
-            raise ValueError("HierarchicalGeographyEncoder requires target y at fit time.")
+            raise ValueError(
+                "HierarchicalGeographyEncoder requires target y at fit time."
+            )
         X = self._as_frame(X)
         y = np.asarray(y, dtype=float)
         y_logit = _logit(y)
@@ -199,7 +201,9 @@ class HierarchicalGeographyEncoder(BaseEstimator, TransformerMixin):
     def _as_frame(X) -> pd.DataFrame:
         if isinstance(X, pd.DataFrame):
             return X
-        raise TypeError("HierarchicalGeographyEncoder expects a pandas DataFrame input.")
+        raise TypeError(
+            "HierarchicalGeographyEncoder expects a pandas DataFrame input."
+        )
 
 
 def make_baseline_pipeline(model, *, smoothing: float = 20.0) -> Pipeline:
