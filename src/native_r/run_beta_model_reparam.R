@@ -24,7 +24,7 @@ script_dir <- if (length(file_arg)) {
 } else {
   getwd()
 }
-source("/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/src/native_r/beta_model_reparam_utils.R")
+source(file.path(script_dir, "beta_model_reparam_utils.R"))
 
 default_data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/data/sully_og"
 default_output_dir <- file.path(default_data_dir, "output", "reparam")

@@ -33,6 +33,70 @@ smoke_mcmc_settings <- function() {
   )
 }
 
+validate_mcmc_cfg <- function(mcmc_cfg) {
+  # R2jags: n.iter is total iterations (burn-in + post-burn-in), not post-burn-in alone.
+  n_iter <- as.integer(mcmc_cfg$n_iter)
+  n_burnin <- as.integer(mcmc_cfg$n_burnin)
+  n_thin <- as.integer(mcmc_cfg$n_thin)
+  n_chains <- as.integer(mcmc_cfg$n_chains)
+
+  if (length(n_iter) != 1L || !is.finite(n_iter) || n_iter <= 0L) {
+    stop("mcmc$n_iter must be a positive integer (R2jags total iterations, including burn-in).")
+  }
+  if (length(n_burnin) != 1L || !is.finite(n_burnin) || n_burnin < 0L) {
+    stop("mcmc$n_burnin must be a non-negative integer.")
+  }
+  if (n_iter <= n_burnin) {
+    stop(sprintf(
+      paste(
+        "mcmc$n_iter (%d) must be greater than mcmc$n_burnin (%d).",
+        "In R2jags, n.iter counts total iterations; post-burn-in = n.iter - n.burnin."
+      ),
+      n_iter,
+      n_burnin
+    ))
+  }
+  if (length(n_thin) != 1L || !is.finite(n_thin) || n_thin <= 0L) {
+    stop("mcmc$n_thin must be a positive integer.")
+  }
+  if (length(n_chains) != 1L || !is.finite(n_chains) || n_chains <= 0L) {
+    stop("mcmc$n_chains must be a positive integer.")
+  }
+  invisible(TRUE)
+}
+
+resolve_jags_parallel <- function(default = TRUE) {
+  flag <- tolower(trimws(Sys.getenv("BETA_JAGS_PARALLEL", unset = "auto")))
+  if (flag %in% c("1", "true", "yes")) {
+    return(TRUE)
+  }
+  if (flag %in% c("0", "false", "no")) {
+    return(FALSE)
+  }
+  isTRUE(default)
+}
+
+assign_jags_parallel_data <- function(win.data) {
+  # jags.parallel exports names(data) from envir; BUGS data (notably `re`) must exist there.
+  for (var in names(win.data)) {
+    assign(var, win.data[[var]], envir = .GlobalEnv)
+  }
+  invisible(names(win.data))
+}
+
+call_r2jags <- function(jags_args, use_parallel, progress_bar = "text") {
+  if (!isTRUE(use_parallel)) {
+    jags_args$progress.bar <- progress_bar
+    return(do.call(R2jags::jags, jags_args))
+  }
+
+  jags_args$envir <- .GlobalEnv
+  if (is.character(jags_args$model.file) && length(jags_args$model.file) == 1L) {
+    jags_args$model.file <- normalizePath(jags_args$model.file, wins = FALSE, mustWork = TRUE)
+  }
+  do.call(R2jags::jags.parallel, jags_args)
+}
+
 maybe_subsample_smoke <- function(df, seed = 20260529L) {
   if (!is_smoke_mode()) {
     return(df)
@@ -256,7 +320,11 @@ run_centered_jags_fit <- function(
   init_seed = 20260529L,
   progress_bar = "text"
 ) {
+  validate_mcmc_cfg(mcmc_cfg)
   inits <- make_centered_glmm_inits(K = K, Nre = Nre, seed = init_seed)
+  if (isTRUE(mcmc_cfg$use_parallel)) {
+    assign_jags_parallel_data(win.data)
+  }
   jags_args <- list(
     data = win.data,
     inits = inits,
@@ -268,13 +336,7 @@ run_centered_jags_fit <- function(
     n.iter = as.integer(mcmc_cfg$n_iter),
     DIC = TRUE
   )
-  if (isTRUE(mcmc_cfg$use_parallel)) {
-    jags_args$envir <- .GlobalEnv
-    do.call(R2jags::jags.parallel, jags_args)
-  } else {
-    jags_args$progress.bar <- progress_bar
-    do.call(R2jags::jags, jags_args)
-  }
+  call_r2jags(jags_args, use_parallel = mcmc_cfg$use_parallel, progress_bar = progress_bar)
 }
 
 source_beta_model_utils <- function(data_dir = NULL) {
@@ -439,6 +501,7 @@ run_jags_fit <- function(win.data, cfg, model_path, init_seed = NULL) {
   if (is.null(init_seed)) {
     init_seed <- cfg$seed
   }
+  validate_mcmc_cfg(cfg$mcmc)
 
   writeLines(make_model_string(), con = model_path)
 
@@ -452,35 +515,25 @@ run_jags_fit <- function(win.data, cfg, model_path, init_seed = NULL) {
     stop("make_inits() must return a function for R2jags compatibility.")
   }
 
+  jags_args <- list(
+    data = win.data,
+    inits = inits,
+    parameters.to.save = cfg$monitor_params,
+    model.file = model_path,
+    n.chains = cfg$mcmc$n_chains,
+    n.burnin = cfg$mcmc$n_burnin,
+    n.iter = cfg$mcmc$n_iter,
+    n.thin = cfg$mcmc$n_thin,
+    DIC = TRUE
+  )
   if (isTRUE(cfg$use_parallel)) {
-    # jags.parallel exports win.data names to .GlobalEnv on workers only;
-    # inits must be self-contained (see make_inits).
-    R2jags::jags.parallel(
-      data = win.data,
-      inits = inits,
-      parameters.to.save = cfg$monitor_params,
-      model.file = model_path,
-      n.chains = cfg$mcmc$n_chains,
-      n.burnin = cfg$mcmc$n_burnin,
-      n.iter = cfg$mcmc$n_iter,
-      n.thin = cfg$mcmc$n_thin,
-      DIC = TRUE,
-      envir = .GlobalEnv
-    )
-  } else {
-    R2jags::jags(
-      data = win.data,
-      inits = inits,
-      parameters.to.save = cfg$monitor_params,
-      model.file = model_path,
-      n.chains = cfg$mcmc$n_chains,
-      n.burnin = cfg$mcmc$n_burnin,
-      n.iter = cfg$mcmc$n_iter,
-      n.thin = cfg$mcmc$n_thin,
-      DIC = TRUE,
-      progress.bar = "text"
-    )
+    assign_jags_parallel_data(win.data)
   }
+  call_r2jags(
+    jags_args,
+    use_parallel = cfg$use_parallel,
+    progress_bar = if (is_smoke_mode()) "none" else "text"
+  )
 }
 
 summarize_convergence <- function(fit, param_rows = NULL) {
@@ -582,17 +635,40 @@ filter_model_ready_rows <- function(df) {
       !is.na(.data$TSA_freqstdev),
       !is.na(.data$Turbidity_mean),
       !is.na(.data$Historical_SST_max),
-      !is.na(.data$site),
-      !is.na(.data$region),
       !is.na(.data$diversity.standardized)
     )
+}
+
+assign_paper_site_region_indices <- function(df) {
+  # Match my_1_run_the_beta_model.Rmd after filtering:
+  # data$Reef_ID <- as.factor(as.character(as.factor(data$Reef_ID)))
+  # site = as.numeric(as.factor(Reef_ID)); region = as.numeric(as.factor(Ecoregion)).
+  df$Reef_ID <- as.factor(as.character(as.factor(df$Reef_ID)))
+  df$site <- as.integer(as.factor(df$Reef_ID))
+  df$region <- as.integer(as.factor(df$Ecoregion))
+
+  site_region <- df %>%
+    dplyr::distinct(.data$site, .data$Ecoregion, .data$region)
+  site_region_n <- site_region %>%
+    dplyr::count(.data$site, name = "n_regions")
+  if (any(site_region_n$n_regions != 1L)) {
+    bad <- site_region_n$site[site_region_n$n_regions != 1L]
+    stop(sprintf(
+      "Paper-style indexing found sites in multiple ecoregions. Example site ids: %s",
+      paste(head(bad, 5), collapse = ", ")
+    ))
+  }
+
+  df
 }
 
 load_model_data_from_pipeline <- function(
   data_dir,
   diversity_lookup_path = NULL,
-  shapefiles_dir = NULL
+  shapefiles_dir = NULL,
+  index_source = c("paper_factor", "data_for_maps")
 ) {
+  index_source <- match.arg(index_source)
   if (is.null(diversity_lookup_path)) {
     diversity_lookup_path <- file.path(data_dir, "data_for_maps.csv")
   }
@@ -661,8 +737,8 @@ load_model_data_from_pipeline <- function(
       trusted_ecoregion = as.character(.data$Ecoregion.x),
       trusted_erg = as.character(.data$ERG),
       diversity.standardized = as.numeric(.data$diversity.standardized),
-      site = as.integer(.data$site),
-      region = as.integer(.data$region)
+      trusted_site = as.integer(.data$site),
+      trusted_region = as.integer(.data$region)
     ) %>%
     dplyr::distinct(.data$Reef_ID, .keep_all = TRUE)
 
@@ -697,12 +773,23 @@ load_model_data_from_pipeline <- function(
   df$trusted_erg <- NULL
 
   df <- filter_model_ready_rows(df)
+  if (index_source == "paper_factor") {
+    df <- assign_paper_site_region_indices(df)
+  } else {
+    df$site <- df$trusted_site
+    df$region <- df$trusted_region
+  }
+  df <- df[!is.na(df$site) & !is.na(df$region), , drop = FALSE]
+  df$trusted_site <- NULL
+  df$trusted_region <- NULL
+
   df <- maybe_subsample_smoke(df)
   msg(
-    "Model-ready dataset: %d rows | %d sites | %d regions",
+    "Model-ready dataset: %d rows | %d sites | %d regions | index_source=%s",
     nrow(df),
     length(unique(df$site)),
-    length(unique(df$region))
+    length(unique(df$region)),
+    index_source
   )
   df
 }
@@ -755,3 +842,880 @@ save_reparam_convergence_plots <- function(
   dev.off()
   invisible(TRUE)
 }
+
+# ---- Beta-model investigation helpers (original vs reparam) ----
+
+ORIGINAL_CENTERED_MONITOR_PARAMS <- c(
+  "beta", "beta_diversity", "a", "theta", "PRes", "Fit", "FitNew",
+  "YNew", "ecoregion", "sigma", "sigma_ecoregion", "mu_global"
+)
+
+make_original_centered_model_string <- function() {
+  "
+    model{
+    #1A. Priors
+    for (k in 1:K) { beta[k]  ~ dnorm(0, 0.0001) }
+    for (j in 1:Nre) {a[j] ~ dnorm(ecoregion[region_for_each_site[j]], tau)}
+    # Hierarchical effects
+    for(z in 1:R){
+    ecoregion[z] ~ dnorm(g[z],tau_ecoregion)
+    g[z] <- mu_global + beta_diversity*diversity[z]
+    }
+    mu_global ~ dnorm(0, 0.0001)
+    beta_diversity ~ dnorm(0, 0.0001)
+
+    #1B.
+    num   ~ dnorm(0, 0.0016)
+    denom ~ dnorm(0, 1)
+    sigma <- abs(num / denom)
+
+    num_ecoregion   ~ dnorm(0, 0.0016)
+    denom_ecoregion ~ dnorm(0, 1)
+    sigma_ecoregion <- abs(num_ecoregion / denom_ecoregion)
+
+    #1C. half-Cauchy(25) prior tau
+    tau   <- 1 / (sigma * sigma)
+    numtheta   ~ dnorm(0, 0.0016)
+    denomtheta ~ dnorm(0, 1)
+    theta <- abs(numtheta / denomtheta)
+
+    tau_ecoregion   <- 1 / (sigma_ecoregion * sigma_ecoregion)
+
+#2. Likelihood
+    for (i in 1:N){
+      Y[i]       ~ dbeta(shape1[i], shape2[i])
+      shape1[i] <- theta * prob[i]
+      shape2[i] <- theta * (1 - prob[i])
+
+      eta[i] <- inprod(beta[], X[i,]) + a[re[i]]
+      logit(prob[i]) <- eta[i]
+
+      ExpY[i] <- prob[i]
+      VarY[i] <- prob[i] * (1 - prob[i])  / (theta + 1)
+      PRes[i] <- (Y[i] - ExpY[i]) / sqrt(VarY[i])
+
+      YNew[i]   ~ dbeta(shape1[i], shape2[i])
+      PResNew[i] <- (YNew[i] - ExpY[i]) / sqrt(VarY[i])
+      D[i]       <- pow(PRes[i], 2)
+      DNew[i]    <- pow(PResNew[i], 2)
+  }
+    Fit         <- sum(D[1:N])
+    FitNew      <- sum(DNew[1:N])
+}
+"
+}
+
+make_reparam_centered_model_string <- function() {
+  "
+model{
+  for (k in 1:K) {
+    beta[k] ~ dnorm(0, 0.0001)
+  }
+
+  for (j in 1:Nre) {
+    a[j] ~ dnorm(ecoregion[region_for_each_site[j]], tau)
+  }
+  for (z in 1:R) {
+    ecoregion[z] ~ dnorm(g[z], tau_ecoregion)
+    g[z] <- mu_global + beta_diversity * diversity[z]
+  }
+
+  mu_global ~ dnorm(0, 0.0001)
+  beta_diversity ~ dnorm(0, 0.0001)
+
+  num ~ dnorm(0, 0.0016)
+  denom ~ dnorm(0, 1)
+  sigma <- abs(num / denom)
+  tau <- 1 / (sigma * sigma)
+
+  num_ecoregion ~ dnorm(0, 0.0016)
+  denom_ecoregion ~ dnorm(0, 1)
+  sigma_ecoregion <- abs(num_ecoregion / denom_ecoregion)
+  tau_ecoregion <- 1 / (sigma_ecoregion * sigma_ecoregion)
+
+  numtheta ~ dnorm(0, 0.0016)
+  denomtheta ~ dnorm(0, 1)
+  theta <- abs(numtheta / denomtheta)
+
+  for (i in 1:N) {
+    Y[i] ~ dbeta(shape1[i], shape2[i])
+    shape1[i] <- theta * pi[i]
+    shape2[i] <- theta * (1 - pi[i])
+
+    logit(pi_raw[i]) <- eta[i]
+    pi[i] <- max(1.0E-6, min(0.999999, pi_raw[i]))
+    eta[i] <- inprod(beta[], X[i,]) + a[re[i]]
+
+    ExpY[i] <- pi[i]
+    VarY[i] <- pi[i] * (1 - pi[i]) / (theta + 1)
+    PRes[i] <- (Y[i] - ExpY[i]) / sqrt(VarY[i])
+
+    YNew[i] ~ dbeta(shape1[i], shape2[i])
+    PResNew[i] <- (YNew[i] - ExpY[i]) / sqrt(VarY[i])
+    D[i] <- pow(PRes[i], 2)
+    DNew[i] <- pow(PResNew[i], 2)
+  }
+
+  Fit <- sum(D[1:N])
+  FitNew <- sum(DNew[1:N])
+}
+"
+}
+
+build_original_design_matrix <- function(df, include_intercept = TRUE) {
+  f <- if (include_intercept) {
+    ~ lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean +
+      SSTA_min + SSTA_freqstdev + SSTA_dhwmax + TSA_max + TSA_freqstdev +
+      Turbidity_mean + Historical_SST_max
+  } else {
+    ~ 0 + lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean +
+      SSTA_min + SSTA_freqstdev + SSTA_dhwmax + TSA_max + TSA_freqstdev +
+      Turbidity_mean + Historical_SST_max
+  }
+  X <- model.matrix(f, data = df)
+  if (any(!is.finite(X))) {
+    stop("Non-finite values in original design matrix.")
+  }
+  X
+}
+
+build_diversity_vector <- function(
+  df,
+  ordering = c("region_dense", "region_factor", "paper_alphabetical", "erg_sorted"),
+  R_expected,
+  region_for_each_site = NULL
+) {
+  ordering <- match.arg(ordering)
+  dens <- make_dense_site_region(df)
+  d <- dens$data
+
+  if (ordering == "region_dense") {
+    return(build_region_diversity(d, R_expected))
+  }
+
+  if (ordering == "region_factor") {
+    reg_div <- d %>%
+      dplyr::distinct(.data$region, .data$diversity.standardized) %>%
+      dplyr::arrange(.data$region)
+    if (nrow(reg_div) != R_expected) {
+      stop(sprintf(
+        "region_factor diversity length %d != R_expected %d",
+        nrow(reg_div), R_expected
+      ))
+    }
+    return(reg_div$diversity.standardized)
+  }
+
+  if (ordering == "paper_alphabetical") {
+    reg_div <- d %>%
+      dplyr::distinct(.data$Ecoregion, .data$diversity.standardized) %>%
+      dplyr::arrange(.data$Ecoregion)
+    vec <- reg_div$diversity.standardized
+    if (length(vec) < R_expected) {
+      stop(sprintf(
+        "paper_alphabetical diversity has %d regions but R_expected=%d",
+        length(vec), R_expected
+      ))
+    }
+    return(vec[seq_len(R_expected)])
+  }
+
+  if (ordering == "erg_sorted") {
+    if (!"ERG" %in% names(d)) {
+      stop("ERG column required for erg_sorted diversity ordering.")
+    }
+    reg_div <- d %>%
+      dplyr::distinct(.data$ERG, .data$diversity.standardized) %>%
+      dplyr::arrange(as.integer(.data$ERG))
+    if (nrow(reg_div) != R_expected) {
+      stop(sprintf(
+        "erg_sorted diversity length %d != R_expected %d",
+        nrow(reg_div), R_expected
+      ))
+    }
+    return(reg_div$diversity.standardized)
+  }
+
+  stop("Unknown diversity ordering.")
+}
+
+resolve_region_count <- function(df, r_index = c("n_regions", "n_erg")) {
+  r_index <- match.arg(r_index)
+  if (r_index == "n_erg") {
+    if (!"ERG" %in% names(df)) {
+      stop("ERG column required when r_index='n_erg'.")
+    }
+    return(length(unique(df$ERG)))
+  }
+  length(unique(df$region))
+}
+
+build_investigation_jags_data <- function(
+  df,
+  include_intercept = FALSE,
+  parameterization = c("noncentered", "centered"),
+  diversity_ordering = "region_dense",
+  r_index = "n_regions",
+  y_eps = 1e-6,
+  N_for_transform = NULL,
+  region_encoding = c("dense", "paper_factor")
+) {
+  parameterization  <- match.arg(parameterization)
+  region_encoding   <- match.arg(region_encoding)
+  if (is.null(N_for_transform)) {
+    N_for_transform <- nrow(df)
+  }
+
+  std <- standardize_vars(df, FEATURE_VARS)
+  d <- std$data
+  dens <- make_dense_site_region(d)
+  d <- dens$data
+
+  if (r_index == "n_erg") {
+    R <- resolve_region_count(d, "n_erg")
+    region_for_each_site <- dens$region_for_each_site
+  } else {
+    R <- dens$R
+    region_for_each_site <- dens$region_for_each_site
+  }
+
+  # Optionally replicate the paper's as.factor(as.character(region)) encoding.
+  # The paper passed region integers as a character factor, so JAGS received
+  # lexicographic codes: "1" -> 1, "10" -> 2, "11" -> 3, ..., "2" -> 12, etc.
+  # This scrambles which ecoregion prior each site actually receives.
+  if (region_encoding == "paper_factor") {
+    all_levels           <- sort(as.character(seq_len(dens$R)))
+    region_for_each_site <- as.integer(
+      factor(as.character(region_for_each_site), levels = all_levels)
+    )
+  }
+
+  diversity_vec <- build_diversity_vector(
+    d,
+    ordering = diversity_ordering,
+    R_expected = R,
+    region_for_each_site = region_for_each_site
+  )
+
+  include_intercept <- isTRUE(include_intercept)
+  X <- build_original_design_matrix(d, include_intercept = include_intercept)
+  Y <- transform_beta_response(d$Average_coral_cover, N_for_transform, y_eps)
+
+  win.data <- list(
+    Y = Y,
+    N = nrow(d),
+    X = X,
+    K = ncol(X),
+    re = d$site_dense,
+    R = R,
+    Nre = dens$Nre,
+    region_for_each_site = region_for_each_site,
+    diversity = diversity_vec
+  )
+
+  list(
+    win.data = win.data,
+    data = d,
+    dense = dens,
+    X = X,
+    spec = list(
+      include_intercept = include_intercept,
+      parameterization  = parameterization,
+      diversity_ordering = diversity_ordering,
+      r_index           = r_index,
+      region_encoding   = region_encoding
+    )
+  )
+}
+
+diagnose_diversity_alignment <- function(df) {
+  dens <- make_dense_site_region(df)
+  d <- dens$data
+  R_regions <- dens$R
+  R_erg <- if ("ERG" %in% names(d)) length(unique(d$ERG)) else NA_integer_
+
+  dense_div <- build_region_diversity(d, R_regions)
+  region_factor_div <- build_diversity_vector(
+    d, ordering = "region_factor", R_expected = R_regions
+  )
+  paper_div <- if (!is.na(R_erg)) {
+    build_diversity_vector(
+      d, ordering = "paper_alphabetical", R_expected = R_erg
+    )
+  } else {
+    rep(NA_real_, R_regions)
+  }
+
+  region_lookup <- d %>%
+    dplyr::distinct(.data$region_dense, .data$region, .data$Ecoregion, .data$ERG) %>%
+    dplyr::arrange(.data$region_dense)
+
+  out <- data.frame(
+    region_dense = seq_len(R_regions),
+    region = region_lookup$region,
+    Ecoregion = region_lookup$Ecoregion,
+    ERG = if ("ERG" %in% names(region_lookup)) region_lookup$ERG else NA,
+    diversity_region_dense = dense_div,
+    diversity_region_factor = region_factor_div,
+    stringsAsFactors = FALSE
+  )
+  out$diversity_dense_vs_factor_diff <- out$diversity_region_dense - out$diversity_region_factor
+
+  list(
+    summary = out,
+    n_regions = R_regions,
+    n_erg = R_erg,
+    n_misaligned_paper = if (!is.na(R_erg)) {
+      n_cmp <- min(R_erg, R_regions)
+      sum(abs(paper_div[seq_len(n_cmp)] - dense_div[seq_len(n_cmp)]) > 1e-8)
+    } else {
+      NA_integer_
+    },
+    paper_alphabetical_head = utils::head(paper_div, 10)
+  )
+}
+
+extract_beta_summary <- function(
+  fit,
+  include_intercept = FALSE,
+  drop_intercept_from_plot = TRUE
+) {
+  sims <- fit$BUGSoutput$sims.list
+  beta_mat <- sims$beta
+  beta_div <- sims$beta_diversity
+
+  if (isTRUE(include_intercept)) {
+    plot_labels <- if (drop_intercept_from_plot) COEF_LABELS else c("Intercept", COEF_LABELS)
+    beta_for_plot <- if (drop_intercept_from_plot) beta_mat[, -1, drop = FALSE] else beta_mat
+  } else {
+    plot_labels <- COEF_LABELS
+    beta_for_plot <- beta_mat
+  }
+
+  beta_df <- data.frame(
+    variable = plot_labels,
+    mean = colMeans(beta_for_plot),
+    sd = apply(beta_for_plot, 2, sd),
+    lower_2.5 = apply(beta_for_plot, 2, stats::quantile, probs = 0.025),
+    upper_97.5 = apply(beta_for_plot, 2, stats::quantile, probs = 0.975),
+    lower_25 = apply(beta_for_plot, 2, stats::quantile, probs = 0.25),
+    upper_75 = apply(beta_for_plot, 2, stats::quantile, probs = 0.75),
+    stringsAsFactors = FALSE
+  )
+  beta_df <- rbind(
+    beta_df,
+    data.frame(
+      variable = "Diversity",
+      mean = mean(beta_div),
+      sd = sd(beta_div),
+      lower_2.5 = stats::quantile(beta_div, 0.025),
+      upper_97.5 = stats::quantile(beta_div, 0.975),
+      lower_25 = stats::quantile(beta_div, 0.25),
+      upper_75 = stats::quantile(beta_div, 0.75),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  intercept_row <- NULL
+  if (isTRUE(include_intercept)) {
+    intercept_row <- data.frame(
+      variable = "Intercept",
+      mean = mean(beta_mat[, 1]),
+      sd = sd(beta_mat[, 1]),
+      lower_2.5 = stats::quantile(beta_mat[, 1], 0.025),
+      upper_97.5 = stats::quantile(beta_mat[, 1], 0.975),
+      lower_25 = stats::quantile(beta_mat[, 1], 0.25),
+      upper_75 = stats::quantile(beta_mat[, 1], 0.75),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  list(beta_df = beta_df, intercept = intercept_row)
+}
+
+write_beta_fit_outputs <- function(
+  fit,
+  pkg,
+  output_dir,
+  variant_label,
+  include_intercept = FALSE,
+  monitor_params = NULL,
+  start_time = NULL,
+  mcmc_cfg = list()
+) {
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(output_dir, "logs"), recursive = TRUE, showWarnings = FALSE)
+
+  beta_summary <- extract_beta_summary(fit, include_intercept = include_intercept)
+  write.csv(
+    beta_summary$beta_df,
+    file.path(output_dir, "beta_est.csv"),
+    row.names = FALSE
+  )
+  if (!is.null(beta_summary$intercept)) {
+    write.csv(
+      beta_summary$intercept,
+      file.path(output_dir, "intercept_beta.csv"),
+      row.names = FALSE
+    )
+  }
+
+  # Convergence summary for key scalar + all beta params
+  K <- pkg$win.data$K
+  conv_params <- c(
+    paste0("beta[", seq_len(K), "]"),
+    "beta_diversity", "mu_global", "theta", "sigma", "sigma_ecoregion"
+  )
+  if (!is.null(monitor_params)) {
+    conv_params <- unique(c(conv_params, monitor_params))
+  }
+  conv <- summarize_convergence(fit, conv_params)
+  write.csv(conv, file.path(output_dir, "convergence_diagnostics.csv"), row.names = TRUE)
+
+  spec_path <- file.path(output_dir, "model_spec.json")
+  spec_out <- c(variant = variant_label, as.list(pkg$spec))
+  if (requireNamespace("jsonlite", quietly = TRUE)) {
+    jsonlite::write_json(spec_out, spec_path, auto_unbox = TRUE, pretty = TRUE)
+  } else {
+    writeLines(
+      paste(names(spec_out), spec_out, sep = ": ", collapse = "\n"),
+      spec_path
+    )
+  }
+
+  # Per-variant diagnostics subdirectory
+  write_variant_diagnostics(
+    fit = fit,
+    output_dir = output_dir,
+    variant_label = variant_label,
+    pkg = pkg,
+    include_intercept = include_intercept
+  )
+
+  # Run log
+  write_run_log(
+    output_dir = output_dir,
+    variant_label = variant_label,
+    start_time = start_time %||% Sys.time(),
+    end_time = Sys.time(),
+    fit = fit,
+    mcmc_cfg = mcmc_cfg
+  )
+
+  beta_summary$beta_df$variant <- variant_label
+  invisible(beta_summary$beta_df)
+}
+
+run_investigation_jags_fit <- function(
+  pkg,
+  cfg,
+  output_dir,
+  model_kind = c("reparam", "reparam_centered", "original_centered"),
+  init_seed = NULL
+) {
+  model_kind <- match.arg(model_kind)
+  model_path <- file.path(output_dir, "GLMM_coral_cover.txt")
+  init_seed <- init_seed %||% cfg$seed
+
+  if (model_kind == "reparam") {
+    fit <- run_jags_fit(pkg$win.data, cfg, model_path, init_seed = init_seed)
+    monitor_params <- cfg$monitor_params
+  } else if (model_kind == "reparam_centered") {
+    writeLines(make_reparam_centered_model_string(), model_path)
+    monitor_params <- ORIGINAL_CENTERED_MONITOR_PARAMS
+    fit <- run_centered_jags_fit(
+      win.data = pkg$win.data,
+      model_path = model_path,
+      params = monitor_params,
+      K = pkg$win.data$K,
+      Nre = pkg$win.data$Nre,
+      mcmc_cfg = cfg$mcmc,
+      init_seed = init_seed,
+      progress_bar = if (is_smoke_mode()) "none" else "text"
+    )
+  } else {
+    writeLines(make_original_centered_model_string(), model_path)
+    monitor_params <- ORIGINAL_CENTERED_MONITOR_PARAMS
+    fit <- run_centered_jags_fit(
+      win.data = pkg$win.data,
+      model_path = model_path,
+      params = monitor_params,
+      K = pkg$win.data$K,
+      Nre = pkg$win.data$Nre,
+      mcmc_cfg = cfg$mcmc,
+      init_seed = init_seed,
+      progress_bar = if (is_smoke_mode()) "none" else "text"
+    )
+  }
+
+  list(fit = fit, monitor_params = monitor_params)
+}
+
+plot_beta_coefficient_comparison <- function(
+  beta_frames,
+  output_path,
+  title = "Beta coefficient comparison across model variants"
+) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 is required for plot_beta_coefficient_comparison().")
+  }
+
+  combined <- dplyr::bind_rows(beta_frames)
+  combined$variable <- factor(
+    combined$variable,
+    levels = c(COEF_LABELS, "Diversity")
+  )
+
+  p <- ggplot2::ggplot(
+    combined,
+    ggplot2::aes(
+      x = variable,
+      y = mean,
+      colour = variant,
+      group = variant
+    )
+  ) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "gray50") +
+    ggplot2::geom_errorbar(
+      ggplot2::aes(ymin = lower_2.5, ymax = upper_97.5),
+      width = 0.15,
+      linewidth = 0.4,
+      alpha = 0.85,
+      position = ggplot2::position_dodge(width = 0.55)
+    ) +
+    ggplot2::geom_point(
+      size = 2.5,
+      position = ggplot2::position_dodge(width = 0.55)
+    ) +
+    ggplot2::coord_flip() +
+    ggplot2::theme_gray(base_size = 13) +
+    ggplot2::labs(
+      title = title,
+      x = "",
+      y = expression(paste("Estimated ", gamma, " coefficients")),
+      colour = "Model variant"
+    ) +
+    ggplot2::theme(legend.position = "bottom")
+
+  ggplot2::ggsave(output_path, p, width = 12, height = 8, dpi = 300)
+  invisible(p)
+}
+
+# ---- Per-variant diagnostics helpers ----
+
+# Build a long-format draws data frame from BUGSoutput$sims.array.
+# sims.array: [n_draws_per_chain, n_chains, n_params]
+make_draws_df <- function(bugs_output, params) {
+  arr <- bugs_output$sims.array
+  if (is.null(arr) || length(dim(arr)) < 3L) return(NULL)
+  pnames <- dimnames(arr)[[3]]
+  sel    <- intersect(params, pnames)
+  if (length(sel) == 0L) return(NULL)
+
+  n_draws  <- dim(arr)[1]
+  n_chains <- dim(arr)[2]
+
+  do.call(rbind, lapply(sel, function(pn) {
+    idx <- which(pnames == pn)
+    data.frame(
+      iteration = rep(seq_len(n_draws), times = n_chains),
+      chain     = rep(paste0("chain", seq_len(n_chains)), each = n_draws),
+      param     = pn,
+      value     = as.vector(arr[, , idx]),
+      stringsAsFactors = FALSE
+    )
+  }))
+}
+
+safe_ggsave <- function(p, path, width, height, dpi = 150) {
+  tryCatch(
+    ggplot2::ggsave(path, p, width = width, height = height, dpi = dpi, limitsize = FALSE),
+    error = function(e) msg("Warning: could not save %s: %s", basename(path), conditionMessage(e))
+  )
+}
+
+save_trace_png <- function(draws_df, path, variant_label, ncol = 4) {
+  nparams <- length(unique(draws_df$param))
+  nrows   <- ceiling(nparams / ncol)
+  p <- ggplot2::ggplot(
+      draws_df,
+      ggplot2::aes(x = .data$iteration, y = .data$value, colour = .data$chain)
+    ) +
+    ggplot2::geom_line(alpha = 0.7, linewidth = 0.25) +
+    ggplot2::facet_wrap(~ param, scales = "free_y", ncol = ncol) +
+    ggplot2::scale_colour_brewer(palette = "Set1") +
+    ggplot2::theme_bw(base_size = 9) +
+    ggplot2::labs(
+      title = sprintf("Trace plots: %s", variant_label),
+      x = "Post-burnin iteration", y = NULL, colour = NULL
+    ) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      strip.text      = ggplot2::element_text(size = 7),
+      axis.text.x     = ggplot2::element_text(size = 6)
+    )
+  safe_ggsave(p, path, width = ncol * 3.2, height = max(3, nrows * 2.5))
+}
+
+save_density_png <- function(draws_df, path, variant_label, ncol = 4) {
+  nparams <- length(unique(draws_df$param))
+  nrows   <- ceiling(nparams / ncol)
+  p <- ggplot2::ggplot(
+      draws_df,
+      ggplot2::aes(x = .data$value, fill = .data$chain, colour = .data$chain)
+    ) +
+    ggplot2::geom_density(alpha = 0.3) +
+    ggplot2::facet_wrap(~ param, scales = "free", ncol = ncol) +
+    ggplot2::scale_colour_brewer(palette = "Set1") +
+    ggplot2::scale_fill_brewer(palette = "Set1") +
+    ggplot2::theme_bw(base_size = 9) +
+    ggplot2::labs(
+      title = sprintf("Posterior densities: %s", variant_label),
+      x = NULL, y = "Density", colour = NULL, fill = NULL
+    ) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      strip.text      = ggplot2::element_text(size = 7)
+    )
+  safe_ggsave(p, path, width = ncol * 3.2, height = max(3, nrows * 2.5))
+}
+
+save_autocorr_png <- function(draws_df, path, variant_label, max_lag = 30, ncol = 4) {
+  n_draws <- max(draws_df$iteration)
+  if (n_draws < 4L) return(invisible(NULL))
+  max_lag  <- min(max_lag, n_draws - 1L)
+  ci_band  <- stats::qnorm(0.975) / sqrt(n_draws)
+
+  acf_rows <- lapply(
+    split(draws_df, list(draws_df$param, draws_df$chain), drop = TRUE),
+    function(df) {
+      if (nrow(df) < 5L) return(NULL)
+      ac <- tryCatch(stats::acf(df$value, lag.max = max_lag, plot = FALSE), error = function(e) NULL)
+      if (is.null(ac)) return(NULL)
+      data.frame(
+        param = df$param[1], chain = df$chain[1],
+        lag   = as.integer(ac$lag),
+        acf   = as.numeric(ac$acf),
+        stringsAsFactors = FALSE
+      )
+    }
+  )
+  acf_df <- do.call(rbind, Filter(Negate(is.null), acf_rows))
+  if (is.null(acf_df) || nrow(acf_df) == 0L) return(invisible(NULL))
+
+  nparams <- length(unique(acf_df$param))
+  nrows   <- ceiling(nparams / ncol)
+  p <- ggplot2::ggplot(
+      acf_df,
+      ggplot2::aes(x = .data$lag, y = .data$acf, colour = .data$chain)
+    ) +
+    ggplot2::geom_hline(yintercept = 0, colour = "gray50") +
+    ggplot2::geom_hline(
+      yintercept = c(-ci_band, ci_band),
+      linetype = "dashed", colour = "steelblue", alpha = 0.6
+    ) +
+    ggplot2::geom_segment(ggplot2::aes(xend = .data$lag, yend = 0), linewidth = 0.5, alpha = 0.8) +
+    ggplot2::facet_wrap(~ param, scales = "free_y", ncol = ncol) +
+    ggplot2::scale_colour_brewer(palette = "Set1") +
+    ggplot2::theme_bw(base_size = 9) +
+    ggplot2::labs(
+      title = sprintf("Autocorrelation: %s", variant_label),
+      x = "Lag", y = "ACF", colour = NULL
+    ) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      strip.text      = ggplot2::element_text(size = 7)
+    )
+  safe_ggsave(p, path, width = ncol * 3.2, height = max(3, nrows * 2.5))
+}
+
+save_rhat_png <- function(fit, path, variant_label, params_sel) {
+  summ      <- fit$BUGSoutput$summary
+  available <- intersect(params_sel, rownames(summ))
+  if (length(available) == 0L || !"Rhat" %in% colnames(summ)) return(invisible(NULL))
+  rhat_vals <- summ[available, "Rhat"]
+  rhat_df   <- data.frame(
+    param = names(rhat_vals),
+    rhat  = as.numeric(rhat_vals),
+    stringsAsFactors = FALSE
+  )
+  rhat_df <- rhat_df[is.finite(rhat_df$rhat), , drop = FALSE]
+  if (nrow(rhat_df) == 0L) return(invisible(NULL))
+
+  rhat_df <- rhat_df[order(rhat_df$rhat, decreasing = TRUE), ]
+  rhat_df$param  <- factor(rhat_df$param, levels = rev(rhat_df$param))
+  rhat_df$status <- factor(
+    ifelse(rhat_df$rhat > 1.1,  "poor (>1.10)",
+    ifelse(rhat_df$rhat > 1.05, "marginal (1.05-1.10)", "good (<=1.05)")),
+    levels = c("good (<=1.05)", "marginal (1.05-1.10)", "poor (>1.10)")
+  )
+  p <- ggplot2::ggplot(rhat_df, ggplot2::aes(x = .data$param, y = .data$rhat, fill = .data$status)) +
+    ggplot2::geom_col() +
+    ggplot2::scale_fill_manual(
+      values = c("good (<=1.05)" = "steelblue", "marginal (1.05-1.10)" = "orange", "poor (>1.10)" = "red")
+    ) +
+    ggplot2::geom_hline(yintercept = 1.1,  colour = "red",    linetype = "dashed") +
+    ggplot2::geom_hline(yintercept = 1.05, colour = "orange", linetype = "dashed") +
+    ggplot2::coord_flip() +
+    ggplot2::theme_bw(base_size = 9) +
+    ggplot2::labs(
+      title = sprintf("Gelman-Rubin R-hat: %s", variant_label),
+      x = NULL, y = "R-hat", fill = "Convergence"
+    ) +
+    ggplot2::theme(axis.text.y = ggplot2::element_text(size = 7), legend.position = "bottom")
+  nparams <- nrow(rhat_df)
+  safe_ggsave(p, path, width = 8, height = max(4, nparams * 0.22 + 2))
+}
+
+plot_single_variant_coeff <- function(beta_df, variant_label, output_path) {
+  df <- beta_df
+  df$fill_color <- ifelse(df$lower_2.5 > 0, "blue",
+                   ifelse(df$upper_97.5 < 0, "red", "white"))
+  df <- df[order(df$mean), , drop = FALSE]
+  df$variable <- factor(df$variable, levels = df$variable)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$variable, y = .data$mean)) +
+    ggplot2::geom_errorbar(
+      ggplot2::aes(ymin = .data$lower_2.5, ymax = .data$upper_97.5), width = 0
+    ) +
+    ggplot2::geom_errorbar(
+      ggplot2::aes(ymin = .data$lower_25, ymax = .data$upper_75), width = 0, linewidth = 1.3
+    ) +
+    ggplot2::geom_point(pch = 21, size = 3, fill = df$fill_color, colour = "black") +
+    ggplot2::coord_flip() +
+    ggplot2::theme_grey(base_size = 16) +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", colour = "gray") +
+    ggplot2::labs(
+      title = sprintf("Beta coefficients: %s", variant_label),
+      y = expression(paste("Estimated ", gamma, " coefficients")), x = ""
+    )
+
+  grDevices::png(output_path, width = 2700, height = 2000, res = 300)
+  print(p)
+  grDevices::dev.off()
+  invisible(p)
+}
+
+write_variant_diagnostics <- function(
+  fit,
+  output_dir,
+  variant_label,
+  pkg = NULL,
+  include_intercept = FALSE
+) {
+  diag_dir <- file.path(output_dir, "diagnostics")
+  dir.create(diag_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # Full convergence summary (all monitored params)
+  summ      <- fit$BUGSoutput$summary
+  conv_cols <- intersect(c("mean", "sd", "2.5%", "97.5%", "Rhat", "n.eff"), colnames(summ))
+  write.csv(
+    summ[, conv_cols, drop = FALSE],
+    file.path(diag_dir, "convergence_full.csv"),
+    row.names = TRUE
+  )
+
+  # Coefficient forest plot (paper style)
+  beta_summary <- extract_beta_summary(fit, include_intercept = include_intercept)
+  plot_single_variant_coeff(
+    beta_df       = beta_summary$beta_df,
+    variant_label = variant_label,
+    output_path   = file.path(diag_dir, "coeff_forest.png")
+  )
+
+  K           <- if (!is.null(pkg)) pkg$win.data$K else 14L
+  beta_params <- paste0("beta[", seq_len(K), "]")
+  other_key   <- c("beta_diversity", "mu_global", "sigma", "sigma_ecoregion", "theta")
+  all_key     <- c(beta_params, other_key)
+
+  arr <- fit$BUGSoutput$sims.array
+  if (!is.null(arr) && length(dim(arr)) == 3L) {
+    beta_df  <- make_draws_df(fit$BUGSoutput, beta_params)
+    other_df <- make_draws_df(fit$BUGSoutput, other_key)
+
+    if (!is.null(beta_df) && nrow(beta_df) > 0L) {
+      save_trace_png(beta_df,
+        file.path(diag_dir, "trace_betas.png"),   variant_label, ncol = 4)
+      save_density_png(beta_df,
+        file.path(diag_dir, "density_betas.png"),  variant_label, ncol = 4)
+      save_autocorr_png(beta_df,
+        file.path(diag_dir, "autocorr_betas.png"), variant_label, ncol = 4)
+    }
+    if (!is.null(other_df) && nrow(other_df) > 0L) {
+      save_trace_png(other_df,
+        file.path(diag_dir, "trace_other.png"),    variant_label, ncol = 3)
+      save_density_png(other_df,
+        file.path(diag_dir, "density_other.png"),   variant_label, ncol = 3)
+      save_autocorr_png(other_df,
+        file.path(diag_dir, "autocorr_other.png"),  variant_label, ncol = 3)
+    }
+  }
+
+  save_rhat_png(fit, file.path(diag_dir, "rhat_summary.png"), variant_label, all_key)
+
+  invisible(diag_dir)
+}
+
+write_run_log <- function(
+  output_dir,
+  variant_label,
+  start_time,
+  end_time = NULL,
+  fit = NULL,
+  mcmc_cfg = list()
+) {
+  log_dir <- file.path(output_dir, "logs")
+  dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
+
+  end_time <- end_time %||% Sys.time()
+  elapsed_min <- as.numeric(difftime(end_time, start_time, units = "mins"))
+
+  n_chains  <- mcmc_cfg$n_chains  %||% NA_integer_
+  n_iter    <- mcmc_cfg$n_iter    %||% NA_integer_
+  n_burnin  <- mcmc_cfg$n_burnin  %||% NA_integer_
+  n_thin    <- mcmc_cfg$n_thin    %||% NA_integer_
+  post_per_chain <- if (!is.na(n_iter) && !is.na(n_burnin) && !is.na(n_thin)) {
+    (as.integer(n_iter) - as.integer(n_burnin)) %/% as.integer(n_thin)
+  } else NA_integer_
+  total_samples <- if (!is.na(n_chains) && !is.na(post_per_chain)) {
+    as.integer(n_chains) * post_per_chain
+  } else NA_integer_
+
+  lines <- c(
+    paste0("variant      : ", variant_label),
+    paste0("finished_at  : ", format(end_time, "%Y-%m-%d %H:%M:%S")),
+    paste0("elapsed_min  : ", round(elapsed_min, 2)),
+    paste0("n_chains     : ", n_chains),
+    paste0("n_iter       : ", n_iter),
+    paste0("n_burnin     : ", n_burnin),
+    paste0("n_thin       : ", n_thin),
+    paste0("post_per_chain: ", post_per_chain),
+    paste0("total_samples: ", total_samples)
+  )
+
+  if (!is.null(fit)) {
+    summ <- fit$BUGSoutput$summary
+    rhat_vals <- if ("Rhat" %in% colnames(summ)) summ[, "Rhat"] else NULL
+    neff_vals  <- if ("n.eff" %in% colnames(summ)) summ[, "n.eff"] else NULL
+    if (!is.null(rhat_vals) && any(is.finite(rhat_vals))) {
+      lines <- c(
+        lines,
+        paste0("max_rhat     : ", round(max(rhat_vals, na.rm = TRUE), 4)),
+        paste0("rhat_gt_1.10 : ", sum(rhat_vals > 1.10, na.rm = TRUE)),
+        paste0("rhat_gt_1.05 : ", sum(rhat_vals > 1.05, na.rm = TRUE))
+      )
+    }
+    if (!is.null(neff_vals)) {
+      lines <- c(
+        lines,
+        paste0("median_neff  : ", round(stats::median(neff_vals, na.rm = TRUE), 1)),
+        paste0("min_neff     : ", round(min(neff_vals, na.rm = TRUE), 1))
+      )
+    }
+  }
+
+  writeLines(lines, file.path(log_dir, "run_log.txt"))
+  invisible(file.path(log_dir, "run_log.txt"))
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
