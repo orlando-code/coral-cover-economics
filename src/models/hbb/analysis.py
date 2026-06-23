@@ -29,6 +29,7 @@ from src.models.hbb.design import (
 from src.models.hbb.indices import prepare_hierarchical_indices
 from src.models.hbb.model import HierarchicalBetaModel
 from src.models.hbb.projections import project_future_coral_cover
+from src.models.residual_plots import build_residual_frame, write_residual_diagnostic_plots
 from src.plots.hb_beta_plots import (
     plot_bright_dark_spots_map,
     plot_correlation_matrix,
@@ -50,6 +51,163 @@ def create_output_dir_path(output_path: Path) -> Path:
     output_dir_path = output_path / f"model_{timestamp}"
     output_dir_path.mkdir(parents=True, exist_ok=True)
     return output_dir_path
+
+
+SPOT_LIST_EXPORT: dict[str, tuple[str, ...]] = {
+    "Latitude": ("latitude.degrees", "lat"),
+    "Longitude": ("longitude.degrees", "lon"),
+    "City_Town": ("city_town",),
+    "City_Town_2": ("city_town_2",),
+    "City_Town_3": ("city_town_3",),
+    "State_Island_Province": ("state_island_province",),
+    "Country_Name": ("country_name",),
+    "Ocean": ("ocean",),
+}
+
+
+def _resolve_df_column(df: pd.DataFrame, *candidates: str) -> str | None:
+    lower_map = {col.lower(): col for col in df.columns}
+    for candidate in candidates:
+        if candidate in df.columns:
+            return candidate
+        match = lower_map.get(candidate.lower())
+        if match is not None:
+            return match
+    return None
+
+
+def export_spot_lists(
+    df: pd.DataFrame,
+    classification: np.ndarray,
+    output_dir: Path,
+) -> None:
+    """Write bright/dark spot location tables (Rmd ``bright_spots_list.csv``)."""
+    export_cols = {
+        out_name: _resolve_df_column(df, *candidates)
+        for out_name, candidates in SPOT_LIST_EXPORT.items()
+    }
+    base = pd.DataFrame(
+        {out_name: df[col].values if col else np.nan for out_name, col in export_cols.items()}
+    )
+    base["classification"] = classification
+    bright = base.loc[classification == "bright_spot"].drop(columns="classification")
+    dark = base.loc[classification == "dark_spot"].drop(columns="classification")
+    bright.to_csv(output_dir / "bright_spots_list.csv", index=False)
+    dark.to_csv(output_dir / "dark_spots_list.csv", index=False)
+
+
+def save_in_sample_application_outputs(
+    model: HierarchicalBetaModel,
+    df: pd.DataFrame,
+    X: np.ndarray,
+    site_idx: np.ndarray,
+    output_dir: Path,
+    *,
+    save_residuals: bool = True,
+    n_prediction_samples: int = 1000,
+    threshold_sd: float = 1.5,
+) -> dict[str, Any]:
+    """Posterior mean cover, bright/dark spots, and Rmd-style in-sample figures."""
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    n = len(df)
+
+    predictions = model.predict(X, site_idx, n_samples=n_prediction_samples)
+    y_new_beta_mean = predictions["mean"]
+    y_new = inverse_transform_beta(y_new_beta_mean, n)
+
+    pred_stats_df = pd.DataFrame(
+        {
+            "mean": y_new,
+            "std": inverse_transform_beta(predictions["std"], n),
+            "median": inverse_transform_beta(predictions["median"], n),
+            "ci_lower_95": inverse_transform_beta(predictions["ci_lower_95"], n),
+            "ci_upper_95": inverse_transform_beta(predictions["ci_upper_95"], n),
+            "ci_lower_50": inverse_transform_beta(predictions["ci_lower_50"], n),
+            "ci_upper_50": inverse_transform_beta(predictions["ci_upper_50"], n),
+            "min": inverse_transform_beta(predictions["min"], n),
+            "max": inverse_transform_beta(predictions["max"], n),
+            "significant": predictions["significant"],
+        }
+    )
+    pred_stats_df.to_csv(output_dir / "prediction_statistics.csv", index=False)
+
+    observed = df["average_coral_cover"].to_numpy(dtype=float)
+    if np.nanmax(observed) > 1.5:
+        observed = observed / 100.0
+
+    spots_df = identify_bright_dark_spots(observed, y_new, threshold_sd=threshold_sd)
+    classification = spots_df["classification"].to_numpy()
+
+    plot_observed_vs_expected(
+        observed,
+        y_new,
+        classification,
+        output_dir / "observed_vs_expected_coral_cover.png",
+    )
+
+    map_df = df.copy()
+    if "lat" not in map_df.columns:
+        lat_col = _resolve_df_column(map_df, "latitude.degrees", "lat")
+        lon_col = _resolve_df_column(map_df, "longitude.degrees", "lon")
+        if lat_col:
+            map_df["lat"] = map_df[lat_col]
+        if lon_col:
+            map_df["lon"] = map_df[lon_col]
+
+    plot_bright_dark_spots_map(
+        map_df,
+        classification,
+        output_dir / "bright_dark_spots_map.png",
+    )
+    plot_bright_dark_spots_map(
+        map_df,
+        classification,
+        output_dir / "current_coral_cover_bright_and_dark_spots_a.png",
+    )
+
+    export_spot_lists(map_df, classification, output_dir)
+
+    ocean_stats = calculate_coral_cover_by_ocean(map_df)
+    ocean_stats.to_csv(output_dir / "coral_cover_by_ocean.csv")
+
+    processed = map_df.copy()
+    processed["Y_New"] = y_new
+    processed["y_new"] = y_new
+    processed["deviation_from_expected"] = spots_df["deviation_normalized"].values
+    processed["classification"] = classification
+    for col in pred_stats_df.columns:
+        processed[f"y_new_{col}"] = pred_stats_df[col].values
+    processed.to_csv(output_dir / "data_processed.csv", index=False)
+
+    if save_residuals:
+        work_df = processed.reset_index(drop=True).copy()
+        if "row_id" not in work_df.columns:
+            work_df["row_id"] = np.arange(len(work_df))
+        in_sample_preds = pd.DataFrame(
+            {
+                "row_id": work_df["row_id"].to_numpy(),
+                "y_obs": observed,
+                "y_pred": y_new,
+            }
+        )
+        residual_frame = build_residual_frame(
+            in_sample_preds,
+            test_df=work_df,
+            train_df=work_df,
+        )
+        write_residual_diagnostic_plots(
+            residual_frame,
+            output_dir / "residual_diagnostics",
+            prefix="in_sample",
+        )
+
+    return {
+        "Y_New": y_new,
+        "spots": spots_df,
+        "ocean_stats": ocean_stats,
+        "prediction_statistics": pred_stats_df,
+    }
 
 
 def identify_bright_dark_spots(
@@ -313,65 +471,24 @@ def run_full_analysis(
             output_dir / "coefficient_diagnostics"
         )
 
-        # Predictions
-        print("Making predictions...")
-        predictions = model.predict(X, site_idx)
-
-        # Extract all statistics from predictions dict (still in beta space)
-        y_new_beta_mean = predictions["mean"]
-        y_new_beta_std = predictions["std"]
-        y_new_beta_median = predictions["median"]
-        y_new_beta_ci_lower_95 = predictions["ci_lower_95"]
-        y_new_beta_ci_upper_95 = predictions["ci_upper_95"]
-        y_new_beta_ci_lower_50 = predictions["ci_lower_50"]
-        y_new_beta_ci_upper_50 = predictions["ci_upper_50"]
-        y_new_beta_min = predictions["min"]
-        y_new_beta_max = predictions["max"]
-        y_new_significant = predictions["significant"]
-
-        # Transform summary statistics back to original [0,1] scale
-        y_new = inverse_transform_beta(y_new_beta_mean, n)
-        y_new_std = inverse_transform_beta(y_new_beta_std, n)
-        y_new_median = inverse_transform_beta(y_new_beta_median, n)
-        y_new_ci_lower_95 = inverse_transform_beta(y_new_beta_ci_lower_95, n)
-        y_new_ci_upper_95 = inverse_transform_beta(y_new_beta_ci_upper_95, n)
-        y_new_ci_lower_50 = inverse_transform_beta(y_new_beta_ci_lower_50, n)
-        y_new_ci_upper_50 = inverse_transform_beta(y_new_beta_ci_upper_50, n)
-        y_new_min = inverse_transform_beta(y_new_beta_min, n)
-        y_new_max = inverse_transform_beta(y_new_beta_max, n)
-
-        # Store all statistics in results
-        results["Y_New"] = y_new
-        results["Y_New_stats"] = {
-            "mean": y_new,
-            "std": y_new_std,
-            "median": y_new_median,
-            "ci_lower_95": y_new_ci_lower_95,
-            "ci_upper_95": y_new_ci_upper_95,
-            "ci_lower_50": y_new_ci_lower_50,
-            "ci_upper_50": y_new_ci_upper_50,
-            "min": y_new_min,
-            "max": y_new_max,
-            "significant": y_new_significant,
-        }
-
-        # Save prediction statistics to CSV
-        print("Saving prediction statistics...")
-        pred_stats_df = pd.DataFrame(
-            {
-                "mean": y_new,
-                "std": y_new_std,
-                "median": y_new_median,
-                "ci_lower_95": y_new_ci_lower_95,
-                "ci_upper_95": y_new_ci_upper_95,
-                "ci_lower_50": y_new_ci_lower_50,
-                "ci_upper_50": y_new_ci_upper_50,
-                "min": y_new_min,
-                "max": y_new_max,
-                "significant": y_new_significant,
-            }
+        # In-sample predictions, bright/dark spots, and Rmd-style figures
+        print("Making predictions and application plots...")
+        app_results = save_in_sample_application_outputs(
+            model,
+            df,
+            X,
+            site_idx,
+            output_dir,
+            n_prediction_samples=n_prediction_samples,
         )
-        pred_stats_df.to_csv(output_dir / "prediction_statistics.csv", index=False)
+        y_new = app_results["Y_New"]
+        pred_stats_df = app_results["prediction_statistics"]
+        results["Y_New"] = y_new
+        results["spots"] = app_results["spots"]
+        results["ocean_stats"] = app_results["ocean_stats"]
+        results["Y_New_stats"] = {
+            col: pred_stats_df[col].to_numpy() for col in pred_stats_df.columns
+        }
 
         # Optionally run future projections for multiple scenarios/years
         if project_scenarios:
@@ -451,52 +568,6 @@ def run_full_analysis(
                 flat_df.to_csv(output_dir / "future_projections.csv", index=False)
 
                 results["future_projections"] = scenario_results
-
-    # 6. Identify bright and dark spots
-    print("Identifying bright and dark spots...")
-    spots_df = identify_bright_dark_spots(df["average_coral_cover"].values, y_new)
-    results["spots"] = spots_df
-
-    # Plot observed vs expected
-    plot_observed_vs_expected(
-        df["average_coral_cover"].values,
-        y_new,
-        spots_df["classification"].values,
-        output_dir / "observed_vs_expected_coral_cover.png",
-    )
-
-    # Plot map
-    plot_bright_dark_spots_map(
-        df, spots_df["classification"].values, output_dir / "bright_dark_spots_map.png"
-    )
-
-    # 7. Calculate ocean statistics
-    print("Calculating ocean statistics...")
-    ocean_stats = calculate_coral_cover_by_ocean(df)
-    ocean_stats.to_csv(output_dir / "coral_cover_by_ocean.csv")
-    results["ocean_stats"] = ocean_stats
-
-    # 8. Save processed data
-    print("Saving results...")
-    df["y_new"] = y_new
-    df["deviation_from_expected"] = spots_df["deviation_normalized"].values
-    df["classification"] = spots_df["classification"].values
-
-    # Add prediction statistics if available
-    if fit_bayesian_model and HAS_PYMC and "Y_New_stats" in results:
-        stats = results["Y_New_stats"]
-        df["y_new_mean"] = stats["mean"]
-        df["y_new_std"] = stats["std"]
-        df["y_new_median"] = stats["median"]
-        df["y_new_ci_lower_95"] = stats["ci_lower_95"]
-        df["y_new_ci_upper_95"] = stats["ci_upper_95"]
-        df["y_new_ci_lower_50"] = stats["ci_lower_50"]
-        df["y_new_ci_upper_50"] = stats["ci_upper_50"]
-        df["y_new_min"] = stats["min"]
-        df["y_new_max"] = stats["max"]
-        df["y_new_significant"] = stats["significant"]
-
-    df.to_csv(output_dir / "data_processed.csv", index=False)
 
     print(f"Analysis complete. Results saved to {output_dir}")
 
