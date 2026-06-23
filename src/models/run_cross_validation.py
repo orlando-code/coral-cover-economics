@@ -22,6 +22,18 @@ python -m src.models.run_cross_validation --models beta_glmm \\
 # Forward forecasting on repeat-visit sites (~80/20 temporal holdout)
 python -m src.models.run_cross_validation --regimes forward_repeat_sites
 
+# Compare corrected vs paper beta indexing on the same CV split
+python -m src.models.run_cross_validation --models beta_glmm \\
+    --regimes forward_repeat_sites --beta-variants reparam,paper_reproduction
+
+# Dynamic persistence-adjusted projection models (longitudinal CV)
+python -m src.models.run_cross_validation --models dynamic_projection \\
+    --regimes forward_repeat_sites
+
+# All families on forward-repeat sites
+python -m src.models.run_cross_validation --models baselines,beta_glmm,dynamic_projection \\
+    --regimes forward_repeat_sites --beta-variants reparam
+
 # Quick smoke test (short MCMC, serial PyMC cores)
 RCV_SMOKE=1 python -m src.models.run_cross_validation --models beta_glmm \\
     --regimes forward_repeat_sites
@@ -38,7 +50,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import time
 from pathlib import Path
 from typing import Any, Optional
 
@@ -72,18 +83,31 @@ except ImportError:
 from src import config
 
 # Beta model
-from src.dataloading.build_model_ready_data import to_hbb_frame
+from src.dataloading.build_sully_model_ready_data import to_hbb_frame
 
 # Baselines
 from src.models.baseline_features import baseline_feature_spec
 from src.models.baseline_models import (
     BASELINE_MODEL_NAMES,
     DISPLAY_NAMES,
+    is_persistence_baseline,
     make_baseline_estimator,
     predict_coral_cover,
 )
+from src.models.baseline_persistence import predict_survey_mean_baseline
 from src.models.baseline_plots import plot_metrics_comparison
 from src.models.coral_data import coral_cover_target, load_model_ready_data
+from src.models.cv_common import (
+    NullProgress,
+    cv_console,
+    cv_log,
+    extract_sampler_diagnostics,
+    fmt_float,
+    format_exc,
+    now_tag,
+    parse_csv_list,
+    write_json,
+)
 from src.models.cv_methods import (
     ALL_CV_REGIMES,
     FoldSpec,
@@ -95,145 +119,79 @@ from src.models.cv_prediction_plots import (
     plot_cv_observed_vs_predicted,
     save_beta_fold_diagnostics,
     write_combined_cv_plots,
+    write_family_cv_residual_plots,
 )
+from src.models.dynamic_cv import run_dynamic_cv
+from src.models.dynamic_features import dynamic_feature_spec
+from src.models.dynamic_models import DYNAMIC_DISPLAY_NAMES, DYNAMIC_MODEL_NAMES
 from src.models.hbb import (
     HAS_PYMC,
     HierarchicalBetaModel,
     predict_from_posterior_cv,
     prepare_cv_fold_arrays,
 )
+from src.models.hbb.cv_decomposition import (
+    compute_fold_decomposition,
+    write_variant_decomposition_summary,
+)
+from src.models.hbb.mcmc_config import (
+    CV_MCMC_DEFAULTS,
+    MCMCConfig,
+    add_cv_mcmc_arguments,
+    apply_cv_smoke_overrides,
+    mcmc_config_from_cv_args,
+    merge_mcmc_dict,
+)
 from src.models.hbb.model import resolve_pymc_ncores
+from src.models.hbb.variants import (
+    VARIANTS,
+    Variant,
+    apply_variant_options,
+    beta_variant_output_dir,
+    parse_optional_bool,
+    parse_variant_names,
+)
 from src.models.metrics import regression_metrics
 
-_CONSOLE = (
-    Console(highlight=False)
-    if _RICH_AVAILABLE and os.getenv("RCV_PLAIN") != "1"
-    else None
-)
-
-BETA_GLMM_MCMC_DEFAULTS: dict[str, Any] = {
-    "n_chains": 2,
-    "n_tune": 100,
-    "n_samples": 200,
-    "target_accept": 0.95,
-    "max_treedepth": 8,
-    # None → min(n_chains, cpu_count); parallel uses mp_ctx=spawn in the model.
-    "ncores": None,
-    "mp_ctx": "spawn",
-}
-
-
-def _format_exc(exc: BaseException) -> str:
-    msg = str(exc).strip()
-    if msg:
-        return f"{type(exc).__name__}: {msg}"
-    return f"{type(exc).__name__} (no message)"
-
-
-def _apply_smoke_overrides(
-    *,
-    output_dir: Path,
-    regimes: list[str],
-    models: list[str],
-    mcmc: dict[str, Any],
-    beta_min_train_rows: int,
-    baseline_n_iter: int,
-) -> tuple[Path, list[str], list[str], dict[str, Any], int, int]:
-    """Apply fast settings when ``RCV_SMOKE=1``."""
-    if os.getenv("RCV_SMOKE") != "1":
-        return output_dir, regimes, models, mcmc, beta_min_train_rows, baseline_n_iter
-
-    smoke_mcmc = {
-        **mcmc,
-        "n_chains": 2,
-        "n_tune": 50,
-        "n_samples": 50,
-        "ncores": 1,
-    }
-    smoke_models = models if models != ["baselines", "beta_glmm"] else ["beta_glmm"]
-    return (
-        output_dir / "smoke",
-        regimes or ["forward_repeat_sites"],
-        smoke_models,
-        smoke_mcmc,
-        min(beta_min_train_rows, 200),
-        min(baseline_n_iter, 2),
-    )
-
-
-class _NullProgress:
-    """No-op progress stand-in when Rich is unavailable."""
-
-    def __enter__(self) -> "_NullProgress":
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        return None
-
-    def add_task(self, *args: object, **kwargs: object) -> int:
-        return 0
-
-    def update(self, *args: object, **kwargs: object) -> None:
-        return None
-
-    def advance(self, *args: object, **kwargs: object) -> None:
-        return None
-
-
-def _log(message: str = "", **kwargs: Any) -> None:
-    if _CONSOLE is not None:
-        _CONSOLE.print(message, **kwargs)
-    else:
-        print(message)
-
-
-def _fmt_float(value: float, ndigits: int = 4) -> str:
-    if value is None or (isinstance(value, float) and np.isnan(value)):
-        return "—"
-    return f"{float(value):.{ndigits}f}"
+_CONSOLE = cv_console()
 
 
 def _model_label(name: str) -> str:
+    if name in DYNAMIC_DISPLAY_NAMES:
+        return DYNAMIC_DISPLAY_NAMES[name]
     return DISPLAY_NAMES.get(name, name)  # type: ignore[arg-type]
-
-
-def _parse_csv_list(value: str) -> list[str]:
-    value = (value or "").strip()
-    if not value:
-        return []
-    return [v.strip() for v in value.split(",") if v.strip()]
-
-
-def _now_tag() -> str:
-    return time.strftime("%Y%m%d_%H%M%S")
-
-
-def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, default=str) + "\n")
-
-
-def _safe_inner_splits(groups: np.ndarray, requested: int) -> int:
-    n_unique = int(pd.Series(groups).nunique())
-    return int(max(2, min(requested, n_unique)))
 
 
 def _resolve_models(
     models: list[str],
     baseline_models_filter: Optional[list[str]] = None,
-) -> tuple[list[str], list[str]]:
-    """Return (model families, baseline model names to run)."""
+    dynamic_models_filter: Optional[list[str]] = None,
+) -> tuple[list[str], list[str], list[str]]:
+    """Return (model families, baseline model names, dynamic model names)."""
     families: list[str] = []
     baselines: list[str] = []
+    dynamic: list[str] = []
     for name in models:
         if name == "beta_glmm":
             families.append("beta_glmm")
+        elif name == "dynamic_projection":
+            dynamic.extend(DYNAMIC_MODEL_NAMES)
+        elif name in DYNAMIC_MODEL_NAMES:
+            dynamic.append(name)
         elif name == "baselines":
             baselines.extend(BASELINE_MODEL_NAMES)
         elif name in BASELINE_MODEL_NAMES:
             baselines.append(name)
         else:
-            opts = ", ".join([*BASELINE_MODEL_NAMES, "baselines", "beta_glmm"])
+            opts = ", ".join(
+                [
+                    *BASELINE_MODEL_NAMES,
+                    "baselines",
+                    "beta_glmm",
+                    "dynamic_projection",
+                    *DYNAMIC_MODEL_NAMES,
+                ]
+            )
             raise ValueError(f"Unknown model '{name}'. Expected one of: {opts}")
 
     if baselines:
@@ -247,9 +205,25 @@ def _resolve_models(
         if "baselines" not in families:
             families.append("baselines")
 
+    if dynamic:
+        if dynamic_models_filter:
+            allowed = set(dynamic_models_filter)
+            dynamic = [m for m in dynamic if m in allowed]
+        else:
+            dynamic = list(dict.fromkeys(dynamic))
+        if not dynamic:
+            raise ValueError("No dynamic projection models selected after filtering.")
+        if "dynamic_projection" not in families:
+            families.append("dynamic_projection")
+
     if not families:
         raise ValueError("No models to run.")
-    return families, baselines
+    return families, baselines, dynamic
+
+
+def _safe_inner_splits(groups: np.ndarray, requested: int) -> int:
+    n_unique = int(pd.Series(groups).nunique())
+    return int(max(2, min(requested, n_unique)))
 
 
 def _print_run_header(cfg: dict[str, Any]) -> None:
@@ -272,7 +246,9 @@ def _print_run_header(cfg: dict[str, Any]) -> None:
     if "beta_glmm" in cfg["model_families"]:
         beta = cfg["beta_glmm"]
         mcmc = beta.get("mcmc") or {}
+        variants = beta.get("variants") or ["reparam"]
         lines.append(f"Beta-GLMM min train rows: {beta['min_train_rows']}")
+        lines.append(f"  variants: {', '.join(variants)}")
         if mcmc:
             lines.append(
                 f"  MCMC: {mcmc.get('n_chains', '?')} chains × "
@@ -282,6 +258,12 @@ def _print_run_header(cfg: dict[str, Any]) -> None:
                 f"ncores={resolve_pymc_ncores(ncores=mcmc.get('ncores'), n_chains=int(mcmc.get('n_chains', 2)))}  |  "
                 f"mp_ctx={mcmc.get('mp_ctx', 'spawn')}"
             )
+    if "dynamic_projection" in cfg["model_families"]:
+        dyn = cfg.get("dynamic_projection") or {}
+        dyn_models = dyn.get("models") or list(DYNAMIC_MODEL_NAMES)
+        lines.append(
+            "Dynamic projection: " + ", ".join(_model_label(m) for m in dyn_models)
+        )
     if os.getenv("RCV_SMOKE") == "1":
         lines.append(
             "[yellow]RCV_SMOKE=1 — shortened MCMC, baseline n_iter capped at 2, "
@@ -292,14 +274,14 @@ def _print_run_header(cfg: dict[str, Any]) -> None:
             Panel("\n".join(lines), title="Cross-validation", border_style="blue")
         )
     else:
-        _log("=== Cross-validation ===")
+        cv_log("=== Cross-validation ===")
         for line in lines:
-            _log(line.replace("[cyan]", "").replace("[/]", ""))
+            cv_log(line.replace("[cyan]", "").replace("[/]", ""))
 
 
 def _print_dataset_summary(df: pd.DataFrame) -> None:
     if _CONSOLE is None:
-        _log(
+        cv_log(
             f"Loaded {len(df):,} rows | {df['site'].nunique():,} sites | "
             f"{df['region'].nunique():,} regions"
         )
@@ -315,7 +297,7 @@ def _print_dataset_summary(df: pd.DataFrame) -> None:
 
 def _print_fold_plan(folds: list[FoldSpec], *, title: str = "Fold plan") -> None:
     if _CONSOLE is None:
-        _log(
+        cv_log(
             f"{title}: {len(folds)} fold{'s' if len(folds) > 1 else ''} across {len({f.name for f in folds})} regime{'s' if len(folds) > 1 else ''}"
         )
         return
@@ -342,7 +324,7 @@ def _print_skipped_regimes(skipped: list[dict[str, Any]]) -> None:
         return
     if _CONSOLE is None:
         for row in skipped:
-            _log(f"Skipped regime {row['regime']}: {row['reason']}")
+            cv_log(f"Skipped regime {row['regime']}: {row['reason']}")
         return
     table = Table(title="Skipped regimes", box=box.ROUNDED, border_style="yellow")
     table.add_column("Regime", style="yellow")
@@ -365,8 +347,8 @@ def _print_baseline_fold_result(
     msg = (
         f"{_model_label(model_name)} · {regime} fold {fold} "
         f"(train={n_train:,}, test={n_test:,})  "
-        f"R²={_fmt_float(metrics['r2'])}  RMSE={_fmt_float(metrics['rmse'])}  "
-        f"MAE={_fmt_float(metrics['mae'])}"
+        f"R²={fmt_float(metrics['r2'])}  RMSE={fmt_float(metrics['rmse'])}  "
+        f"MAE={fmt_float(metrics['mae'])}"
     )
     if tuning:
         trials = tuning.get("n_trials_completed", "?")
@@ -376,7 +358,7 @@ def _print_baseline_fold_result(
         method = tuning.get("tuning_method", "?")
         inner = tuning.get("inner_cv_splits", "?")
         cv_part = (
-            f"best inner-CV R²={_fmt_float(best_cv)}"
+            f"best inner-CV R²={fmt_float(best_cv)}"
             if best_cv is not None and np.isfinite(best_cv)
             else "no inner tuning"
         )
@@ -387,14 +369,14 @@ def _print_baseline_fold_result(
     if _CONSOLE is not None:
         _CONSOLE.print(f"  [green]✓[/] {msg}")
     else:
-        _log(f"  Done {msg}")
+        cv_log(f"  Done {msg}")
 
 
 def _print_baseline_summary(summary: pd.DataFrame) -> None:
     if summary.empty:
         return
     if _CONSOLE is None:
-        _log("\nBaseline summary:\n" + summary.to_string(index=False))
+        cv_log("\nBaseline summary:\n" + summary.to_string(index=False))
         return
     table = Table(title="Baseline results by regime", box=box.ROUNDED)
     table.add_column("Regime", style="cyan")
@@ -404,14 +386,14 @@ def _print_baseline_summary(summary: pd.DataFrame) -> None:
     table.add_column("RMSE (mean ± sd)", justify="right")
     for _, row in summary.iterrows():
         r2_cell = (
-            f"{_fmt_float(row['r2_mean'])} ± {_fmt_float(row['r2_sd'])}"
+            f"{fmt_float(row['r2_mean'])} ± {fmt_float(row['r2_sd'])}"
             if pd.notna(row["r2_sd"])
-            else _fmt_float(row["r2_mean"])
+            else fmt_float(row["r2_mean"])
         )
         rmse_cell = (
-            f"{_fmt_float(row['rmse_mean'])} ± {_fmt_float(row['rmse_sd'])}"
+            f"{fmt_float(row['rmse_mean'])} ± {fmt_float(row['rmse_sd'])}"
             if pd.notna(row["rmse_sd"])
-            else _fmt_float(row["rmse_mean"])
+            else fmt_float(row["rmse_mean"])
         )
         table.add_row(
             str(row["regime"]),
@@ -449,25 +431,25 @@ def _print_beta_sampling_header(
             "(Rich progress bar disabled during MCMC).[/]\n"
         )
     else:
-        _log("=== Beta-GLMM sampling ===")
+        cv_log("=== Beta-GLMM sampling ===")
         for line in lines:
-            _log(line.replace("[bold]", "").replace("[/]", ""))
+            cv_log(line.replace("[bold]", "").replace("[/]", ""))
 
 
 def _print_beta_fold_result(metrics_row: pd.Series) -> None:
     msg = (
         f"{metrics_row['fold_tag']}  "
-        f"R²={_fmt_float(metrics_row['r2'])}  "
-        f"RMSE={_fmt_float(metrics_row['rmse'])}  "
-        f"MAE={_fmt_float(metrics_row['mae'])}  "
-        f"cov95={_fmt_float(metrics_row['coverage95'])}  "
-        f"R̂_max={_fmt_float(metrics_row['max_rhat'])}  "
-        f"ESS_min={_fmt_float(metrics_row['min_neff'], 0)}"
+        f"R²={fmt_float(metrics_row['r2'])}  "
+        f"RMSE={fmt_float(metrics_row['rmse'])}  "
+        f"MAE={fmt_float(metrics_row['mae'])}  "
+        f"cov95={fmt_float(metrics_row['coverage95'])}  "
+        f"R̂_max={fmt_float(metrics_row['max_rhat'])}  "
+        f"ESS_min={fmt_float(metrics_row['min_neff'], 0)}"
     )
     if _CONSOLE is not None:
         _CONSOLE.print(f"  [green]✓[/] {msg}")
     else:
-        _log(f"  Done {msg}")
+        cv_log(f"  Done {msg}")
 
 
 def _print_beta_summary(metrics_df: pd.DataFrame) -> None:
@@ -481,7 +463,7 @@ def _print_beta_summary(metrics_df: pd.DataFrame) -> None:
         max_rhat_mean=("max_rhat", "mean"),
     )
     if _CONSOLE is None:
-        _log("\nBeta-GLMM summary:\n" + summary.to_string(index=False))
+        cv_log("\nBeta-GLMM summary:\n" + summary.to_string(index=False))
         return
     table = Table(title="Beta-GLMM results by regime", box=box.ROUNDED)
     table.add_column("Regime", style="cyan")
@@ -492,22 +474,22 @@ def _print_beta_summary(metrics_df: pd.DataFrame) -> None:
     table.add_column("R̂ (mean)", justify="right")
     for _, row in summary.iterrows():
         r2_cell = (
-            f"{_fmt_float(row['r2_mean'])} ± {_fmt_float(row['r2_sd'])}"
+            f"{fmt_float(row['r2_mean'])} ± {fmt_float(row['r2_sd'])}"
             if pd.notna(row["r2_sd"])
-            else _fmt_float(row["r2_mean"])
+            else fmt_float(row["r2_mean"])
         )
         rmse_cell = (
-            f"{_fmt_float(row['rmse_mean'])} ± {_fmt_float(row['rmse_sd'])}"
+            f"{fmt_float(row['rmse_mean'])} ± {fmt_float(row['rmse_sd'])}"
             if pd.notna(row["rmse_sd"])
-            else _fmt_float(row["rmse_mean"])
+            else fmt_float(row["rmse_mean"])
         )
         table.add_row(
             str(row["regime"]),
             str(int(row["folds"])),
             r2_cell,
             rmse_cell,
-            _fmt_float(row["coverage95_mean"]),
-            _fmt_float(row["max_rhat_mean"]),
+            fmt_float(row["coverage95_mean"]),
+            fmt_float(row["max_rhat_mean"]),
         )
     _CONSOLE.print(table)
 
@@ -553,6 +535,9 @@ def run_baselines_cv(
     for model_name in baseline_models:
         if model_name not in BASELINE_MODEL_NAMES:
             raise ValueError(f"Unknown baseline model: {model_name}")
+        if is_persistence_baseline(model_name):
+            active_models.append(model_name)
+            continue
         try:
             _ = make_baseline_estimator(
                 model_name, n_jobs=est_n_jobs, random_state=seed
@@ -562,7 +547,7 @@ def run_baselines_cv(
             if _CONSOLE is not None:
                 _CONSOLE.print(f"[yellow]Skipping {_model_label(model_name)}:[/] {exc}")
             else:
-                _log(f"Skipping baseline model {model_name}: {exc}")
+                cv_log(f"Skipping baseline model {model_name}: {exc}")
 
     tasks = [
         (regime, model_name, f)
@@ -577,7 +562,7 @@ def run_baselines_cv(
     if _CONSOLE is not None:
         _CONSOLE.print(
             Panel(
-                f"Fitting {len(tasks)} folds across {len(regimes)} regimes "
+                f"Fitting {len(tasks)} folds across {len(regimes)} regime{'' if len(regimes) == 1 else 's'} "
                 f"and {len(active_models)} model{'s' if len(active_models) > 1 else ''}",
                 title="Baselines",
                 border_style="green",
@@ -598,7 +583,7 @@ def run_baselines_cv(
         if _CONSOLE is not None and Progress is not None
         else None
     )
-    progress = progress_ctx or _NullProgress()
+    progress = progress_ctx or NullProgress()
 
     with progress:
         task_id = progress.add_task("Baselines", total=len(tasks))
@@ -611,31 +596,46 @@ def run_baselines_cv(
             y_train, y_test = y[train_idx], y[test_idx]
             groups_train = site_groups[train_idx]
 
-            train_prep, test_prep, _ = prepare_baseline_fold_frames(
-                df.iloc[train_idx], df.iloc[test_idx]
-            )
+            if is_persistence_baseline(model_name):
+                y_pred = predict_survey_mean_baseline(
+                    df.iloc[train_idx],
+                    df.iloc[test_idx],
+                    y_train,
+                )
+                best_params: dict[str, Any] = {}
+                tuning: dict[str, Any] = {
+                    "tuning_method": "none",
+                    "n_trials_requested": 0,
+                    "n_trials_completed": 0,
+                    "best_cv_r2": np.nan,
+                    "elapsed_sec": 0.0,
+                }
+            else:
+                train_prep, test_prep, _ = prepare_baseline_fold_frames(
+                    df.iloc[train_idx], df.iloc[test_idx]
+                )
 
-            est = make_baseline_estimator(
-                model_name, n_jobs=est_n_jobs, random_state=seed
-            )
-            pipe = make_baseline_pipeline(est)
+                est = make_baseline_estimator(
+                    model_name, n_jobs=est_n_jobs, random_state=seed
+                )
+                pipe = make_baseline_pipeline(est)
 
-            inner_n = _safe_inner_splits(groups_train, inner_splits)
-            inner_cv = GroupKFold(n_splits=inner_n)
-            best, best_params, tuning = tune_baseline_estimator(
-                pipe,
-                model_name,  # type: ignore[arg-type]
-                X_train=train_prep,
-                y_train=y_train,
-                groups_train=groups_train,
-                inner_cv=inner_cv,
-                n_iter=n_iter,
-                n_jobs=n_jobs,
-                seed=seed,
-                method=tuning_method,  # type: ignore[arg-type]
-            )
+                inner_n = _safe_inner_splits(groups_train, inner_splits)
+                inner_cv = GroupKFold(n_splits=inner_n)
+                best, best_params, tuning = tune_baseline_estimator(
+                    pipe,
+                    model_name,  # type: ignore[arg-type]
+                    X_train=train_prep,
+                    y_train=y_train,
+                    groups_train=groups_train,
+                    inner_cv=inner_cv,
+                    n_iter=n_iter,
+                    n_jobs=n_jobs,
+                    seed=seed,
+                    method=tuning_method,  # type: ignore[arg-type]
+                )
 
-            y_pred = predict_coral_cover(best, test_prep)
+                y_pred = predict_coral_cover(best, test_prep)
             m = regression_metrics(y_test, y_pred)
 
             fold_tag = f"{regime}__{f.fold}"
@@ -742,22 +742,6 @@ def run_baselines_cv(
         )
 
 
-def _extract_sampler_diagnostics(
-    model: HierarchicalBetaModel, max_treedepth: int
-) -> dict[str, float]:
-    out = {"n_divergences": np.nan, "pct_max_treedepth": np.nan}
-    try:
-        ss = model.trace.sample_stats
-        if "diverging" in ss:
-            out["n_divergences"] = float(ss["diverging"].sum().values)
-        if "tree_depth" in ss:
-            td = ss["tree_depth"].values
-            out["pct_max_treedepth"] = float(100.0 * (td >= max_treedepth).mean())
-    except Exception:
-        pass
-    return out
-
-
 def run_beta_glmm_cv(
     *,
     df: pd.DataFrame,
@@ -767,6 +751,7 @@ def run_beta_glmm_cv(
     min_train_rows: int,
     y_eps: float,
     mcmc: dict[str, Any],
+    variant: str | Variant = "reparam",
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -774,24 +759,27 @@ def run_beta_glmm_cv(
 
     all_metrics: list[pd.DataFrame] = []
     all_predictions: list[pd.DataFrame] = []
+    decomposition_summaries: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
 
     eligible = [
         f for f in folds if len(f.train_idx) >= min_train_rows and len(f.test_idx) > 0
     ]
     skipped = len(folds) - len(eligible)
+    variant_name = variant.name if isinstance(variant, Variant) else variant
     if _CONSOLE is not None:
         _CONSOLE.print(
             Panel(
                 f"Fitting {len(eligible)} fold{'' if len(eligible) == 1 else 's'}"
-                + (f" ({skipped} skipped)" if skipped else ""),
+                + (f" ({skipped} skipped)" if skipped else "")
+                + f"  ·  variant={variant_name}",
                 title="Beta-GLMM",
                 border_style="magenta",
             )
         )
     else:
-        _log(
-            f"Beta-GLMM: {len(eligible)} folds to fit"
+        cv_log(
+            f"Beta-GLMM ({variant_name}): {len(eligible)} folds to fit"
             + (f", {skipped} skipped" if skipped else "")
         )
 
@@ -813,7 +801,14 @@ def run_beta_glmm_cv(
         )
 
         try:
-            arrays = prepare_cv_fold_arrays(train_df, test_df, y_eps=y_eps)
+            arrays = prepare_cv_fold_arrays(
+                train_df, test_df, y_eps=y_eps, variant=variant
+            )
+            # save train and test dfs
+            train_df.to_csv(output_dir / "train_df.csv")
+            test_df.to_csv(output_dir / "test_df.csv")
+            print(f"Written train/test to files: {output_dir / 'train_df.csv'}")
+
             model = HierarchicalBetaModel()
             model.fit(
                 X=arrays["X_train"],
@@ -829,6 +824,7 @@ def run_beta_glmm_cv(
                 n_chains=mcmc["n_chains"],
                 target_accept=mcmc["target_accept"],
                 max_treedepth=mcmc["max_treedepth"],
+                spec=arrays["spec"],
                 ncores=resolve_pymc_ncores(
                     ncores=mcmc.get("ncores"),
                     n_chains=int(mcmc["n_chains"]),
@@ -836,6 +832,9 @@ def run_beta_glmm_cv(
                 mp_ctx=mcmc.get("mp_ctx"),
                 random_seed=seed + sum(ord(c) for c in fold_tag) % 1_000_000,
                 progressbar=True,
+                use_site_hierarchy=arrays["use_site_hierarchy"],
+                use_ecoregion_hierarchy=arrays["use_ecoregion_hierarchy"],
+                use_diversity=arrays["use_diversity"],
             )
 
             pred = predict_from_posterior_cv(
@@ -858,7 +857,7 @@ def run_beta_glmm_cv(
                 if "ess_bulk" in summary_df.columns
                 else np.nan
             )
-            sampler = _extract_sampler_diagnostics(model, mcmc["max_treedepth"])
+            sampler = extract_sampler_diagnostics(model, mcmc["max_treedepth"])
 
             metrics = pd.DataFrame(
                 [
@@ -866,6 +865,7 @@ def run_beta_glmm_cv(
                         "fold_tag": fold_tag,
                         "regime": f.name,
                         "fold": int(f.fold),
+                        "variant": variant_name,
                         "n_train": len(train_df),
                         "n_test": len(test_df),
                         "r2": pred["metrics"]["r2"],
@@ -892,6 +892,9 @@ def run_beta_glmm_cv(
 
             metrics_row = metrics.iloc[0].to_dict()
             fold_dir = output_dir / "folds" / fold_tag
+            fold_dir.mkdir(parents=True, exist_ok=True)
+            train_df.to_csv(fold_dir / "train_df.csv", index=False)
+            test_df.to_csv(fold_dir / "test_df.csv", index=False)
             if _CONSOLE is not None:
                 with _CONSOLE.status("[cyan]Writing fold diagnostics…[/]"):
                     save_beta_fold_diagnostics(
@@ -899,23 +902,44 @@ def run_beta_glmm_cv(
                         fold_dir=fold_dir,
                         fold_tag=fold_tag,
                         predictions=pred["predictions"],
+                        test_df=test_df,
+                        train_df=train_df,
                         summary_df=summary_df,
                         sampler=sampler,
                         mcmc=mcmc,
                         metrics=metrics_row,
+                        variant=variant_name,
                     )
             else:
-                _log("Writing fold diagnostics…")
+                cv_log("Writing fold diagnostics…")
                 save_beta_fold_diagnostics(
                     model,
                     fold_dir=fold_dir,
                     fold_tag=fold_tag,
                     predictions=pred["predictions"],
+                    test_df=test_df,
+                    train_df=train_df,
                     summary_df=summary_df,
                     sampler=sampler,
                     mcmc=mcmc,
                     metrics=metrics_row,
+                    variant=variant_name,
                 )
+            summary = compute_fold_decomposition(
+                predictions=pred["predictions"],
+                test_df=test_df,
+                train_df=train_df,
+                fold_dir=fold_dir,
+                variant=variant_name,
+                n_train=arrays["n_train"],
+                dense_info=arrays["dense_info"],
+                X_test=arrays["X_test"],
+                use_site_hierarchy=arrays["use_site_hierarchy"],
+                use_ecoregion_hierarchy=arrays["use_ecoregion_hierarchy"],
+                use_diversity=arrays["use_diversity"],
+            )
+            summary["fold_tag"] = fold_tag
+            decomposition_summaries.append(summary)
             _print_beta_fold_result(metrics.iloc[0])
 
         except Exception as exc:  # noqa: BLE001
@@ -926,14 +950,14 @@ def run_beta_glmm_cv(
                     "fold": int(f.fold),
                     "n_train": len(train_df),
                     "n_test": len(test_df),
-                    "error": _format_exc(exc),
+                    "error": format_exc(exc),
                 }
             )
-            err_msg = _format_exc(exc)
+            err_msg = format_exc(exc)
             if _CONSOLE is not None:
                 _CONSOLE.print(f"  [red]✗[/] {fold_tag}: {err_msg}")
             else:
-                _log(f"  Fold failed: {err_msg}")
+                cv_log(f"  Fold failed: {err_msg}")
 
     if failures:
         pd.DataFrame(failures).to_csv(output_dir / "failures.csv", index=False)
@@ -946,6 +970,7 @@ def run_beta_glmm_cv(
 
     metrics_df.to_csv(output_dir / "metrics_by_fold.csv", index=False)
     pred_df.to_csv(output_dir / "predictions.csv", index=False)
+    write_variant_decomposition_summary(decomposition_summaries, output_dir)
 
     summary = metrics_df.groupby("regime", as_index=False).agg(
         folds=("fold_tag", "count"),
@@ -962,18 +987,19 @@ def run_beta_glmm_cv(
         pred_df,
         output_dir=output_dir,
         model_col=None,
+        single_model_label=variant_name,
     )
     _print_beta_summary(metrics_df)
 
 
 def run_cross_validation(
     *,
-    models: list[str],
-    regimes: list[str],
+    models: list[str] | str,
+    regimes: list[str] | str,
     output_dir: Path,
-    seed: int,
-    k_folds: int,
-    spatial_bins: int,
+    seed: int = 42,
+    k_folds: int = 5,
+    spatial_bins: int = 4,
     baseline_models: Optional[list[str]] = None,
     baseline_inner_splits: int = 5,
     baseline_n_iter: int = 50,
@@ -981,7 +1007,13 @@ def run_cross_validation(
     baseline_tuning: str = "bayes",
     beta_min_train_rows: int = 500,
     beta_y_eps: float = 1e-6,
-    beta_mcmc: Optional[dict[str, Any]] = None,
+    beta_mcmc: MCMCConfig | dict[str, Any] | None = None,
+    beta_variants: Optional[list[str]] = None,
+    beta_use_site_hierarchy: bool | None = None,
+    beta_use_ecoregion_hierarchy: bool | None = None,
+    dynamic_models: Optional[list[str]] = None,
+    dynamic_n_jobs: int = -1,
+    in_sample_min_site_measurements: int = 1,
 ) -> Path:
     """Run cross-validation for a given set of models and regimes.
 
@@ -1004,7 +1036,17 @@ def run_cross_validation(
     Returns:
         Path: Path to the output directory.
     """
+    if type(models) == str:
+        models = [models]
+    if type(regimes) == str:
+        regimes = [regimes]
+
     output_dir = Path(output_dir)
+    base_mcmc = (
+        beta_mcmc
+        if isinstance(beta_mcmc, MCMCConfig)
+        else merge_mcmc_dict(CV_MCMC_DEFAULTS, beta_mcmc)
+    )
     (
         output_dir,
         regimes,
@@ -1012,18 +1054,30 @@ def run_cross_validation(
         beta_mcmc_resolved,
         beta_min_train_rows,
         baseline_n_iter,
-    ) = _apply_smoke_overrides(
+    ) = apply_cv_smoke_overrides(
         output_dir=output_dir,
         regimes=regimes,
         models=models,
-        mcmc={**BETA_GLMM_MCMC_DEFAULTS, **(beta_mcmc or {})},
+        mcmc=base_mcmc,
         beta_min_train_rows=beta_min_train_rows,
         baseline_n_iter=baseline_n_iter,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    families, resolved_baselines = _resolve_models(models, baseline_models)
-    mcmc = beta_mcmc_resolved
+    families, resolved_baselines, resolved_dynamic = _resolve_models(
+        models, baseline_models, dynamic_models
+    )
+    mcmc = beta_mcmc_resolved.to_dict()
+    beta_variant_list = apply_variant_options(
+        [
+            VARIANTS[name]
+            for name in parse_variant_names(",".join(beta_variants or ["reparam"]))
+        ],
+        exclude_vars=(),
+        latitude_transform=None,
+        use_site_hierarchy=beta_use_site_hierarchy,
+        use_ecoregion_hierarchy=beta_use_ecoregion_hierarchy,
+    )
 
     cfg = {
         "models": models,
@@ -1044,12 +1098,19 @@ def run_cross_validation(
             "min_train_rows": beta_min_train_rows,
             "y_eps": beta_y_eps,
             "mcmc": mcmc,
+            "variants": [v.name for v in beta_variant_list],
         },
-        "timestamp": _now_tag(),
+        "dynamic_projection": {
+            "models": resolved_dynamic,
+            "n_jobs": dynamic_n_jobs,
+            "feature_spec": dynamic_feature_spec(),
+        },
+        "in_sample_min_site_measurements": in_sample_min_site_measurements,
+        "timestamp": now_tag(),
     }
 
     cfg["output_dir"] = str(output_dir)
-    _write_json(output_dir / "cv_config.json", cfg)
+    write_json(output_dir / "cv_config.json", cfg)
     _print_run_header(cfg)
 
     df = load_model_ready_data()
@@ -1061,6 +1122,7 @@ def run_cross_validation(
         k_folds=k_folds,
         seed=seed,
         spatial_bins=spatial_bins,
+        in_sample_min_site_measurements=in_sample_min_site_measurements,
     )
     _print_fold_plan(plot_folds)
     _print_skipped_regimes(plot_skipped)
@@ -1070,11 +1132,11 @@ def run_cross_validation(
         with _CONSOLE.status("[cyan]Writing CV regime plots…[/]"):
             plot_cv_regimes(df, plot_folds, plot_dir)
     else:
-        _log("Writing CV regime plots…")
+        cv_log("Writing CV regime plots…")
         plot_cv_regimes(df, plot_folds, plot_dir)
     if plot_skipped:
         pd.DataFrame(plot_skipped).to_csv(plot_dir / "skipped_regimes.csv", index=False)
-    _log(f"CV regime plots → {plot_dir}")
+    cv_log(f"CV regime plots → {plot_dir}")
 
     for model in families:
         model_dir = output_dir / model
@@ -1098,6 +1160,43 @@ def run_cross_validation(
                 n_jobs=baseline_n_jobs,
                 tuning_method=baseline_tuning,
             )
+            residual_plots = write_family_cv_residual_plots(
+                output_dir,
+                df,
+                folds,
+                family="baselines",
+            )
+            if residual_plots:
+                cv_log(
+                    f"Baseline residual diagnostics → {model_dir / 'residual_diagnostics'}"
+                )
+
+        elif model == "dynamic_projection":
+            folds, skipped = plot_folds, plot_skipped
+            if skipped:
+                pd.DataFrame(skipped).to_csv(
+                    model_dir / "skipped_regimes.csv", index=False
+                )
+            run_dynamic_cv(
+                df=df,
+                folds=folds,
+                output_dir=model_dir,
+                dynamic_models=resolved_dynamic,
+                seed=seed,
+                n_jobs=dynamic_n_jobs,
+                log_fn=cv_log,
+            )
+            residual_plots = write_family_cv_residual_plots(
+                output_dir,
+                df,
+                folds,
+                family="dynamic_projection",
+            )
+            if residual_plots:
+                cv_log(
+                    f"Dynamic projection residual diagnostics → "
+                    f"{model_dir / 'residual_diagnostics'}"
+                )
 
         elif model == "beta_glmm":
             if not HAS_PYMC:
@@ -1107,27 +1206,46 @@ def run_cross_validation(
 
             beta_df = to_hbb_frame(df)
             folds, skipped = plot_folds, plot_skipped
-            if skipped:
-                pd.DataFrame(skipped).to_csv(
-                    model_dir / "skipped_regimes.csv", index=False
+            n_variants = len(beta_variant_list)
+            for variant in beta_variant_list:
+                variant_dir = beta_variant_output_dir(output_dir, variant, n_variants)
+                variant_dir.mkdir(parents=True, exist_ok=True)
+                if skipped:
+                    pd.DataFrame(skipped).to_csv(
+                        variant_dir / "skipped_regimes.csv", index=False
+                    )
+
+                run_beta_glmm_cv(
+                    df=beta_df,
+                    folds=folds,
+                    output_dir=variant_dir,
+                    seed=seed,
+                    min_train_rows=beta_min_train_rows,
+                    y_eps=beta_y_eps,
+                    mcmc=mcmc,
+                    variant=variant,
                 )
 
-            run_beta_glmm_cv(
-                df=beta_df,
-                folds=folds,
-                output_dir=model_dir,
-                seed=seed,
-                min_train_rows=beta_min_train_rows,
-                y_eps=beta_y_eps,
-                mcmc=mcmc,
+            residual_plots = write_family_cv_residual_plots(
+                output_dir,
+                beta_df,
+                folds,
+                family="beta_glmm",
             )
+            if residual_plots:
+                cv_log(f"Beta-GLMM residual diagnostics → {output_dir / 'beta_glmm'}")
 
         else:
             raise ValueError(f"Unknown model family: {model}")
 
     combined_plots = write_combined_cv_plots(output_dir, families=families)
     if combined_plots:
-        _log(f"Combined model comparison plots → {output_dir}")
+        cv_log(f"Combined model comparison → {output_dir}")
+    elif "beta_glmm" in families and len(beta_variant_list) > 1:
+        cv_log(
+            "Combined comparison skipped (need baselines or multiple model families "
+            "with ≥2 models in metrics)."
+        )
 
     if _CONSOLE is not None:
         _CONSOLE.print(
@@ -1138,7 +1256,7 @@ def run_cross_validation(
             )
         )
     else:
-        _log(f"Cross-validation complete → {output_dir}")
+        cv_log(f"Cross-validation complete → {output_dir}")
     return output_dir
 
 
@@ -1150,7 +1268,8 @@ def main() -> None:
         default="baselines,beta_glmm",
         help=(
             "Comma-separated models: individual baselines "
-            f"({','.join(BASELINE_MODEL_NAMES)}), baselines (all), beta_glmm "
+            f"({','.join(BASELINE_MODEL_NAMES)}), baselines (all), beta_glmm, "
+            f"dynamic_projection ({','.join(DYNAMIC_MODEL_NAMES)}) "
             "(default: baselines,beta_glmm)"
         ),
     )
@@ -1169,6 +1288,15 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--k-folds", type=int, default=5)
     parser.add_argument("--spatial-bins", type=int, default=4)
+    parser.add_argument(
+        "--in-sample-min-site-measurements",
+        type=int,
+        default=1,
+        help=(
+            "For in_sample_multi_visit: keep sites with strictly more than this "
+            "many rows (default: 1 → at least 2 visits per site)"
+        ),
+    )
 
     # Baselines
     parser.add_argument(
@@ -1210,57 +1338,55 @@ def main() -> None:
         default=1e-6,
         help="Epsilon for beta-scale y clipping (default: 1e-6)",
     )
+    add_cv_mcmc_arguments(parser)
     parser.add_argument(
-        "--beta-n-chains",
-        type=int,
-        default=BETA_GLMM_MCMC_DEFAULTS["n_chains"],
-        help="Number of MCMC chains (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--beta-n-tune",
-        type=int,
-        default=BETA_GLMM_MCMC_DEFAULTS["n_tune"],
-        help="Number of tuning samples per chain (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--beta-n-samples",
-        type=int,
-        default=BETA_GLMM_MCMC_DEFAULTS["n_samples"],
-        help="Number of posterior draws per chain (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--beta-target-accept",
-        type=float,
-        default=BETA_GLMM_MCMC_DEFAULTS["target_accept"],
-        help="NUTS target acceptance rate (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--beta-max-treedepth",
-        type=int,
-        default=BETA_GLMM_MCMC_DEFAULTS["max_treedepth"],
-        help="NUTS maximum tree depth (default: %(default)s)",
-    )
-    parser.add_argument(
-        "--beta-ncores",
-        type=int,
-        default=None,
+        "--beta-variants",
+        type=str,
+        default="reparam",
         help=(
-            "Parallel PyMC chain workers (default: min(--beta-n-chains, cpu_count); "
-            "uses mp_ctx=spawn)"
+            "Comma-separated hierarchical beta variants "
+            f"({', '.join(sorted(VARIANTS))}). "
+            "Use e.g. reparam,reparam_site_only,reparam_ecoregion_only,reparam_flat "
+            "to compare hierarchy structures."
         ),
     )
+    parser.add_argument(
+        "--beta-site-hierarchy",
+        choices=["true", "false"],
+        default=None,
+        help="Override site random effects for all selected beta variants.",
+    )
+    parser.add_argument(
+        "--beta-ecoregion-hierarchy",
+        choices=["true", "false"],
+        default=None,
+        help="Override ecoregion random effects for all selected beta variants.",
+    )
+    parser.add_argument(
+        "--dynamic-models",
+        type=str,
+        default=None,
+        help=(
+            "Filter dynamic projection models when --models includes "
+            f"'dynamic_projection' (default: all: {','.join(DYNAMIC_MODEL_NAMES)})"
+        ),
+    )
+    parser.add_argument("--dynamic-n-jobs", type=int, default=-1)
 
     args = parser.parse_args()
 
-    models = _parse_csv_list(args.models)
-    regimes = _parse_csv_list(args.regimes)
+    models = parse_csv_list(args.models)
+    regimes = parse_csv_list(args.regimes)
 
     out = args.output_dir
     if out is None:
         out = config.sully_og_dir / "output" / "cross_validation"
 
     baseline_models = (
-        _parse_csv_list(args.baseline_models) if args.baseline_models else None
+        parse_csv_list(args.baseline_models) if args.baseline_models else None
+    )
+    dynamic_models = (
+        parse_csv_list(args.dynamic_models) if args.dynamic_models else None
     )
 
     run_cross_validation(
@@ -1277,15 +1403,13 @@ def main() -> None:
         baseline_tuning=args.baseline_tuning,
         beta_min_train_rows=args.beta_min_train_rows,
         beta_y_eps=args.beta_y_eps,
-        beta_mcmc={
-            "n_chains": args.beta_n_chains,
-            "n_tune": args.beta_n_tune,
-            "n_samples": args.beta_n_samples,
-            "target_accept": args.beta_target_accept,
-            "max_treedepth": args.beta_max_treedepth,
-            "ncores": args.beta_ncores,
-            "mp_ctx": BETA_GLMM_MCMC_DEFAULTS["mp_ctx"],
-        },
+        beta_mcmc=mcmc_config_from_cv_args(args),
+        beta_variants=parse_variant_names(args.beta_variants),
+        beta_use_site_hierarchy=parse_optional_bool(args.beta_site_hierarchy),
+        beta_use_ecoregion_hierarchy=parse_optional_bool(args.beta_ecoregion_hierarchy),
+        dynamic_models=dynamic_models,
+        dynamic_n_jobs=args.dynamic_n_jobs,
+        in_sample_min_site_measurements=args.in_sample_min_site_measurements,
     )
 
 
