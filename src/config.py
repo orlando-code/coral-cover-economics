@@ -16,8 +16,14 @@ def get_repo_root():
     )
     if git_root.returncode == 0:
         return Path(git_root.stdout.strip())
-    else:
-        raise RuntimeError("Unable to determine Git repository root directory.")
+
+    # Fallback for environments where `git -C` cannot resolve OneDrive-backed
+    # paths but the repository checkout is still present.
+    for parent in (file_dir, *file_dir.parents):
+        if (parent / ".git").exists():
+            return parent
+
+    raise RuntimeError("Unable to determine Git repository root directory.")
 
 
 """
@@ -43,6 +49,9 @@ coastlines_dir = data_dir / "coastlines"
 sentinel_coast_dir = coastlines_dir / "S2Coast2023_ShapeFile_vector"
 meow_dir = data_dir / "MEOW"
 mpas_dir = data_dir / "mpas" / "WDPA_Jun2026_Public_shp"
+diversity_dir = data_dir / "ecoregion_diversity"
+env_dir = data_dir / "env_vars"
+reef_check_dir = data_dir / "reef_check"
 
 # METADATA DIRECTORIES
 figures_dir = repo_dir / "figures"
