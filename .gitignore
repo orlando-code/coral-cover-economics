@@ -67,15 +67,19 @@ docs/_build/
 # Model outputs and figures (adjust as needed)
 figures/
 outputs/
+output*/
 results/
 *.pptx
+*.png
+*.html
 
 # Temporary files
+
 *.tmp
 *.log
 *.bak
 *.cache
-.matplotlib-cache/
+*.matplotlib-cache/
 
 # OS
 .DS_Store
