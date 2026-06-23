@@ -1,0 +1,62 @@
+{
+  "models": [
+    "beta_glmm"
+  ],
+  "model_families": [
+    "beta_glmm"
+  ],
+  "regimes": [
+    "forward_repeat_sites"
+  ],
+  "seed": 42,
+  "k_folds": 5,
+  "spatial_bins": 4,
+  "baselines": {
+    "baseline_models": [],
+    "inner_splits": 5,
+    "n_iter": 50,
+    "n_jobs": -1,
+    "tuning": "bayes",
+    "feature_spec": {
+      "fixed_effects": [
+        "lat_stzd",
+        "depth_stzd",
+        "human_pop_stzd",
+        "cyclone_stzd",
+        "sst_mean_stzd",
+        "ssta_mean_stzd",
+        "ssta_min_stzd",
+        "ssta_freqstdev_stzd",
+        "ssta_dhwmax_stzd",
+        "tsa_max_stzd",
+        "tsa_freqstdev_stzd",
+        "turbidity_mean_stzd",
+        "historical_sst_max_stzd"
+      ],
+      "geography": "hierarchical_site_logit_intercept_zscored",
+      "geography_fallback": [
+        "site",
+        "region",
+        "diversity",
+        "global"
+      ],
+      "standardization": "train_only_standardize_train_test",
+      "notes": "Approximates beta site/region random intercepts with fold-safe smoothed training means on the logit scale; refit inside each CV fold."
+    }
+  },
+  "beta_glmm": {
+    "min_train_rows": 500,
+    "y_eps": 1e-06,
+    "mcmc": {
+      "n_chains": 1,
+      "n_tune": 10,
+      "n_samples": 10,
+      "target_accept": 0.95,
+      "max_treedepth": 8,
+      "ncores": 1,
+      "mp_ctx": "spawn"
+    }
+  },
+  "timestamp": "20260613_192327",
+  "output_dir": "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCambridge/cambridge/phd/Paper_Conferences/reef_cover_economics/notebooks/test"
+}
