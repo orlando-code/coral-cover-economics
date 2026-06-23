@@ -242,7 +242,10 @@ MODEL_COLORS = {
 
 # Hierarchical beta model (Sully / hb_beta)
 COVARIATE_LABELS = {
+    "Intercept": "Intercept",
     "lat_stzd": "Latitude",
+    "lat_sin_stzd": "sin(latitude)",
+    "lat_cos_stzd": "cos(latitude)",
     "historical_sst_max_stzd": "Max. historical SST",
     "ssta_dhwmax_stzd": "Max. SSTA DHW",
     "tsa_freqstdev_stzd": "TSA standard deviation",
