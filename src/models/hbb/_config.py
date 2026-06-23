@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from typing import Literal
 
-ModelSpec = Literal["reparam", "legacy_r"]
+ModelSpec = Literal["reparam", "legacy_r", "centered"]
 
 from src import config
 

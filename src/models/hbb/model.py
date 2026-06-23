@@ -128,6 +128,10 @@ class HierarchicalBetaModel:
         ncores: int = 6,
         progressbar: bool = True,
         mp_ctx: str | None = None,
+        use_site_hierarchy: bool | None = None,
+        use_ecoregion_hierarchy: bool | None = None,
+        use_hierarchy: bool | None = None,
+        use_diversity: bool = True,
     ) -> "HierarchicalBetaModel":
         """
         Fit the hierarchical beta regression model.
@@ -147,7 +151,8 @@ class HierarchicalBetaModel:
             target_accept (float): Target acceptance rate for NUTS sampler
             max_treedepth (int): Maximum tree depth for NUTS sampler
             random_seed (int): Random seed for reproducibility
-            spec (str): ``reparam`` (non-centered, no intercept in X) or
+            spec (str): ``reparam`` (non-centered, no intercept in X),
+                ``centered`` (centered hierarchy, intercept optional), or
                 ``legacy_r`` (centered JAGS like ``my_1_run_the_beta_model.Rmd``;
                 requires ``Intercept`` in ``X``).
             ncores (int): Number of cores to use for sampling
@@ -179,13 +184,36 @@ class HierarchicalBetaModel:
         self.max_treedepth = max_treedepth
         self.random_seed = random_seed
         self.mp_ctx = mp_ctx
+        if use_site_hierarchy is None and use_ecoregion_hierarchy is None:
+            if use_hierarchy is None:
+                use_site_hierarchy = True
+                use_ecoregion_hierarchy = True
+            else:
+                use_site_hierarchy = use_hierarchy
+                use_ecoregion_hierarchy = use_hierarchy
+        else:
+            use_site_hierarchy = (
+                True if use_site_hierarchy is None else use_site_hierarchy
+            )
+            use_ecoregion_hierarchy = (
+                True if use_ecoregion_hierarchy is None else use_ecoregion_hierarchy
+            )
+        self.use_site_hierarchy = use_site_hierarchy
+        self.use_ecoregion_hierarchy = use_ecoregion_hierarchy
+        self.use_hierarchy = use_site_hierarchy or use_ecoregion_hierarchy
+        self.use_diversity = use_diversity and use_ecoregion_hierarchy
 
         n_obs, n_predictors = X.shape
         n_sites = len(np.unique(site_idx))
         n_regions = len(np.unique(region_idx))
 
-        if diversity is None:
+        if diversity is None or not self.use_diversity:
             diversity = np.zeros(n_regions)
+        if spec == "legacy_r" and not (use_site_hierarchy and use_ecoregion_hierarchy):
+            raise ValueError(
+                "spec='legacy_r' requires use_site_hierarchy=True and "
+                "use_ecoregion_hierarchy=True (JAGS site/ecoregion structure)."
+            )
         if spec == "legacy_r" and (col_names is None or col_names[0] != "Intercept"):
             raise ValueError(
                 "spec='legacy_r' requires add_intercept=True (R model.matrix default)."
@@ -203,6 +231,9 @@ class HierarchicalBetaModel:
             ncores,
             progressbar=progressbar,
             mp_ctx=mp_ctx,
+            use_site_hierarchy=use_site_hierarchy,
+            use_ecoregion_hierarchy=use_ecoregion_hierarchy,
+            use_diversity=self.use_diversity,
         )
         self.summary = az.summary(self.trace)
         return self
@@ -214,27 +245,33 @@ class HierarchicalBetaModel:
         n_sites: int,
         n_chains: int,
         seed: int,
+        *,
+        use_diversity: bool = True,
+        use_site_hierarchy: bool = True,
+        use_ecoregion_hierarchy: bool = True,
     ) -> list[dict[str, Any]]:
         """Match the centered JAGS initial values in ``1_run_the_beta_model.Rmd``."""
         inits: list[dict[str, Any]] = []
         for c in range(n_chains):
             rng = np.random.default_rng(seed + c * 1000)
 
-            inits.append(
-                {
-                    "beta": rng.normal(0, 0.1, n_predictors).astype(float),
-                    "beta_diversity": float(rng.normal(0, 0.1)),
-                    "mu_global": float(rng.normal(0, 0.1)),
-                    "sigma_ecoregion_num": float(rng.normal(0, 25)),
-                    "sigma_ecoregion_denom": float(rng.normal(0, 1)),
-                    "sigma_num": float(rng.normal(0, 25)),
-                    "sigma_denom": float(rng.normal(0, 1)),
-                    "theta_num": float(rng.normal(0, 25)),
-                    "theta_denom": float(rng.normal(0, 1)),
-                    "ecoregion": rng.normal(0, 0.1, n_regions).astype(float),
-                    "site_effect": rng.normal(0, 0.1, n_sites).astype(float),
-                }
-            )
+            init: dict[str, Any] = {
+                "beta": rng.normal(0, 0.1, n_predictors).astype(float),
+                "mu_global": float(rng.normal(0, 0.1)),
+                "sigma_ecoregion_num": float(rng.normal(0, 25)),
+                "sigma_ecoregion_denom": float(rng.normal(0, 1)),
+                "sigma_num": float(rng.normal(0, 25)),
+                "sigma_denom": float(rng.normal(0, 1)),
+                "theta_num": float(rng.normal(0, 25)),
+                "theta_denom": float(rng.normal(0, 1)),
+            }
+            if use_ecoregion_hierarchy:
+                init["ecoregion"] = rng.normal(0, 0.1, n_regions).astype(float)
+            if use_site_hierarchy:
+                init["site_effect"] = rng.normal(0, 0.1, n_sites).astype(float)
+            if use_diversity:
+                init["beta_diversity"] = float(rng.normal(0, 0.1))
+            inits.append(init)
         return inits
 
     def _sample_pymc_model(
@@ -250,54 +287,97 @@ class HierarchicalBetaModel:
         *,
         progressbar: bool = True,
         mp_ctx: str | None = None,
+        use_site_hierarchy: bool = True,
+        use_ecoregion_hierarchy: bool = True,
+        use_diversity: bool = True,
     ):
         """PyMC graph: ``reparam`` (default) or centered ``legacy_r`` (my_1 JAGS)."""
+        use_hierarchy = use_site_hierarchy or use_ecoregion_hierarchy
         with pm.Model() as self.model:
             beta = pm.Normal("beta", mu=0, sigma=100, shape=n_predictors)
-            beta_diversity = pm.Normal("beta_diversity", mu=0, sigma=100)
-            mu_global = pm.Normal("mu_global", mu=0, sigma=100)
-            g = mu_global + beta_diversity * diversity
 
-            if spec == "legacy_r":
-                # JAGS: num ~ dnorm(0, 0.0016), denom ~ dnorm(0, 1),
-                # sigma <- abs(num / denom), giving the paper's centered geometry.
+            if not use_hierarchy:
+                theta = pm.HalfCauchy("theta", beta=25)
+                eta = pm.math.dot(X, beta)
+                fast_sample = True
+            else:
+                mu_global = pm.Normal("mu_global", mu=0, sigma=100)
+                if use_ecoregion_hierarchy and use_diversity:
+                    beta_diversity = pm.Normal("beta_diversity", mu=0, sigma=100)
+                    g = mu_global + beta_diversity * diversity
+                else:
+                    g = mu_global
+
                 def _bugs_halfcauchy(name: str):
                     num = pm.Normal(f"{name}_num", mu=0, sigma=25)
                     denom = pm.Normal(f"{name}_denom", mu=0, sigma=1)
                     return pm.Deterministic(name, pm.math.abs(num / denom))
 
-                ecoregion_effect = pm.Normal(
-                    "ecoregion",
-                    mu=g,
-                    sigma=_bugs_halfcauchy("sigma_ecoregion"),
-                    shape=n_regions,
-                )
-                site_effect = pm.Normal(
-                    "site_effect",
-                    mu=ecoregion_effect[site_to_region],
-                    sigma=_bugs_halfcauchy("sigma"),
-                    shape=n_sites,
-                )
-                theta = _bugs_halfcauchy("theta")
-                fast_sample = False
-            else:
-                sigma_ecoregion = pm.HalfCauchy("sigma_ecoregion", beta=25)
-                ecoregion_offset = pm.Normal(
-                    "ecoregion_offset", mu=0, sigma=1, shape=n_regions
-                )
-                ecoregion_effect = pm.Deterministic(
-                    "ecoregion", g + sigma_ecoregion * ecoregion_offset
-                )
-                sigma_site = pm.HalfCauchy("sigma_site", beta=25)
-                site_offset = pm.Normal("site_offset", mu=0, sigma=1, shape=n_sites)
-                site_effect = pm.Deterministic(
-                    "site_effect",
-                    ecoregion_effect[site_to_region] + sigma_site * site_offset,
-                )
-                theta = pm.HalfCauchy("theta", beta=25)
-                fast_sample = True
+                ecoregion_effect = None
+                if use_ecoregion_hierarchy:
+                    if spec in {"legacy_r", "centered"}:
+                        ecoregion_effect = pm.Normal(
+                            "ecoregion",
+                            mu=g,
+                            sigma=_bugs_halfcauchy("sigma_ecoregion"),
+                            shape=n_regions,
+                        )
+                    else:
+                        sigma_ecoregion = pm.HalfCauchy("sigma_ecoregion", beta=25)
+                        ecoregion_offset = pm.Normal(
+                            "ecoregion_offset", mu=0, sigma=1, shape=n_regions
+                        )
+                        ecoregion_effect = pm.Deterministic(
+                            "ecoregion", g + sigma_ecoregion * ecoregion_offset
+                        )
 
-            eta = pm.math.dot(X, beta) + site_effect[self.site_idx]
+                if use_site_hierarchy:
+                    if use_ecoregion_hierarchy:
+                        if spec in {"legacy_r", "centered"}:
+                            site_effect = pm.Normal(
+                                "site_effect",
+                                mu=ecoregion_effect[site_to_region],
+                                sigma=_bugs_halfcauchy("sigma"),
+                                shape=n_sites,
+                            )
+                        else:
+                            sigma_site = pm.HalfCauchy("sigma_site", beta=25)
+                            site_offset = pm.Normal(
+                                "site_offset", mu=0, sigma=1, shape=n_sites
+                            )
+                            site_effect = pm.Deterministic(
+                                "site_effect",
+                                ecoregion_effect[site_to_region]
+                                + sigma_site * site_offset,
+                            )
+                    elif spec in {"legacy_r", "centered"}:
+                        site_effect = pm.Normal(
+                            "site_effect",
+                            mu=g,
+                            sigma=_bugs_halfcauchy("sigma"),
+                            shape=n_sites,
+                        )
+                    else:
+                        sigma_site = pm.HalfCauchy("sigma_site", beta=25)
+                        site_offset = pm.Normal(
+                            "site_offset", mu=0, sigma=1, shape=n_sites
+                        )
+                        site_effect = pm.Deterministic(
+                            "site_effect", g + sigma_site * site_offset
+                        )
+
+                if spec in {"legacy_r", "centered"}:
+                    theta = _bugs_halfcauchy("theta")
+                    fast_sample = False
+                else:
+                    theta = pm.HalfCauchy("theta", beta=25)
+                    fast_sample = True
+
+                if use_site_hierarchy:
+                    eta = pm.math.dot(X, beta) + site_effect[self.site_idx]
+                else:
+                    eta = pm.math.dot(X, beta) + ecoregion_effect[self.region_idx]
+
             pi = pm.math.clip(
                 pm.math.invlogit(eta), _PI_EPS, 1.0 - _PI_EPS
             )  # JAGS: max(1e-6, min(0.999999, pi_raw))
@@ -322,9 +402,16 @@ class HierarchicalBetaModel:
             )
             if fast_sample:
                 sample_kw["idata_kwargs"] = {"log_likelihood": False}
-            else:
+            elif use_hierarchy and spec in {"legacy_r", "centered"}:
                 sample_kw["initvals"] = self._legacy_initvals(
-                    n_predictors, n_regions, n_sites, self.n_chains, self.random_seed
+                    n_predictors,
+                    n_regions,
+                    n_sites,
+                    self.n_chains,
+                    self.random_seed,
+                    use_diversity=use_diversity,
+                    use_site_hierarchy=use_site_hierarchy,
+                    use_ecoregion_hierarchy=use_ecoregion_hierarchy,
                 )
             sample_kw = _parallel_sample_kwargs(
                 sample_kw,
@@ -340,6 +427,7 @@ class HierarchicalBetaModel:
         site_idx: np.ndarray,
         n_samples: int = 1000,
         verbose: bool = False,
+        region_idx: np.ndarray | None = None,
     ) -> dict[str, np.ndarray]:
         """
         Generate predictions from the fitted model.
@@ -372,39 +460,83 @@ class HierarchicalBetaModel:
         n_predictors = self.trace.posterior["beta"].shape[-1]
         beta_samples = self.trace.posterior["beta"].values.reshape(-1, n_predictors)
 
-        # Get number of sites from trace
-        n_sites_trained = self.trace.posterior["site_effect"].shape[-1]
-        site_samples = self.trace.posterior["site_effect"].values.reshape(
-            -1, n_sites_trained
-        )
+        use_site_hierarchy = getattr(self, "use_site_hierarchy", True)
+        use_ecoregion_hierarchy = getattr(self, "use_ecoregion_hierarchy", True)
+        use_hierarchy = use_site_hierarchy or use_ecoregion_hierarchy
+
+        site_samples = None
+        eco_samples = None
+        if use_site_hierarchy and "site_effect" in self.trace.posterior:
+            n_sites_trained = self.trace.posterior["site_effect"].shape[-1]
+            site_samples = self.trace.posterior["site_effect"].values.reshape(
+                -1, n_sites_trained
+            )
+        else:
+            n_sites_trained = 0
+        if use_ecoregion_hierarchy and "ecoregion" in self.trace.posterior:
+            n_regions_trained = self.trace.posterior["ecoregion"].shape[-1]
+            eco_samples = self.trace.posterior["ecoregion"].values.reshape(
+                -1, n_regions_trained
+            )
+        else:
+            n_regions_trained = 0
         theta_samples = self.trace.posterior["theta"].values.flatten()
+
+        if region_idx is None:
+            region_idx = self.region_idx
+        if region_idx is not None and len(region_idx) != X_new.shape[0]:
+            raise ValueError(
+                "region_idx length must match X_new rows when provided explicitly."
+            )
 
         if verbose:
             print("\n  🔍 PREDICT VALIDATION:")
             print(f"      X_new shape: {X_new.shape}")
             print(f"      Expected predictors: {n_predictors}")
-            print(f"      Trained sites: {n_sites_trained}")
-            print(f"      Input unique sites: {len(np.unique(site_idx))}")
-            print(f"      Site idx range: [{site_idx.min()}, {site_idx.max()}]")
+            if use_site_hierarchy:
+                print(f"      Trained sites: {n_sites_trained}")
+                print(f"      Input unique sites: {len(np.unique(site_idx))}")
+                print(f"      Site idx range: [{site_idx.min()}, {site_idx.max()}]")
+            if use_ecoregion_hierarchy and region_idx is not None:
+                print(f"      Trained regions: {n_regions_trained}")
+                print(f"      Input unique regions: {len(np.unique(region_idx))}")
 
-        # Handle site_idx: map to valid range if needed
-        unique_sites = np.unique(site_idx)
-        if len(unique_sites) > n_sites_trained or max(unique_sites) >= n_sites_trained:
-            # Map site_idx to valid range (0 to n_sites_trained-1) using modulo
-            # This handles cases where new data has different site indices
-            site_idx_mapped = site_idx % n_sites_trained
-            if len(unique_sites) > n_sites_trained:
-                print(
-                    f"⚠️  Warning: {len(unique_sites)} unique sites in site_idx but model trained on {n_sites_trained} sites."
-                )
-                print("    Using modulo mapping - site effects may not be accurate!")
-                print(
-                    "    Consider using model.reef_to_site_map for consistent site indices."
-                )
-        else:
-            site_idx_mapped = site_idx
-            if verbose:
+        site_idx_mapped = site_idx
+        if use_site_hierarchy and site_samples is not None:
+            unique_sites = np.unique(site_idx)
+            if len(unique_sites) > n_sites_trained or max(unique_sites) >= n_sites_trained:
+                site_idx_mapped = site_idx % n_sites_trained
+                if len(unique_sites) > n_sites_trained:
+                    print(
+                        f"⚠️  Warning: {len(unique_sites)} unique sites in site_idx but model trained on {n_sites_trained} sites."
+                    )
+                    print("    Using modulo mapping - site effects may not be accurate!")
+                    print(
+                        "    Consider using model.reef_to_site_map for consistent site indices."
+                    )
+            elif verbose:
                 print("      ✅ All site indices within valid range")
+        elif verbose and not use_hierarchy:
+            print("      Fixed-effects-only model (no random effects)")
+
+        region_idx_mapped = region_idx
+        if (
+            use_ecoregion_hierarchy
+            and eco_samples is not None
+            and region_idx is not None
+        ):
+            unique_regions = np.unique(region_idx)
+            if (
+                len(unique_regions) > n_regions_trained
+                or max(unique_regions) >= n_regions_trained
+            ):
+                region_idx_mapped = region_idx % n_regions_trained
+                if len(unique_regions) > n_regions_trained:
+                    print(
+                        f"⚠️  Warning: {len(unique_regions)} unique regions in region_idx "
+                        f"but model trained on {n_regions_trained} regions."
+                    )
+                    print("    Using modulo mapping - ecoregion effects may not be accurate!")
 
         # Randomly select samples
         n_total = len(beta_samples)
@@ -412,7 +544,11 @@ class HierarchicalBetaModel:
 
         predictions = []
         for i in idx:
-            eta = X_new @ beta_samples[i] + site_samples[i, site_idx_mapped]
+            eta = X_new @ beta_samples[i]
+            if use_site_hierarchy and site_samples is not None:
+                eta = eta + site_samples[i, site_idx_mapped]
+            elif use_ecoregion_hierarchy and eco_samples is not None and region_idx_mapped is not None:
+                eta = eta + eco_samples[i, region_idx_mapped]
             pi = inv_logit(eta)
 
             # Sample from beta distribution
@@ -502,9 +638,10 @@ class HierarchicalBetaModel:
 
         # Use 90% HDI so we get 5% / 95% bounds, to mirror the
         # MyBUGSOutput-style summaries (2.5/97.5 and 25/75 in R).
-        beta_summary = az.summary(
-            self.trace, var_names=["beta", "beta_diversity"], hdi_prob=0.90
-        )
+        var_names = ["beta"]
+        if getattr(self, "use_diversity", True) and "beta_diversity" in self.trace.posterior:
+            var_names.append("beta_diversity")
+        beta_summary = az.summary(self.trace, var_names=var_names, hdi_prob=0.90)
 
         if self.col_names is not None:
             # Rename index to use column names
@@ -581,7 +718,15 @@ class HierarchicalBetaModel:
         # Save trace (MCMC samples)
         trace_path = output_path / "model_trace.nc"
         print(f"\tSaving trace to {trace_path}")
+        if not self.trace.posterior.data_vars:
+            raise ValueError("Cannot save trace with empty posterior.")
         self.trace.to_netcdf(trace_path)
+        loaded = az.from_netcdf(trace_path)
+        if not loaded.posterior.data_vars:
+            raise RuntimeError(
+                f"model_trace.nc at {trace_path} failed post-save validation. "
+                "Load with arviz.from_netcdf(), not xarray.open_dataset()."
+            )
 
         # Save metadata
         import json
@@ -766,16 +911,21 @@ class HierarchicalBetaModel:
         if self.trace is None:
             raise ValueError("Model must be fit first")
 
-        samples = {
+        samples: dict[str, np.ndarray] = {
             "beta": self.trace.posterior["beta"].values.reshape(-1, self.X.shape[1]),
-            "beta_diversity": self.trace.posterior["beta_diversity"].values.flatten(),
-            "ecoregion": self.trace.posterior["ecoregion"].values.reshape(
-                -1, len(np.unique(self.region_idx))
-            ),
-            "site_effect": self.trace.posterior["site_effect"].values.reshape(
-                -1, len(np.unique(self.site_idx))
-            ),
             "theta": self.trace.posterior["theta"].values.flatten(),
         }
+        if getattr(self, "use_diversity", True) and "beta_diversity" in self.trace.posterior:
+            samples["beta_diversity"] = self.trace.posterior[
+                "beta_diversity"
+            ].values.flatten()
+        if getattr(self, "use_ecoregion_hierarchy", True) and "ecoregion" in self.trace.posterior:
+            samples["ecoregion"] = self.trace.posterior["ecoregion"].values.reshape(
+                -1, len(np.unique(self.region_idx))
+            )
+        if getattr(self, "use_site_hierarchy", True) and "site_effect" in self.trace.posterior:
+            samples["site_effect"] = self.trace.posterior["site_effect"].values.reshape(
+                -1, len(np.unique(self.site_idx))
+            )
 
         return samples

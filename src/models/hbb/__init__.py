@@ -12,8 +12,10 @@ from src.models.hbb._config import (
 from src.models.hbb.analysis import (
     calculate_coral_cover_by_ocean,
     create_output_dir_path,
+    export_spot_lists,
     identify_bright_dark_spots,
     run_full_analysis,
+    save_in_sample_application_outputs,
 )
 from src.models.hbb.cv import predict_from_posterior_cv, prepare_cv_fold_arrays
 from src.models.hbb.data import (
@@ -59,6 +61,7 @@ __all__ = [
     "clean_data",
     "compute_correlation_matrix",
     "create_output_dir_path",
+    "export_spot_lists",
     "identify_bright_dark_spots",
     "inverse_transform_beta",
     "load_data",
@@ -72,6 +75,7 @@ __all__ = [
     "prepare_hierarchical_indices_reparam",
     "project_future_coral_cover",
     "run_full_analysis",
+    "save_in_sample_application_outputs",
     "standardize_train_test",
     "standardize_variables",
     "transform_to_beta",
