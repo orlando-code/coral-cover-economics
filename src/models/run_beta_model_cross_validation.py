@@ -47,6 +47,7 @@ from src import config
 from src.models.cv_methods import FoldSpec, build_all_folds, fold_manifest_dataframe
 from src.models.cv_prediction_plots import (
     plot_cv_observed_vs_predicted,
+    plot_cv_residual_diagnostics,
     save_beta_fold_diagnostics,
 )
 from src.models.hbb import (
@@ -56,29 +57,11 @@ from src.models.hbb import (
     predict_from_posterior_cv,
     prepare_cv_fold_arrays,
 )
+from src.models.cv_common import cv_console, cv_log, extract_sampler_diagnostics, fmt_float
+from src.models.hbb.mcmc_config import CV_MCMC_DEFAULTS
 from src.models.hbb.model import resolve_pymc_ncores
 
-
-def _make_console() -> Optional["Console"]:
-    if not _RICH_AVAILABLE or os.getenv("RCV_PLAIN") == "1":
-        return None
-    return Console(highlight=False)
-
-
-_CONSOLE = _make_console()
-
-
-def _log(message: str = "", **kwargs: Any) -> None:
-    if _CONSOLE is not None:
-        _CONSOLE.print(message, **kwargs)
-    else:
-        print(message)
-
-
-def _fmt_float(value: float, ndigits: int = 4) -> str:
-    if value is None or (isinstance(value, float) and np.isnan(value)):
-        return "—"
-    return f"{float(value):.{ndigits}f}"
+_CONSOLE = cv_console()
 
 
 def _print_run_header(cfg: dict[str, Any]) -> None:
@@ -106,14 +89,14 @@ def _print_run_header(cfg: dict[str, Any]) -> None:
             )
         )
     else:
-        _log("=== Beta-GLMM cross-validation ===")
+        cv_log("=== Beta-GLMM cross-validation ===")
         for line in lines:
-            _log(line.replace("[cyan]", "").replace("[/]", "").replace("[yellow]", ""))
+            cv_log(line.replace("[cyan]", "").replace("[/]", "").replace("[yellow]", ""))
 
 
 def _print_dataset_summary(df: pd.DataFrame) -> None:
     if _CONSOLE is None:
-        _log(
+        cv_log(
             f"Loaded {len(df)} rows | {df['site'].nunique()} sites | "
             f"{df['region'].nunique()} regions"
         )
@@ -128,8 +111,8 @@ def _print_dataset_summary(df: pd.DataFrame) -> None:
         cover = df["Average_coral_cover"].astype(float)
         if cover.max() > 1.5:
             cover = cover / 100.0
-        table.add_row("Coral cover (mean)", _fmt_float(float(cover.mean()), 3))
-        table.add_row("Coral cover (sd)", _fmt_float(float(cover.std()), 3))
+        table.add_row("Coral cover (mean)", fmt_float(float(cover.mean()), 3))
+        table.add_row("Coral cover (sd)", fmt_float(float(cover.std()), 3))
     _CONSOLE.print(table)
 
 
@@ -146,7 +129,7 @@ def _print_fold_plan(folds: list[FoldSpec], cfg: dict[str, Any]) -> tuple[int, i
             eligible += 1
 
     if _CONSOLE is None:
-        _log(f"Folds: {len(folds)} total ({eligible} to fit, {skipped} skipped)")
+        cv_log(f"Folds: {len(folds)} total ({eligible} to fit, {skipped} skipped)")
         return eligible, skipped
 
     table = Table(
@@ -180,19 +163,19 @@ def _print_fold_plan(folds: list[FoldSpec], cfg: dict[str, Any]) -> tuple[int, i
 
 def _print_fold_result(metrics_row: pd.Series) -> None:
     msg = (
-        f"  R²={_fmt_float(metrics_row['r2'])}  "
-        f"RMSE={_fmt_float(metrics_row['rmse'])}  "
-        f"MAE={_fmt_float(metrics_row['mae'])}  "
-        f"cov95={_fmt_float(metrics_row['coverage95'])}  "
-        f"R̂_max={_fmt_float(metrics_row['max_rhat'])}  "
-        f"ESS_min={_fmt_float(metrics_row['min_neff'], 0)}  "
-        f"div={_fmt_float(metrics_row['n_divergences'], 0)}"
+        f"  R²={fmt_float(metrics_row['r2'])}  "
+        f"RMSE={fmt_float(metrics_row['rmse'])}  "
+        f"MAE={fmt_float(metrics_row['mae'])}  "
+        f"cov95={fmt_float(metrics_row['coverage95'])}  "
+        f"R̂_max={fmt_float(metrics_row['max_rhat'])}  "
+        f"ESS_min={fmt_float(metrics_row['min_neff'], 0)}  "
+        f"div={fmt_float(metrics_row['n_divergences'], 0)}"
     )
     line = f"{metrics_row['fold_tag']}{msg}"
     if _CONSOLE is not None:
         _CONSOLE.print(f"[green]✓[/] {line}")
     else:
-        _log(f"Done {line}")
+        cv_log(f"Done {line}")
 
 
 def _print_regime_summary(metrics_df: pd.DataFrame) -> None:
@@ -206,8 +189,8 @@ def _print_regime_summary(metrics_df: pd.DataFrame) -> None:
         max_rhat_mean=("max_rhat", "mean"),
     )
     if _CONSOLE is None:
-        _log("\nSummary by regime:")
-        _log(summary.to_string(index=False))
+        cv_log("\nSummary by regime:")
+        cv_log(summary.to_string(index=False))
         return
 
     table = Table(title="Results by regime", box=box.ROUNDED)
@@ -219,22 +202,22 @@ def _print_regime_summary(metrics_df: pd.DataFrame) -> None:
     table.add_column("R̂ (mean)", justify="right")
     for _, row in summary.iterrows():
         r2_cell = (
-            f"{_fmt_float(row['r2_mean'])} ± {_fmt_float(row['r2_sd'])}"
+            f"{fmt_float(row['r2_mean'])} ± {fmt_float(row['r2_sd'])}"
             if pd.notna(row["r2_sd"])
-            else _fmt_float(row["r2_mean"])
+            else fmt_float(row["r2_mean"])
         )
         rmse_cell = (
-            f"{_fmt_float(row['rmse_mean'])} ± {_fmt_float(row['rmse_sd'])}"
+            f"{fmt_float(row['rmse_mean'])} ± {fmt_float(row['rmse_sd'])}"
             if pd.notna(row["rmse_sd"])
-            else _fmt_float(row["rmse_mean"])
+            else fmt_float(row["rmse_mean"])
         )
         table.add_row(
             str(row["regime"]),
             str(int(row["folds"])),
             r2_cell,
             rmse_cell,
-            _fmt_float(row["coverage95_mean"]),
-            _fmt_float(row["max_rhat_mean"]),
+            fmt_float(row["coverage95_mean"]),
+            fmt_float(row["max_rhat_mean"]),
         )
     _CONSOLE.print(table)
 
@@ -247,15 +230,7 @@ DEFAULT_CFG: dict[str, Any] = {
     "spatial_bins": 4,
     "min_train_rows": 500,
     "y_eps": 1e-6,
-    "mcmc": {
-        "n_chains": 2,
-        "n_tune": 100,
-        "n_samples": 200,
-        "target_accept": 0.95,
-        "max_treedepth": 8,
-        "ncores": None,
-        "mp_ctx": "spawn",
-    },
+    "mcmc": CV_MCMC_DEFAULTS.to_dict(),
     "validation_regimes": [
         "random_kfold",
         "site_group_kfold",
@@ -281,21 +256,6 @@ def apply_smoke_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def extract_sampler_diagnostics(
-    model: HierarchicalBetaModel, max_treedepth: int
-) -> dict[str, float]:
-    """Summarise NUTS divergences and tree-depth saturation from a fit."""
-    out = {"n_divergences": np.nan, "pct_max_treedepth": np.nan}
-    try:
-        ss = model.trace.sample_stats
-        if "diverging" in ss:
-            out["n_divergences"] = float(ss["diverging"].sum().values)
-        if "tree_depth" in ss:
-            td = ss["tree_depth"].values
-            out["pct_max_treedepth"] = float(100.0 * (td >= max_treedepth).mean())
-    except Exception:
-        pass
-    return out
 
 
 def fit_fold_model(
@@ -331,6 +291,9 @@ def fit_fold_model(
         mp_ctx=mcmc.get("mp_ctx"),
         random_seed=cfg["seed"] + sum(ord(c) for c in fold_tag) % 1_000_000,
         progressbar=True,
+        use_site_hierarchy=arrays.get("use_site_hierarchy", True),
+        use_ecoregion_hierarchy=arrays.get("use_ecoregion_hierarchy", True),
+        use_diversity=arrays.get("use_diversity", True),
     )
 
     pred = predict_from_posterior_cv(
@@ -377,6 +340,8 @@ def fit_fold_model(
         fold_dir=output_dir / "folds" / fold_tag,
         fold_tag=fold_tag,
         predictions=pred["predictions"],
+        test_df=test_df,
+        train_df=train_df,
         summary_df=summary,
         sampler=sampler,
         mcmc=mcmc,
@@ -447,7 +412,7 @@ def _run_fold_loop(
             if _CONSOLE is not None:
                 _CONSOLE.print(f"[red]✗[/] {fold_tag}: {exc}")
             else:
-                _log(f"Fold {fold_tag} failed: {exc}")
+                cv_log(f"Fold {fold_tag} failed: {exc}")
             return None
 
         metrics = res["metrics"].copy()
@@ -488,7 +453,7 @@ def _run_fold_loop(
                 "(Rich progress bar disabled during MCMC).[/]\n"
             )
         else:
-            _log(
+            cv_log(
                 f"[{i}/{len(eligible_folds)}] Running {fold_tag} "
                 f"(train={n_train}, test={n_test})..."
             )
@@ -512,7 +477,7 @@ def run_cross_validation(cfg: Optional[dict[str, Any]] = None) -> Path:
 
     _print_run_header(cfg)
 
-    _log("Loading data (data.csv + shapefile pipeline)...")
+    cv_log("Loading data (data.csv + shapefile pipeline)...")
     df = load_model_data_for_cv(Path(cfg["data_dir"]))
     _print_dataset_summary(df)
 
@@ -543,7 +508,7 @@ def run_cross_validation(cfg: Optional[dict[str, Any]] = None) -> Path:
                 f"[yellow]{len(all_failures)} fold(s) failed[/] — see validation_failures.csv"
             )
         else:
-            _log(f"{len(all_failures)} fold(s) failed — see validation_failures.csv")
+            cv_log(f"{len(all_failures)} fold(s) failed — see validation_failures.csv")
 
     metrics_df.to_csv(output_dir / "validation_metrics_by_fold.csv", index=False)
     pred_df.to_csv(output_dir / "validation_predictions.csv", index=False)
@@ -560,12 +525,26 @@ def run_cross_validation(cfg: Optional[dict[str, Any]] = None) -> Path:
     )
     metrics_regime.to_csv(output_dir / "validation_metrics_by_regime.csv", index=False)
 
-    _log("Writing plots and summaries...")
+    cv_log("Writing plots and summaries...")
     plot_cv_observed_vs_predicted(
         pred_df,
         output_dir=output_dir,
         model_col=None,
     )
+    residual_plots: list[Path] = []
+    for regime in sorted(pred_df["regime"].astype(str).unique()):
+        regime_sub = pred_df.loc[pred_df["regime"] == regime]
+        residual_plots.extend(
+            plot_cv_residual_diagnostics(
+                regime_sub,
+                df,
+                all_folds,
+                output_dir=output_dir,
+                prefix=regime,
+            )
+        )
+    if residual_plots:
+        cv_log(f"Residual diagnostics → {output_dir / 'residual_diagnostics'}")
     fig, ax = plt.subplots(figsize=(9, 5))
     metrics_df.boxplot(column="rmse", by="regime", ax=ax)
     ax.set_title("RMSE by validation regime")
@@ -582,7 +561,7 @@ def run_cross_validation(cfg: Optional[dict[str, Any]] = None) -> Path:
     if _CONSOLE is not None:
         _CONSOLE.print(Panel(done_msg, border_style="green", title="Complete"))
     else:
-        _log(done_msg)
+        cv_log(done_msg)
     return output_dir
 
 
