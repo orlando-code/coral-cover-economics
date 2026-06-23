@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 
 from src import config
@@ -251,9 +250,11 @@ def load_model_data_from_maps(
 def load_model_data_from_pipeline(
     data_dir: Optional[Path] = None,
     diversity_lookup_path: Optional[Path] = None,
+    force_rebuild: bool = False,
+    index_source: Literal["paper_factor", "data_for_maps"] = "paper_factor",
 ) -> pd.DataFrame:
     """Model-ready data from the shared cached build (``data.csv`` + lookup)."""
-    from src.dataloading.build_model_ready_data import (
+    from src.dataloading.build_sully_model_ready_data import (
         load_model_ready_data,
         to_hbb_frame,
     )
@@ -261,6 +262,8 @@ def load_model_data_from_pipeline(
     df = load_model_ready_data(
         data_dir=data_dir,
         lookup_path=diversity_lookup_path,
+        force_rebuild=force_rebuild,
+        index_source=index_source,
     )
     return to_hbb_frame(df)
 
@@ -270,9 +273,10 @@ def load_model_data_for_cv(
     *,
     lookup_path: Optional[Path] = None,
     force_rebuild: bool = False,
+    index_source: Literal["paper_factor", "data_for_maps"] = "paper_factor",
 ) -> pd.DataFrame:
     """Load shared cached model-ready data in HBB (lowercase) column format."""
-    from src.dataloading.build_model_ready_data import (
+    from src.dataloading.build_sully_model_ready_data import (
         load_model_ready_data,
         to_hbb_frame,
     )
@@ -281,5 +285,6 @@ def load_model_data_for_cv(
         data_dir=data_dir,
         lookup_path=lookup_path,
         force_rebuild=force_rebuild,
+        index_source=index_source,
     )
     return to_hbb_frame(df)
