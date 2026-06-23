@@ -56,7 +56,11 @@ class StandardizationStats:
 def _ensure_lat(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     if "lat" not in out.columns:
-        lat_col = "Latitude.Degrees" if "Latitude.Degrees" in out.columns else "latitude.degrees"
+        lat_col = (
+            "Latitude.Degrees"
+            if "Latitude.Degrees" in out.columns
+            else "latitude.degrees"
+        )
         out["lat"] = np.abs(out[lat_col].astype(float))
     return out
 
@@ -70,7 +74,9 @@ def _to_proportion(cover: pd.Series) -> pd.Series:
 
 def filter_model_ready_rows(df: pd.DataFrame) -> pd.DataFrame:
     """Match dplyr::filter() in beta_model_reparam_utils.R::filter_model_ready_rows."""
-    from src.dataloading.build_model_ready_data import filter_model_ready_rows as _filter
+    from src.dataloading.build_sully_model_ready_data import (
+        filter_model_ready_rows as _filter,
+    )
 
     return _filter(df)
 
@@ -84,9 +90,11 @@ def load_model_ready_data(
     Load the shared cached model-ready dataset.
 
     Built from ``data.csv`` + ``data_for_maps.csv`` (diversity/site lookup) via
-    :mod:`src.dataloading.build_model_ready_data`.
+    :mod:`src.dataloading.build_sully_model_ready_data`.
     """
-    from src.dataloading.build_model_ready_data import load_model_ready_data as _load
+    from src.dataloading.build_sully_model_ready_data import (
+        load_model_ready_data as _load,
+    )
 
     return _load(cache_path=data_path, force_rebuild=force_rebuild)
 

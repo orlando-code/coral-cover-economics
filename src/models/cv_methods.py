@@ -30,9 +30,18 @@ ALL_CV_REGIMES: tuple[ValidationRegime, ...] = (
     "forward_repeat_sites",
     # "spatial_kfold",
     "in_sample",
+    "in_sample_multi_visit",
 )
 
 _EPOCH_19811231 = pd.Timestamp("1981-12-31")
+
+IN_SAMPLE_REGIMES: frozenset[ValidationRegime] = frozenset(
+    {"in_sample", "in_sample_multi_visit"}
+)
+
+
+def is_in_sample_regime(regime: str) -> bool:
+    return regime in IN_SAMPLE_REGIMES
 
 
 @dataclass(frozen=True)
@@ -63,8 +72,7 @@ def year_series(df: pd.DataFrame) -> pd.Series:
             "No year column found (expected 'year', 'Year', or 'days_since_19811231')."
         )
     return (
-        _EPOCH_19811231
-        + pd.to_timedelta(df[days_col].astype(float), unit="D")
+        _EPOCH_19811231 + pd.to_timedelta(df[days_col].astype(float), unit="D")
     ).dt.year.astype(int)
 
 
@@ -317,6 +325,59 @@ def make_folds_in_sample(
     ]
 
 
+def make_folds_in_sample_multi_visit(
+    df: pd.DataFrame,
+    *,
+    min_site_measurements: int = 1,
+    site_col: str = "site",
+    regime_name: str = "in_sample_multi_visit",
+) -> list[FoldSpec]:
+    """In-sample split restricted to rows at sites with > ``min_site_measurements`` visits.
+
+    Default ``min_site_measurements=1`` keeps sites with at least two observations.
+    Train and test indices are identical (as for ``in_sample``), but both are limited
+    to the eligible subset.
+    """
+    if site_col not in df.columns:
+        raise ValueError(f"{regime_name} requires a '{site_col}' column")
+    if min_site_measurements < 1:
+        raise ValueError(
+            f"{regime_name}: min_site_measurements must be >= 1 "
+            f"(got {min_site_measurements})"
+        )
+
+    site_counts = df.groupby(site_col, dropna=False).size()
+    eligible_sites = site_counts[site_counts > min_site_measurements].index
+    if len(eligible_sites) == 0:
+        raise ValueError(
+            f"{regime_name}: no sites with more than {min_site_measurements} measurements"
+        )
+
+    eligible_mask = df[site_col].isin(eligible_sites).to_numpy()
+    idx = np.flatnonzero(eligible_mask)
+    if len(idx) == 0:
+        raise ValueError(f"{regime_name}: no rows at eligible sites")
+
+    return [
+        FoldSpec(
+            name=regime_name,
+            fold=1,
+            train_idx=idx,
+            test_idx=idx.copy(),
+            meta={
+                "n_rows": int(len(idx)),
+                "n_rows_total": int(len(df)),
+                "split": "identity",
+                "site_col": site_col,
+                "min_site_measurements": int(min_site_measurements),
+                "min_site_rows_required": int(min_site_measurements + 1),
+                "n_sites": int(len(eligible_sites)),
+                "n_sites_total": int(site_counts.shape[0]),
+            },
+        )
+    ]
+
+
 def build_all_folds(
     df: pd.DataFrame,
     *,
@@ -325,6 +386,7 @@ def build_all_folds(
     seed: int,
     spatial_bins: int = 4,
     time_col_candidates: Optional[list[str]] = None,
+    in_sample_min_site_measurements: int = 1,
 ) -> tuple[list[FoldSpec], list[dict[str, Any]]]:
     """Build fold specs for the requested validation regimes.
 
@@ -334,6 +396,8 @@ def build_all_folds(
     - forward_time_blocks yields fewer than k folds (blocks 2..k).
     - forward_repeat_sites yields one temporal holdout on repeat-visit sites.
     - in_sample yields one fold with identical train and test indices.
+    - in_sample_multi_visit is in_sample on sites with
+      > ``in_sample_min_site_measurements`` rows (default: at least 2 visits).
     """
     regimes = list(validation_regimes)
     time_col_candidates = time_col_candidates or [
@@ -406,6 +470,17 @@ def build_all_folds(
             all_folds.extend(make_folds_in_sample(df))
         except Exception as exc:  # noqa: BLE001
             skipped.append({"regime": "in_sample", "reason": str(exc)})
+
+    if "in_sample_multi_visit" in regimes:
+        try:
+            all_folds.extend(
+                make_folds_in_sample_multi_visit(
+                    df,
+                    min_site_measurements=in_sample_min_site_measurements,
+                )
+            )
+        except Exception as exc:  # noqa: BLE001
+            skipped.append({"regime": "in_sample_multi_visit", "reason": str(exc)})
 
     if not all_folds:
         # If everything was skipped, surface a helpful error.
