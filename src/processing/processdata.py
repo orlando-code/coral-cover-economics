@@ -6,56 +6,198 @@ from typing import Literal
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry.base import BaseGeometry
 from shapely.strtree import STRtree
 from tqdm import tqdm
 
 _LINE_GEOMS = frozenset({"LineString", "LinearRing", "MultiLineString"})
+PROJECTED_CRS = "EPSG:6933"
+GEOGRAPHIC_CRS = "EPSG:4326"
+DEFAULT_BATCH_SIZE = 10_000
+
+# shape_assign_code values: W=within (unique), M=within (multiple), N=nearest, U=unassigned
+SHAPE_ASSIGN_WITHIN = "W"
+SHAPE_ASSIGN_WITHIN_AMBIGUOUS = "M"
+SHAPE_ASSIGN_NEAREST = "N"
+SHAPE_ASSIGN_UNASSIGNED = "U"
 
 BoundarySource = Literal["eez", "land"] | Path
 
 
+def _geometry_kind(gdf: gpd.GeoDataFrame) -> Literal["point", "line", "other"]:
+    types = set(gdf.geometry.geom_type.unique())
+    if types <= {"Point", "MultiPoint"}:
+        return "point"
+    if types <= _LINE_GEOMS:
+        return "line"
+    return "other"
+
+
+def _read_geodataframe(source: gpd.GeoDataFrame | Path) -> gpd.GeoDataFrame:
+    if isinstance(source, Path):
+        if source.is_dir():
+            matches = sorted(source.glob("*.shp"))
+            if not matches:
+                raise FileNotFoundError(f"No shapefile found in {source}")
+            source = matches[0]
+        return gpd.read_file(source)
+    return source
+
+
+def _ensure_crs(gdf: gpd.GeoDataFrame, default: str = GEOGRAPHIC_CRS) -> gpd.GeoDataFrame:
+    return gdf.set_crs(default) if gdf.crs is None else gdf
+
+
+def _prepare_polygons(
+    polygons_gdf: gpd.GeoDataFrame,
+    *,
+    projected_crs: str = PROJECTED_CRS,
+) -> gpd.GeoDataFrame:
+    out = _ensure_crs(polygons_gdf.copy())
+    out["geometry"] = out.geometry.make_valid()
+    return out.to_crs(projected_crs)
+
+
+def _nearest_indices(
+    tree: STRtree,
+    geoms: np.ndarray,
+    *,
+    batch_size: int,
+    desc: str,
+    verbose: bool,
+) -> np.ndarray:
+    out = np.empty(len(geoms), dtype=np.intp)
+    for start in tqdm(range(0, len(geoms), batch_size), desc=desc, disable=not verbose):
+        end = min(start + batch_size, len(geoms))
+        nearest = tree.query_nearest(geoms[start:end], all_matches=False)
+        tree_ix = nearest[1] if isinstance(nearest, (tuple, np.ndarray)) and np.ndim(nearest) > 1 else nearest
+        out[start:end] = np.asarray(tree_ix, dtype=np.intp).reshape(-1)
+    return out
+
+
+def _within_indices(
+    tree: STRtree,
+    point_geoms: np.ndarray,
+    *,
+    batch_size: int,
+    verbose: bool,
+) -> tuple[np.ndarray, np.ndarray]:
+    assigned = np.full(len(point_geoms), -1, dtype=np.intp)
+    ambiguous = np.zeros(len(point_geoms), dtype=bool)
+    for start in tqdm(
+        range(0, len(point_geoms), batch_size),
+        desc="Assigning points (within)",
+        disable=not verbose,
+    ):
+        end = min(start + batch_size, len(point_geoms))
+        inp_ix, tree_ix = tree.query(point_geoms[start:end], predicate="within")
+        for local_i, shape_i in zip(inp_ix, tree_ix, strict=False):
+            global_i = start + int(local_i)
+            if assigned[global_i] < 0:
+                assigned[global_i] = int(shape_i)
+            else:
+                ambiguous[global_i] = True
+    return assigned, ambiguous
+
+
+def _assign_points_to_polygons(
+    points_gdf: gpd.GeoDataFrame,
+    polygons_gdf: gpd.GeoDataFrame,
+    attr_cols: list[str],
+    *,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    fill_nearest: bool = True,
+    verbose: bool = True,
+    assignment_col: str | None = None,
+    projected_crs: str = PROJECTED_CRS,
+) -> gpd.GeoDataFrame:
+    src_crs = points_gdf.crs
+    points = _ensure_crs(points_gdf).to_crs(projected_crs)
+    polys = _prepare_polygons(polygons_gdf, projected_crs=projected_crs)
+    tree = STRtree(polys.geometry.values)
+    polygon_ix, ambiguous = _within_indices(
+        tree, points.geometry.values, batch_size=batch_size, verbose=verbose
+    )
+    attr_vals = polys[attr_cols].to_numpy()
+
+    out = points_gdf.copy()
+    hit = polygon_ix >= 0
+    for col_i, col in enumerate(attr_cols):
+        values = np.full(len(out), np.nan, dtype=object)
+        values[hit] = attr_vals[polygon_ix[hit], col_i]
+        out[col] = values
+
+    if assignment_col:
+        codes = np.full(len(out), SHAPE_ASSIGN_UNASSIGNED, dtype=object)
+        codes[hit & ~ambiguous] = SHAPE_ASSIGN_WITHIN
+        codes[hit & ambiguous] = SHAPE_ASSIGN_WITHIN_AMBIGUOUS
+
+    miss_mask = polygon_ix < 0
+    if fill_nearest and miss_mask.any():
+        nearest_ix = _nearest_indices(
+            tree,
+            points.geometry.values[miss_mask],
+            batch_size=batch_size,
+            desc="Filling unassigned (nearest)",
+            verbose=verbose,
+        )
+        for col_i, col in enumerate(attr_cols):
+            out.loc[miss_mask, col] = attr_vals[nearest_ix, col_i]
+        if assignment_col:
+            codes[miss_mask] = SHAPE_ASSIGN_NEAREST
+
+    if assignment_col:
+        out[assignment_col] = codes
+
+    return out.to_crs(src_crs) if src_crs is not None else out
+
+
+def _attribute_columns(cols: list[str] | None, default: list[str]) -> list[str]:
+    """Normalize attribute column names (lowercase, no geometry, no duplicates)."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for col in cols or default:
+        name = str(col).lower()
+        if name == "geometry" or name in seen:
+            continue
+        seen.add(name)
+        out.append(name)
+    return out
+
+
 def assign_points_to_shapes(
     gdf: gpd.GeoDataFrame,
-    shapefile_gdf: gpd.GeoDataFrame,
-    cols_to_add: list[str] = ["lat_zone", "realm", "province", "ecoregion"],
+    shapefile_gdf: gpd.GeoDataFrame | Path,
+    cols_to_add: list[str] | None = None,
+    *,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    verbose: bool = True,
+    assignment_col: str | None = "shape_assign_code",
+    projected_crs: str = PROJECTED_CRS,
 ) -> gpd.GeoDataFrame:
-    """Assign each polygon to a shapefile using centroid spatial join."""
-    shapes = shapefile_gdf.rename(columns=str.lower)
+    """Assign MEOW (or other) polygon attributes to points.
 
-    shapes = shapes[cols_to_add + ["geometry"]].copy()
-    shapes["geometry"] = shapes.geometry.make_valid()
-    projected_crs = "EPSG:6933"
-    points = gdf.to_crs(projected_crs).copy()
-    shapes_proj = shapes.to_crs(projected_crs)
-
-    # first attempt: sjoin within
-    joined = gpd.sjoin(points, shapes_proj, how="left", predicate="within")
-
-    # some points will be assigned to multiple polygons (on boundaries): keep first match
-    attrs = joined[cols_to_add] if len(cols_to_add >= 1) else joined[cols_to_add[0]]
-    if attrs.index.duplicated().any():
-        n_dup = attrs.index.duplicated().sum()
-        print(f"Warning: {n_dup:,} duplicate MEOW matches; keeping first per point")
-        attrs = attrs.groupby(level=0).first()
-    out = gdf.copy()
-    for col in cols_to_add:
-        out[col] = attrs[col].reindex(out.index)
-
-    # fill problem points due to seam gaps via nearest polygon matching
-    miss_ix = out.index[out["ecoregion"].isna()]
-    if len(miss_ix):
-        filled = gpd.sjoin_nearest(
-            points.loc[miss_ix],
-            shapes_proj,
-            how="left",
-            max_distance=1e6,  # metres in EPSG:6933. Set to ensure no nans.
-            distance_col="dist_m",
-        )
-        filled = filled.groupby(level=0).first()
-        for col in cols_to_add:
-            out.loc[filled.index, col] = filled[col]
-    return out
+    Adds ``assignment_col`` (default ``shape_assign_code``) with codes:
+    W = within (unique polygon), M = within (multiple polygons; first kept),
+    N = nearest fill, U = unassigned.
+    Pass ``assignment_col=None`` to omit the column.
+    """
+    attr_cols = _attribute_columns(
+        cols_to_add, ["lat_zone", "realm", "province", "ecoregion"]
+    )
+    shapes = _read_geodataframe(shapefile_gdf).rename(columns=str.lower)
+    missing = [c for c in attr_cols if c not in shapes.columns]
+    if missing:
+        raise ValueError(f"Polygon layer missing columns: {missing}")
+    shapes = shapes[attr_cols + ["geometry"]]
+    return _assign_points_to_polygons(
+        gdf,
+        shapes,
+        attr_cols,
+        batch_size=batch_size,
+        verbose=verbose,
+        assignment_col=assignment_col,
+        projected_crs=projected_crs,
+    )
 
 
 _BOUNDARY_SPECS: dict[str, dict] = {
@@ -70,170 +212,135 @@ _BOUNDARY_SPECS: dict[str, dict] = {
 }
 
 
-def _geometry_kind(gdf: gpd.GeoDataFrame) -> Literal["point", "line", "other"]:
-    types = set(gdf.geometry.geom_type.unique())
-    if types <= {"Point", "MultiPoint"}:
-        return "point"
-    if types <= _LINE_GEOMS:
-        return "line"
-    return "other"
-
-
-def _geom_for_nearest_query(geom: BaseGeometry) -> BaseGeometry:
-    """Use a point probe for line work when querying nearest polygons."""
-    if geom.geom_type in _LINE_GEOMS:
-        return geom.representative_point()
-    return geom
-
-
-def assign_geometries_to_region_by_overlap(
-    features_gdf: gpd.GeoDataFrame, borders_gdf: gpd.GeoDataFrame
-) -> gpd.GeoDataFrame:
-    """
-    Assign features to regions.
-
-    Points use a ``within`` join. Lines and multilines use ``intersects``; when a
-    feature crosses multiple regions, the region with the **largest shared length**
-    is kept.
-    """
-    if features_gdf.empty:
-        return features_gdf.copy()
-
-    if _geometry_kind(features_gdf) == "point":
-        return assign_points_to_region_by_within(features_gdf, borders_gdf)
-
-    borders = borders_gdf.to_crs("EPSG:6933").copy()
-    features = features_gdf.to_crs("EPSG:6933").copy()
-    borders["geometry"] = borders.geometry.make_valid()
-    features["geometry"] = features.geometry.make_valid()
-
-    joined = gpd.sjoin(features, borders, how="left", predicate="intersects")
-    if joined["index_right"].isna().all():
-        return joined.drop(columns="index_right", errors="ignore").to_crs(
-            features_gdf.crs
-        )
-
-    if not joined.index.duplicated(keep=False).any():
-        return joined.drop(columns="index_right", errors="ignore").to_crs(
-            features_gdf.crs
-        )
-
-    border_geoms = borders.geometry
-    feat_geoms = features.geometry
-    overlap = np.zeros(len(joined), dtype=float)
-    for k, (feat_idx, row) in enumerate(joined.iterrows()):
-        border_idx = row["index_right"]
-        if pd.isna(border_idx):
-            continue
-        overlap[k] = (
-            feat_geoms.loc[feat_idx]
-            .intersection(border_geoms.iloc[int(border_idx)])
-            .length
-        )
-
-    joined["_overlap_len"] = overlap
-    best_idx = joined.groupby(level=0)["_overlap_len"].idxmax()
-    out = joined.loc[best_idx].drop(
-        columns=["_overlap_len", "index_right"], errors="ignore"
-    )
-    return out.to_crs(features_gdf.crs)
-
-
-def assign_points_to_region_by_within(
-    points_gdf: gpd.GeoDataFrame, borders_gdf: gpd.GeoDataFrame
-) -> gpd.GeoDataFrame:
-    """
-    Assign points to countries based on whether they are within the country's borders.
-
-    Args:
-        points_gdf (gpd.GeoDataFrame): Points to assign to countries
-        borders_gdf (gpd.GeoDataFrame): Dataframe containing a geometry column indicating the countries' borders (whether land, EEZ or otherwise)
-
-    Returns:
-        gpd.GeoDataFrame: Points with assigned information
-    """
-    borders = borders_gdf.to_crs("EPSG:6933").copy()
-    points = points_gdf.to_crs("EPSG:6933").copy()
-
-    borders["geometry"] = borders.geometry.make_valid()
-
-    return (
-        gpd.sjoin(points, borders, how="left", predicate="within").drop(
-            columns="index_right"
-        )
-    ).to_crs(points_gdf.crs)
-
-
-def assign_country_by_nearest(
-    points_gdf: gpd.GeoDataFrame,
-    countries: gpd.GeoDataFrame,
-    fill_nan_only: bool = True,
-    batch_size: int = 10000,
-) -> gpd.GeoDataFrame:
-    """
-    Assign points to countries based on the nearest country.
-
-    Args:
-        points_gdf (gpd.GeoDataFrame): GeoDataFrame of points to assign to countries.
-        countries (gpd.GeoDataFrame): GeoDataFrame of countries. Must have a NAME and ISO_A3 column
-        fill_nan_only (bool): If True, only fill rows with missing country assignment.
-                              If False, reassign all rows to nearest country.
-
-    Returns:
-        gpd.GeoDataFrame: Same size as input points_gdf, with missing (or all) country assignments filled in.
-    """
-    # Make a copy to avoid mutating input
-    result = points_gdf.rename(columns=str.lower).copy()
-    if fill_nan_only:
-        mask = result.isna().any(axis=1)
-    else:
-        mask = np.full(len(result), True)
-
-    if not mask.any():
-        # Nothing to fill, return unchanged
-        return result
-
-    points_to_fill = result.loc[mask]
-    geoms = [_geom_for_nearest_query(g) for g in points_to_fill["geometry"].values]
-    tree = STRtree(countries.geometry.values)
-
-    indices_out = np.empty(len(geoms), dtype=int)
-
-    for start in tqdm(
-        range(0, len(geoms), batch_size),
-        desc="Assigning nearest country via STRtree-enabled nearest-neighbor search",
-    ):
-        end = min(start + batch_size, len(geoms))
-        inds = tree.query_nearest(geoms[start:end], all_matches=False)[1, :]
-        indices_out[start:end] = inds
-
-    # Bulk assignment for matching country fields (add more fields as needed)
-    for col in ["country", "iso_a3"]:
-        result.loc[mask, col] = countries.iloc[indices_out][col].values
-
-    return result
-
-
 def load_nation_boundaries(
     source: BoundarySource = "land",
     *,
     geographic_dir: Path | None = None,
 ) -> gpd.GeoDataFrame:
-    """Load nation polygons with ``country``, ``iso_a3``, and ``geometry`` columns."""
+    """Load nation polygons with country, iso_a3, and geometry columns."""
     if geographic_dir is None:
         from src import config
 
         geographic_dir = config.geographic_dir
 
     if isinstance(source, Path):
-        gdf = gpd.read_file(source)
+        gdf = _ensure_crs(gpd.read_file(source))
         return gdf.rename(columns=str.lower)[["country", "iso_a3", "geometry"]]
 
     spec = _BOUNDARY_SPECS[str(source)]
     path = geographic_dir.joinpath(*spec["path"])
     cols = list(spec["columns"].keys()) + ["geometry"]
-    gdf = gpd.read_file(path)[cols].rename(columns=spec["columns"])
+    gdf = _ensure_crs(gpd.read_file(path)[cols].rename(columns=spec["columns"]))
     return gdf.rename(columns=str.lower)
+
+
+def assign_points_to_region_by_within(
+    points_gdf: gpd.GeoDataFrame,
+    borders_gdf: gpd.GeoDataFrame,
+    *,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    verbose: bool = False,
+) -> gpd.GeoDataFrame:
+    """Assign points to polygons when the point lies within the polygon."""
+    attr_cols = [c for c in borders_gdf.columns if c != "geometry"]
+    return _assign_points_to_polygons(
+        points_gdf, borders_gdf, attr_cols,
+        batch_size=batch_size, fill_nearest=False, verbose=verbose,
+    )
+
+
+def assign_geometries_to_region_by_overlap(
+    features_gdf: gpd.GeoDataFrame,
+    borders_gdf: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame:
+    """Points: within join. Lines: intersects, keeping the longest overlap."""
+    if features_gdf.empty:
+        return features_gdf.copy()
+    if _geometry_kind(features_gdf) == "point":
+        return assign_points_to_region_by_within(features_gdf, borders_gdf)
+
+    borders = _prepare_polygons(borders_gdf)
+    features = features_gdf.to_crs(PROJECTED_CRS).copy()
+    features["geometry"] = features.geometry.make_valid()
+    joined = gpd.sjoin(features, borders, how="left", predicate="intersects")
+    if joined["index_right"].isna().all() or not joined.index.duplicated(keep=False).any():
+        return joined.drop(columns="index_right", errors="ignore").to_crs(features_gdf.crs)
+
+    border_geoms, feat_geoms = borders.geometry, features.geometry
+    overlap = np.zeros(len(joined))
+    for k, (feat_idx, row) in enumerate(joined.iterrows()):
+        border_idx = row["index_right"]
+        if pd.notna(border_idx):
+            overlap[k] = feat_geoms.loc[feat_idx].intersection(border_geoms.iloc[int(border_idx)]).length
+
+    joined["_overlap_len"] = overlap
+    best_idx = joined.groupby(level=0)["_overlap_len"].idxmax()
+    return joined.loc[best_idx].drop(columns=["_overlap_len", "index_right"], errors="ignore").to_crs(features_gdf.crs)
+
+
+def assign_country_by_nearest(
+    points_gdf: gpd.GeoDataFrame,
+    countries: gpd.GeoDataFrame,
+    fill_nan_only: bool = True,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    verbose: bool = True,
+) -> gpd.GeoDataFrame:
+    """Fill country assignments from the nearest polygon."""
+    result = points_gdf.rename(columns=str.lower).copy()
+    mask = result.isna().any(axis=1) if fill_nan_only else np.ones(len(result), dtype=bool)
+    if not mask.any():
+        return result
+
+    geoms = np.asarray([
+        g.representative_point() if g.geom_type in _LINE_GEOMS else g
+        for g in result.loc[mask, "geometry"].values
+    ], dtype=object)
+    countries = _prepare_polygons(countries)
+    indices = _nearest_indices(
+        STRtree(countries.geometry.values), geoms,
+        batch_size=batch_size, desc="Assigning nearest country", verbose=verbose,
+    )
+    for col in ("country", "iso_a3"):
+        if col in countries.columns:
+            result.loc[mask, col] = countries.iloc[indices][col].values
+    return result
+
+
+def _nation_boundaries(
+    boundaries_gdf: gpd.GeoDataFrame | None,
+    boundaries: BoundarySource,
+    fill_boundaries: BoundarySource | gpd.GeoDataFrame | None,
+    fill_unassigned: bool,
+    geographic_dir: Path | None,
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame | None]:
+    b = boundaries_gdf or load_nation_boundaries(boundaries, geographic_dir=geographic_dir)
+    if not fill_unassigned:
+        return b, None
+    if isinstance(fill_boundaries, gpd.GeoDataFrame):
+        return b, fill_boundaries
+    return b, load_nation_boundaries(fill_boundaries or "land", geographic_dir=geographic_dir)
+
+
+def _assign_to_nations(
+    features_gdf: gpd.GeoDataFrame,
+    boundaries_gdf: gpd.GeoDataFrame,
+    fill_boundaries: gpd.GeoDataFrame | None,
+    *,
+    fill_unassigned: bool,
+    verbose: bool,
+    line_mode: bool,
+) -> gpd.GeoDataFrame:
+    result = (
+        assign_geometries_to_region_by_overlap(features_gdf, boundaries_gdf)
+        if line_mode
+        else assign_points_to_region_by_within(features_gdf, boundaries_gdf)
+    )
+    check_cols = [c for c in ("country", "iso_a3") if c in result.columns]
+    if fill_unassigned and check_cols and fill_boundaries is not None:
+        missing = result[check_cols].isna().any(axis=1)
+        if missing.any():
+            result = assign_country_by_nearest(result, fill_boundaries, verbose=verbose)
+    return result
 
 
 def assign_points_to_nations(
@@ -246,33 +353,13 @@ def assign_points_to_nations(
     geographic_dir: Path | None = None,
     verbose: bool = True,
 ) -> gpd.GeoDataFrame:
-    """Assign points to nations via boundary ``within``, then nearest land admin fill."""
-    if boundaries_gdf is None:
-        boundaries_gdf = load_nation_boundaries(
-            boundaries, geographic_dir=geographic_dir
-        )
-
-    result = assign_points_to_region_by_within(points_gdf, boundaries_gdf)
-    n_missing = int(result[["country", "iso_a3"]].isna().any(axis=1).sum())
-    if verbose and n_missing:
-        pct = 100 * n_missing / len(result)
-        print(
-            f"  {n_missing:,} points ({pct:.2f}%) unassigned after within-join; filling nearest…"
-        )
-
-    if fill_unassigned and n_missing:
-        if fill_boundaries is None or isinstance(fill_boundaries, str):
-            fill_gdf = load_nation_boundaries(
-                fill_boundaries or "land", geographic_dir=geographic_dir
-            )
-        else:
-            fill_gdf = fill_boundaries
-        result = assign_country_by_nearest(result, fill_gdf, fill_nan_only=True)
-
-    if verbose:
-        n_left = int(result[["country", "iso_a3"]].isna().any(axis=1).sum())
-        print(f"  {len(result) - n_left:,}/{len(result):,} points assigned to a nation")
-    return result
+    """Assign points to nations via within join, then nearest fill."""
+    b, fill = _nation_boundaries(
+        boundaries_gdf, boundaries, fill_boundaries, fill_unassigned, geographic_dir
+    )
+    return _assign_to_nations(
+        points_gdf, b, fill, fill_unassigned=fill_unassigned, verbose=verbose, line_mode=False
+    )
 
 
 def assign_geometries_to_nations(
@@ -285,50 +372,19 @@ def assign_geometries_to_nations(
     geographic_dir: Path | None = None,
     verbose: bool = True,
 ) -> gpd.GeoDataFrame:
-    """
-    Assign points or (multi)linestrings to nations.
-
-    Points use a ``within`` join. Line geometries use ``intersects`` and keep the
-    nation with the largest overlapping length, then optional nearest-neighbour fill
-    for any remaining unassigned features (using each line's representative point).
-    """
+    """Assign points or linestrings to nations (overlap join + nearest fill)."""
     kind = _geometry_kind(features_gdf)
     if kind == "other":
         raise ValueError(
             "assign_geometries_to_nations supports Point and LineString/MultiLineString "
             f"geometries only; got {set(features_gdf.geometry.geom_type.unique())}"
         )
-
-    if boundaries_gdf is None:
-        boundaries_gdf = load_nation_boundaries(
-            boundaries, geographic_dir=geographic_dir
-        )
-
-    result = assign_geometries_to_region_by_overlap(features_gdf, boundaries_gdf)
-    n_missing = int(result[["country", "iso_a3"]].isna().any(axis=1).sum())
-    label = "lines" if kind == "line" else "points"
-    if verbose and n_missing:
-        pct = 100 * n_missing / len(result)
-        print(
-            f"  {n_missing:,} {label} ({pct:.2f}%) unassigned after spatial join; "
-            "filling nearest…"
-        )
-
-    if fill_unassigned and n_missing:
-        if fill_boundaries is None or isinstance(fill_boundaries, str):
-            fill_gdf = load_nation_boundaries(
-                fill_boundaries or "land", geographic_dir=geographic_dir
-            )
-        else:
-            fill_gdf = fill_boundaries
-        result = assign_country_by_nearest(result, fill_gdf, fill_nan_only=True)
-
-    if verbose:
-        n_left = int(result[["country", "iso_a3"]].isna().any(axis=1).sum())
-        print(
-            f"  {len(result) - n_left:,}/{len(result):,} {label} assigned to a nation"
-        )
-    return result
+    b, fill = _nation_boundaries(
+        boundaries_gdf, boundaries, fill_boundaries, fill_unassigned, geographic_dir
+    )
+    return _assign_to_nations(
+        features_gdf, b, fill, fill_unassigned=fill_unassigned, verbose=verbose, line_mode=(kind == "line")
+    )
 
 
 def assign_gdfs_to_nations(
@@ -342,37 +398,16 @@ def assign_gdfs_to_nations(
     verbose: bool = True,
 ) -> list[gpd.GeoDataFrame]:
     """Assign multiple GeoDataFrames to nations (shared boundaries, per-layer progress)."""
-    if boundaries_gdf is None:
-        boundaries_gdf = load_nation_boundaries(
-            boundaries, geographic_dir=geographic_dir
-        )
-    if (
-        fill_unassigned
-        and fill_boundaries is not None
-        and not isinstance(fill_boundaries, gpd.GeoDataFrame)
-    ):
-        fill_boundaries = load_nation_boundaries(
-            fill_boundaries, geographic_dir=geographic_dir
-        )
-
-    out: list[gpd.GeoDataFrame] = []
-    for i, gdf in enumerate(
-        tqdm(gdfs, desc="Assigning nations", disable=not verbose), start=1
-    ):
-        if verbose:
-            print(f"Layer {i}/{len(gdfs)} ({len(gdf):,} points)")
+    b, fill = _nation_boundaries(
+        boundaries_gdf, boundaries, fill_boundaries, fill_unassigned, geographic_dir
+    )
+    out = []
+    for gdf in tqdm(gdfs, desc="Assigning nations", disable=not verbose):
         out.append(
-            assign_points_to_nations(
-                gdf,
-                boundaries_gdf,
-                fill_unassigned=fill_unassigned,
-                fill_boundaries=fill_boundaries,
-                geographic_dir=geographic_dir,
-                verbose=verbose,
+            _assign_to_nations(
+                gdf, b, fill,
+                fill_unassigned=fill_unassigned, verbose=verbose,
+                line_mode=_geometry_kind(gdf) == "line",
             )
         )
-    if verbose and out:
-        n_left = sum(g["country"].isna().sum() for g in out)
-        n_total = sum(len(g) for g in out)
-        print(f"Total: {n_total - n_left:,}/{n_total:,} points assigned across layers")
     return out
