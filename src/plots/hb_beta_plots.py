@@ -36,7 +36,9 @@ def _az():
 
 
 def _label(name: str) -> str:
-    return COVARIATE_LABELS.get(name, name)
+    from src.models.hbb.variants import display_coefficient_label
+
+    return display_coefficient_label(name)
 
 
 def _save(fig: plt.Figure, path: Optional[Path], show: bool) -> None:
@@ -132,15 +134,27 @@ def posterior_coefficient_summary(
     trace, col_names: Optional[list[str]] = None
 ) -> pd.DataFrame:
     _az()
-    names = col_names or []
+    from src.models.hbb.variants import coefficient_labels
+
+    names = list(col_names or [])
+    if names and names[0] == "Intercept":
+        row_labels = ["Intercept", *coefficient_labels(names[1:])]
+    elif names:
+        row_labels = coefficient_labels(names)
+    else:
+        row_labels = []
+
     beta = trace.posterior["beta"].stack(sample=("chain", "draw")).values
     rows = [
-        _quantile_row(names[i] if i < len(names) else f"beta[{i}]", beta[i])
+        _quantile_row(
+            row_labels[i] if i < len(row_labels) else f"beta[{i}]",
+            beta[i],
+        )
         for i in range(beta.shape[0])
     ]
     if "beta_diversity" in trace.posterior:
         s = trace.posterior["beta_diversity"].stack(sample=("chain", "draw")).values.ravel()
-        rows.append(_quantile_row("beta_diversity", s))
+        rows.append(_quantile_row("Diversity", s))
     return pd.DataFrame(rows).set_index("index")
 
 
@@ -188,14 +202,30 @@ def plot_correlation_matrix(
     return fig
 
 
-def plot_posterior_coefficient_forest(
-    trace,
-    col_names: Optional[list[str]] = None,
+def plot_coefficient_forest_df(
+    df: pd.DataFrame,
     output_path: Optional[Path] = None,
+    *,
+    title: str | None = None,
     figsize: tuple[float, float] = (9, 7),
     show: bool = False,
+    label_col: str | None = None,
 ) -> plt.Figure:
-    s = posterior_coefficient_summary(trace, col_names).sort_values("mean")
+    """Standardised beta-coefficient forest plot from a summary table."""
+    work = df.copy()
+    if label_col and label_col in work.columns:
+        work = work.set_index(label_col)
+    elif "variable" in work.columns:
+        work = work.set_index("variable")
+    elif work.index.name is None and "index" not in work.columns:
+        work.index.name = "variable"
+
+    required = {"mean", "lower_2.5", "upper_97.5", "lower_25", "upper_75"}
+    missing = required - set(work.columns)
+    if missing:
+        raise ValueError(f"Coefficient summary missing columns: {sorted(missing)}")
+
+    s = work.sort_values("mean")
     y = np.arange(len(s))
     fig, ax = plt.subplots(figsize=figsize)
     for i, (_, r) in enumerate(s.iterrows()):
@@ -211,12 +241,33 @@ def plot_posterior_coefficient_forest(
     )
     ax.axvline(0, color="gray", ls="--", lw=1)
     ax.set_yticks(y)
-    ax.set_yticklabels([_label(i) for i in s.index])
+    ax.set_yticklabels([_label(str(i)) for i in s.index])
     ax.set_xlabel(r"Estimated $\gamma$ coefficients")
+    if title:
+        ax.set_title(title)
     ax.grid(axis="x", ls="--", alpha=0.5)
     plt.tight_layout()
     _save(fig, output_path, show)
     return fig
+
+
+def plot_posterior_coefficient_forest(
+    trace,
+    col_names: Optional[list[str]] = None,
+    output_path: Optional[Path] = None,
+    figsize: tuple[float, float] = (9, 7),
+    show: bool = False,
+    title: str | None = None,
+) -> plt.Figure:
+    s = posterior_coefficient_summary(trace, col_names)
+    return plot_coefficient_forest_df(
+        s.reset_index().rename(columns={"index": "variable"}),
+        output_path,
+        figsize=figsize,
+        show=show,
+        title=title,
+        label_col="variable",
+    )
 
 
 def plot_coefficient_traces_and_posteriors(
@@ -257,7 +308,10 @@ def plot_coefficient_traces_and_posteriors(
             show=show,
         )
 
-    ess_ax = az.plot_ess(trace, var_names=avail)
+    ess_vars = hp if hp else [v for v in avail if v != "beta"]
+    if not ess_vars:
+        ess_vars = avail[:1]
+    ess_ax = az.plot_ess(trace, var_names=ess_vars)
     fig_ess = ess_ax.flat[0].figure if isinstance(ess_ax, np.ndarray) else ess_ax.figure
     fig_ess.subplots_adjust(hspace=0.45, wspace=0.25)
     figures["ess"] = fig_ess
@@ -290,27 +344,55 @@ def plot_coefficient_traces_and_posteriors(
     _save(fig_p, out / "coefficient_posterior.png" if out else None, show)
 
     if include_forest:
+        forest_path = out / "coeff_forest.png" if out else None
         figures["posterior_forest"] = plot_posterior_coefficient_forest(
             trace,
             col_names,
-            out / "coefficient_posterior_forest.png" if out else None,
+            forest_path,
             show=show,
         )
     return figures
+
+
+def _scalar_hyperparameter_vars(trace) -> list[str]:
+    """Scalar posterior variables for compact trace-diagnostic PNGs."""
+    return [
+        v
+        for v in (
+            "beta_diversity",
+            "mu_global",
+            "sigma_site",
+            "sigma_ecoregion",
+            "sigma",
+            "theta",
+        )
+        if v in trace.posterior
+    ]
 
 
 def save_trace_diagnostics(trace, output_path: Path) -> None:
     az = _az()
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
-    beta = ["beta", "beta_diversity"]
-    for name, plot_fn in [
-        ("trace", lambda: az.plot_trace(trace)),
-        ("pair", lambda: az.plot_pair(trace, var_names=beta)),
-        ("posterior", lambda: az.plot_posterior(trace, var_names=beta)),
-        ("autocorr", lambda: az.plot_autocorr(trace, var_names=beta)),
-        ("ess", lambda: az.plot_ess(trace, var_names=beta)),
-    ]:
+    # Beta coefficient traces live in coefficient_diagnostics/; keep these PNGs
+    # to scalar hyperparameters so ArviZ does not expand beta into 50+ subplots.
+    scalar_vars = _scalar_hyperparameter_vars(trace)
+    if not scalar_vars:
+        return
+
+    plots: list[tuple[str, Any]] = [
+        (
+            "trace",
+            lambda: az.plot_trace(trace, var_names=scalar_vars, compact=True),
+        ),
+        ("posterior", lambda: az.plot_posterior(trace, var_names=scalar_vars)),
+        ("autocorr", lambda: az.plot_autocorr(trace, var_names=scalar_vars)),
+        ("ess", lambda: az.plot_ess(trace, var_names=scalar_vars)),
+    ]
+    if len(scalar_vars) >= 2:
+        plots.insert(1, ("pair", lambda: az.plot_pair(trace, var_names=scalar_vars)))
+
+    for name, plot_fn in plots:
         plot_fn()
         plt.savefig(output_path / f"{name}.png", dpi=HBB_FIG_DPI)
         plt.close()

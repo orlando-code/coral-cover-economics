@@ -217,7 +217,7 @@ def auto_gridlines(
     )
 
 
-def format_geo_axes(
+def format_geo_axis(  # TODO: rename to format_geo_axis
     ax: plt.Axes,
     resolution: str = "10m",
     xlocs: Iterable[float] | str = "auto",
@@ -371,7 +371,7 @@ def generate_geo_axis(
     return plt.figure(figsize=figsize, dpi=dpi), plt.axes(projection=map_proj)
 
 
-# def format_geo_axes(
+# def format_geo_axis(
 #     ax: plt.Axes,
 #     extent: Optional[tuple | list] = None,
 #     crs: Optional[ccrs.CRS] = None,

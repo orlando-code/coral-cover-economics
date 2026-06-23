@@ -2047,7 +2047,7 @@ def plot_spatial_distribution(
         )
 
     # Format axes
-    plot_utils.format_geo_axes(ax, config=config)
+    plot_utils.format_geo_axis(ax, config=config)
 
     gdf_plot = gdf.copy()
 
@@ -2478,7 +2478,7 @@ def _plot_composite_economic_layers_static(
 ) -> Tuple[plt.Figure, plt.Axes]:
     """Static composite map for mixed point/polygon economic layers."""
     fig, ax = plot_utils.generate_geo_axis(figsize=(14, 8), dpi=150)
-    ax = plot_utils.format_geo_axes(ax)
+    ax = plot_utils.format_geo_axis(ax)
     transform = ccrs.PlateCarree()
     cmaps = ["Greens", "Blues", "Purples", "Oranges", "Reds"]
 
