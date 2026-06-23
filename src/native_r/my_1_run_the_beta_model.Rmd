@@ -24,7 +24,10 @@ suppressPackageStartupMessages({
 # Legacy paper dependencies (maptools, raster, sp, etc.) are not required:
 # shapefile join and model fitting use terra; bright-spot map uses terra below.
 if (!BETA_SMOKE) {
-  suppressPackageStartupMessages(library(plotrix))
+  suppressPackageStartupMessages({
+    library(plotrix)
+    library(GISTools)
+  })
 }
 ```
 
@@ -40,7 +43,7 @@ default_data_dir <- "/Users/rt582/Library/CloudStorage/OneDrive-UniversityofCamb
 data_dir <- Sys.getenv("BETA_DATA_DIR", unset = default_data_dir)
 
 shapefiles_directory <- file.path(data_dir, "shapefiles")
-output_directory <- Sys.getenv("BETA_OUTPUT_DIR", unset = file.path(data_dir, "output"))
+output_directory <- Sys.getenv("BETA_OUTPUT_DIR", unset = file.path(data_dir, "output", "original"))
 dir.create(output_directory, recursive = TRUE, showWarnings = FALSE)
 if (!exists("BETA_SMOKE")) {
   BETA_SMOKE <- identical(Sys.getenv("BETA_SMOKE"), "1")
@@ -92,18 +95,11 @@ source(file = "MCMCSupportHighstatV4.R")
 
 
 ```{r read in and format shapefiles of a world map, and ecoregion boundaries}
-# Modern shapefile loading using terra
-# library(terra)
 
 # Load world boundaries and ecoregion polygons as SpatVector objects
+# had to switch to terra from sp because sp was deprecated in 2023
 wlrd.p <- terra::vect(file.path(shapefiles_directory, 'TM_WORLD_BORDERS_SIMPL_PC150.shp'))
 ECO <- terra::vect(file.path(shapefiles_directory, 'ecoregion_exportPolygon.shp'))
-
-# No need to convert to sp::SpatialPolygons or manipulate slots when using terra.
-# 'ECO' is now a SpatVector polygon object and can be used with terra and sf functions.
-# For compatibility with downstream code, you may want to ensure attribute names match expectations.
-# If any downstream code expects a SpatialPolygonsDataFrame from 'sp', use as.polygons()/as.data.frame() and sf::as_Spatial methods,
-# but it is recommended to update analysis to work directly with SpatVector objects.
 
 # Example: Print summary info for SpatVector objects
 print(ECO)
@@ -139,28 +135,18 @@ ggplot() +
   # xlim(120, 180) +
   # ylim(-20, 20)
 
-
-
-# # Ensure CRS matches between points and polygons (assume ECO is correct)
-# if (!terra::crs(coral_cover_points) == terra::crs(ECO)) {
-#   coral_cover_points <- terra::project(coral_cover_points, terra::crs(ECO))
-# }
-
-# Extract ecoregion attributes from polygons to points
-# eco_extracted <- terra::extract(ECO, coral_cover_points)
-
 # Write extracted values directly to avoid duplicate ERG/Ecoregion columns
 # (which can happen with cbind and cause coral_cover_data$ERG to reference stale NA values).
 coral_cover_data <- as.data.frame(coral_cover_data)
 coral_cover_data$ERG <- eco_extracted$ERG
 coral_cover_data$Ecoregion <- eco_extracted$Ecoregion
 
-# Optionally, remove "ID" column added by terra::extract if present
+# remove "ID" column added by terra::extract if present
 if ("ID" %in% colnames(coral_cover_data)) {
   coral_cover_data$ID <- NULL
 }
 
-# Use data_for_maps.csv as the trusted reef -> ecoregion/diversity mapping.
+# Use data_for_maps.csv as the trusted reef -> ecoregion/diversity mapping (in order to recreate the paper exactly).
 # This flags spatial-join disagreements while preserving the curated mapping.
 data_for_maps <- read.csv(file.path(data_dir, "data_for_maps.csv"), header=TRUE)
 trusted_mapping <- data_for_maps %>%
@@ -295,16 +281,26 @@ if (length(nan_ecoregions) > 0) {
 
 ```{r create a dataframe containing information for each site, with the ecoregion it belongs to, and the standardized diversity value}
 
-data$Reef_ID<-as.factor(as.character(as.factor(data$Reef_ID)))
+# ensure that Reef_ID is a factor (forcing through as.character prevents potential issues with level order/persistence)
+data$Reef_ID <- as.factor(as.character(as.factor(data$Reef_ID)))
 
-sites_and_region_df <- data %>% distinct(Reef_ID, Ecoregion) %>% ungroup()
+# create a dataframe with unique combinations of Reef_ID and Ecoregion (i.e., a site-region index)
+sites_and_region_df <- data %>% 
+  distinct(Reef_ID, Ecoregion) %>%  # retain only one row per unique site-region combo
+  ungroup()                         # remove any groupings
+
+# assign a numeric site index to each unique Reef_ID (for use as a random effect grouping variable)
 sites_and_region_df$site <- as.numeric(as.factor(sites_and_region_df$Reef_ID))
+
+# assign a numeric region index to each unique Ecoregion (also for hierarchical modeling/random effects)
 sites_and_region_df$region <- as.numeric(as.factor(sites_and_region_df$Ecoregion))
 
+# create a dataframe mapping each ecoregion to a standardized diversity value,
+# together with its numeric index (region) and sorted by that index
 region_diversity_df <- data %>%
-  dplyr::distinct(Ecoregion, diversity.standardized) %>%
-  dplyr::mutate(region = as.numeric(as.factor(Ecoregion))) %>%
-  dplyr::arrange(region)
+  dplyr::distinct(Ecoregion, diversity.standardized) %>%  # unique rows for each region/diversity combo
+  dplyr::mutate(region = as.numeric(as.factor(Ecoregion))) %>%  # assign numeric region index
+  dplyr::arrange(region)                                        # sort by the region index
 
 # Attach site/region indices to each observation row (required for JAGS random effects).
 data <- left_join(data, sites_and_region_df[, c("Reef_ID", "site", "region")], by = "Reef_ID")
@@ -601,7 +597,9 @@ if (!dir.exists(log_root)) {
 }
 
 # CHAIN PLOT
-chains_plot <- MyBUGSChains(out, vars = beta_params, PanelNames = beta_labels)
+trace_params <- c(beta_params, "mu_global")
+trace_labels <- c(beta_labels, "global_intercept (mu_global)")
+chains_plot <- MyBUGSChains(out, vars = trace_params, PanelNames = trace_labels)
 png(
   file.path(
     log_root,
@@ -618,8 +616,8 @@ dev.off()
 # ACF PLOT
 acf_plot <- MyBUGSACF(
   Output = out,
-  SelectedVar = beta_params,
-  PanelNames = beta_labels
+  SelectedVar = trace_params,
+  PanelNames = trace_labels
 )
 png(
   file.path(
@@ -637,8 +635,8 @@ dev.off()
 # HISTOGRAM PLOT
 hist_plot <- MyBUGSHist(
   Output = out,
-  SelectedVar = beta_params,
-  PanelNames = beta_labels
+  SelectedVar = trace_params,
+  PanelNames = trace_labels
 )
 png(
   file.path(
@@ -881,7 +879,7 @@ points(pt_crds[point_col == "black", , drop = FALSE], col=rgb(0, 0, 0, alpha=0.7
 text(-7868896,-2922012,'Indian Ocean',cex=1,family='Arial')
 text(9438742,487176,'Pacific Ocean',cex=1,family='Arial')
 text(x=(-16654136+111319.4*305), y=1615153*2.15,'Atlantic Ocean',cex=1, family='Arial')
-north.arrow(x=(-16654136+111319.4*320), y=1615153*1, len=(111319.4*2), lab="N", cex=.7, cex.lab=1.1)
+GISTools::north.arrow(x=(-16654136+111319.4*320), y=1615153*1, len=(111319.4*2), lab="N", cex=.7, cex.lab=1.1)
 
 #legend
 plotrix::color.legend(9684797.171+25e5,-28*111319.4666666667,15807371.62+25e5,-23.5*111319.4666666667,legend=c("Dark spot", "", "Bright spot"), rect.col=c("black", "lightgray", "yellow"),cex=.8)
