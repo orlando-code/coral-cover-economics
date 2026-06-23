@@ -60,7 +60,6 @@ source(file = "HighstatLibV10.R")
 source(file = "MCMCSupportHighstatV4.R")
 
 #diversity data
-# don't need to do this since diversity column in data_for_maps.csv
 setwd(output_directory)
 diversity<-read.csv(file=file.path(diversity_data_directory, "coral_diversity_for_coral_cover.csv"), header=TRUE, sep=",")
 names(diversity)[1]<-"Ecoregion"
@@ -70,7 +69,6 @@ diversity<-diversity[order(diversity$Ecoregion),]
 ```
 
 ```{r read in and format shapefiles of a world map, and ecoregion boundaries}
-# don't need to do this since ecoregions in data_for_maps.csv
 wlrd.p <- readOGR(file.path(shapefiles_directory,'TM_WORLD_BORDERS_SIMPL_PC150.shp'))
 ECO <- readOGR(file.path(shapefiles_directory,'ecoregion_exportPolygon.shp')) # ecoregions
 
@@ -120,7 +118,7 @@ coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Turbidity_mean),]
 coral_cover_data<-coral_cover_data[coral_cover_data$Turbidity_mean<0.35,]
 
 coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$ERG),]
-#coral_cover_data$Human_pop[is.na(coral_cover_data$Human_pop)]<-0 # don't know why this is commented out
+#coral_cover_data$Human_pop[is.na(coral_cover_data$Human_pop)]<-0
 coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Cyclone),]
 coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Depth),]
 coral_cover_data <- coral_cover_data[!is.na(coral_cover_data$Historical_SST_max),]
@@ -182,7 +180,7 @@ sites_and_region_df$region <- as.numeric(as.factor(sites_and_region_df$Ecoregion
 
 data <- left_join(data,sites_and_region_df,by='Reef_ID')
 
-```{r define, initialize, and run the beta model. Save some output in csvs}
+```{r define, initialize, and run the beta model. Save some output in csv's}
 
 X <- model.matrix(~ lat + Depth + Human_pop + Cyclone + SST_mean + SSTA_Mean + SSTA_min + SSTA_freqstdev + SSTA_dhwmax + TSA_max + TSA_freqstdev + Turbidity_mean + Historical_SST_max, data =X_standardized)
 
