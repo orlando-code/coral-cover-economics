@@ -63,6 +63,7 @@ docs/_build/
 *.hdf5
 *.nc
 *.netcdf
+Present-and-future-bright-and-dark-spots-for-coral-reefs-through-climate-change*
 
 # Model outputs and figures (adjust as needed)
 figures/
@@ -74,7 +75,6 @@ results/
 *.html
 
 # Temporary files
-
 *.tmp
 *.log
 *.bak
