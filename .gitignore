@@ -80,6 +80,7 @@ results/
 *.bak
 *.cache
 *.matplotlib-cache/
+credentials.yaml
 
 # OS
 .DS_Store
