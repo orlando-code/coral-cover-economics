@@ -16,7 +16,29 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="assets/css/site.css?v=13" />
+    <style>
+        :root {
+            /* Dataset colours (used across charts, map, and legends) */
+            --dataset-tourism: #3A9AB2;
+            --dataset-fisheries: #22c55e;
+            --dataset-coastal: #a78bfa;
+            /* Depreciation model colours */
+            --model-linear: #E3B710;
+            --model-compound: #F11B00;
+            --model-tipping: #dc2626;
+            /* Climate scenario colours */
+            --scenario-rcp45: #3498db;
+            --scenario-rcp85: #e74c3c;
+            /* Loss choropleth scale */
+            --loss-low: #22c55e;
+            --loss-mid: #eab308;
+            --loss-high: #E3B710;
+            --loss-extreme: #F11B00;
+            /* Habitat floor used when exporting fisheries linear results */
+            --habitat-export-a: 0.4;
+        }
+    </style>
+    <link rel="stylesheet" href="assets/css/site.css?v=18" />
 
 </head>
 <body>
@@ -37,7 +59,7 @@
                 <a class="nav-link" data-page="map" href="/map">Map</a>
                 <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
                 <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="models" href="/models">Models</a>
+                <a class="nav-link" data-page="methods" href="/methods">Methods</a>
             </div>
             
             <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu">
@@ -51,7 +73,7 @@
                 <a class="nav-link" data-page="map" href="/map">Map</a>
                 <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
                 <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="models" href="/models">Models</a>
+                <a class="nav-link" data-page="methods" href="/methods">Methods</a>
             </div>
         </div>
     </nav>
@@ -75,52 +97,65 @@
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Scenario Comparison</h2>
-                            <p class="chart-subtitle">Annual value loss at endpoint by scenario and model: note axis scale</p>
+                            <p class="chart-subtitle">Stacked bars by dataset; three grouped bars per scenario (Linear, Compound, Tipping). Fisheries linear uses &alpha; = 0.4.</p>
                         </div>
                         <div class="controls">
                             <div class="control-group">
                                 <span class="control-label">Datasets:</span>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="scenario-value-type-checkbox" value="tourism" checked />
-                                    <span>Tourism</span>
+                                    <span style="color: var(--dataset-tourism)">Tourism</span>
                                 </label>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="scenario-value-type-checkbox" value="fisheries" checked />
-                                    <span>Fisheries</span>
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
                                 </label>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="scenario-value-type-checkbox" value="coastal_protection" checked />
-                                    <span>Coastal protection</span>
+                                    <span style="color: var(--dataset-coastal)">Coastal protection</span>
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div id="scenario-comparison-chart" style="height: 400px;"></div>
+                    <p class="chart-note chart-model-key">
+                        <span>Bar fill = dataset.</span>
+                        <span class="model-key-item" style="--key-color: var(--model-linear)">Linear</span>
+                        <span class="model-key-item" style="--key-color: var(--model-compound)">Compound</span>
+                        <span class="model-key-item" style="--key-color: var(--model-tipping)">Tipping</span>
+                        <span class="model-key-hint">(left → right within each scenario)</span>
+                    </p>
                 </div>
                 
                 <div class="chart-section">
                     <div class="chart-header">
                         <div>
                             <h2 class="chart-title">Cumulative Impact Over Time</h2>
-                            <p class="chart-subtitle">Economic losses over time by scenario and model</p>
+                            <p class="chart-subtitle">Economic losses over time by scenario and dataset. Fisheries linear uses habitat suitability with <em>&alpha;</em> = 0.4.</p>
                         </div>
                         <div class="controls">
                             <div class="control-group">
-                                <span class="control-label">Dataset:</span>
-                                <select id="overview-value-type">
-                                    <option value="all" selected>All datasets</option>
-                                    <option value="tourism">Tourism</option>
-                                    <option value="fisheries">Fisheries</option>
-                                    <option value="coastal_protection">Coastal protection</option>
-                                </select>
+                                <span class="control-label">Datasets:</span>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="overview-value-type-checkbox" value="tourism" checked />
+                                    <span style="color: var(--dataset-tourism)">Tourism</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="overview-value-type-checkbox" value="fisheries" checked />
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="overview-value-type-checkbox" value="coastal_protection" checked />
+                                    <span style="color: var(--dataset-coastal)">Coastal protection</span>
+                                </label>
                             </div>
                             <div class="control-group">
-                                <span class="control-label">Model:</span>
+                                <span class="control-label">Depreciation model:</span>
                                 <select id="overview-model">
-                                    <option value="all">All Models</option>
-                                    <option value="Linear" selected>Linear</option>
+                                    <option value="all">All models</option>
+                                    <option value="Linear" selected>Linear (Chen / habitat)</option>
                                     <option value="Compound">Compound</option>
-                                    <option value="Tipping">Tipping Point</option>
+                                    <option value="Tipping">Tipping point</option>
                                 </select>
                             </div>
                             <div class="toggle-group">
@@ -175,12 +210,15 @@
                                 </select>
                             </div>
                             <div class="control-group">
-                                <span class="control-label">Model:</span>
+                                <span class="control-label">Depreciation model:</span>
                                 <select id="map-model">
-                                    <option value="Linear_3.81pct_pp" selected>Linear (3.81%/pp)</option>
-                                    <option value="Compound_3.81pct_pp">Compound (3.81%/pp)</option>
-                                    <option value="Tipping_Point_threshold=10pct">Tipping Point (10%)</option>
+                                    <option value="Linear (3.81%/rel%)" selected>Linear (Chen / habitat)</option>
+                                    <option value="Compound (3.81%/pp)">Compound</option>
+                                    <option value="Tipping Point (threshold=10%)">Tipping point</option>
                                 </select>
+                            </div>
+                            <div class="control-group" id="map-habitat-alpha-wrap">
+                                <span class="habitat-alpha-badge" id="map-habitat-alpha">Fisheries habitat &alpha; = 0.4</span>
                             </div>
                             <div class="control-group">
                                 <span class="control-label">Colour by:</span>
@@ -242,15 +280,15 @@
                                 <span class="control-label">Datasets:</span>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="traj-value-type-checkbox" value="tourism" checked />
-                                    <span>Tourism</span>
+                                    <span style="color: var(--dataset-tourism)">Tourism</span>
                                 </label>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="traj-value-type-checkbox" value="fisheries" checked />
-                                    <span>Fisheries</span>
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
                                 </label>
                                 <label class="toggle-label">
                                     <input type="checkbox" class="traj-value-type-checkbox" value="coastal_protection" checked />
-                                    <span>Coastal protection</span>
+                                    <span style="color: var(--dataset-coastal)">Coastal protection</span>
                                 </label>
                             </div>
                         </div>
@@ -265,12 +303,12 @@
                         </div>
                         <div class="controls">
                             <div class="control-group">
-                                <span class="control-label">Model:</span>
+                                <span class="control-label">Depreciation model:</span>
                                 <select id="traj-model">
-                                    <option value="all">All Models</option>
-                                    <option value="Linear" selected>Linear (3.81%/pp)</option>
-                                    <option value="Compound">Compound (3.81%/pp)</option>
-                                    <option value="Tipping Point">Tipping Point (10%)</option>
+                                    <option value="all">All models</option>
+                                    <option value="Linear" selected>Linear (Chen / habitat)</option>
+                                    <option value="Compound">Compound</option>
+                                    <option value="Tipping Point">Tipping point</option>
                                 </select>
                             </div>
                         </div>
@@ -328,7 +366,7 @@
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="country-model">
-                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
+                                    <option value="Linear (3.81%/rel%)" selected>Linear</option>
                                     <option value="Compound (3.81%/pp)">Compound</option>
                                     <option value="Tipping Point (threshold=10%)">Tipping Point</option>
                                 </select>
@@ -382,7 +420,7 @@
                             <div class="control-group">
                                 <span class="control-label">Model:</span>
                                 <select id="gdp-comparison-model">
-                                    <option value="Linear (3.81%/pp)" selected>Linear</option>
+                                    <option value="Linear (3.81%/rel%)" selected>Linear</option>
                                     <option value="Compound (3.81%/pp)">Compound</option>
                                     <option value="Tipping Point (threshold=10%)">Tipping Point</option>
                                 </select>
@@ -427,31 +465,261 @@
                 </div>
             </section>
             
-            <!-- Models Page -->
-            <section id="page-models" class="page">
-                <div class="chart-section">
-                    <div class="chart-header">
-                        <div>
-                            <h2 class="chart-title">Depreciation Model Comparison</h2>
-                            <p class="chart-subtitle"><a href="https://doi.org/10.1016/j.gloenvcha.2014.10.011" target="_blank" rel="noopener noreferrer">Chen et al. (2015)</a> sector-specific valuation vs sensitivity scenarios</p>
-                        </div>
-                        <div class="controls">
-                            <div class="control-group model-cover-control">
-                                <label class="control-label" for="model-initial-cover">Initial cover C<sub>0</sub>:</label>
-                                <input type="range" id="model-initial-cover" min="10" max="70" step="1" value="35"
-                                    aria-valuemin="10" aria-valuemax="70" aria-valuenow="35">
-                                <output id="model-initial-cover-value" class="model-cover-value" for="model-initial-cover">35%</output>
+            <!-- Methods Page (includes depreciation model comparison) -->
+            <section id="page-methods" class="page">
+                <div class="methods-page">
+                    <header class="methods-hero">
+                        <h1>Methods</h1>
+                        <p>
+                            Coral reefs are being rapidly degraded under climate change. This project estimates the impact of coral cover declines on economic benefits of nature associated with coral reefs attributable to tourism, fisheries, and coastal protection.
+                        </p>
+                        <p>
+                            This page documents data and methodologies employed in the impact accounting throughout the dashboard.
+                        </p>
+                        <p>
+                            Note: It is the author's opinion that nature is invaluable. It is not a commodity that can be bought, sold, or traded. Peoples' connection to nature is not quantifiable. The purpose of this project is to speak to decision- and policy-makers to show them the impact of inaction in language and numbers that matter to them. I hope that this will add to the countless voices clamouring for faster, more equitable, and more meaningful action to curb emissions and protect these priceless ecosystems. 
+                        </p>
+
+                    </header>
+
+                    <nav class="methods-toc method-box" aria-label="Table of contents">
+                        <h2 class="methods-toc-title">Contents</h2>
+                        <ol class="methods-toc-list">
+                            <li><a href="#methods-overview">Analytical framework</a></li>
+                            <li><a href="#methods-coral-cover">Coral cover projections</a></li>
+                            <li><a href="#methods-economic-data">Economic value datasets</a></li>
+                            <li><a href="#methods-alignment">Spatial alignment</a></li>
+                            <li><a href="#methods-depreciation">Economic depreciation models</a></li>
+                            <li><a href="#methods-cumulative">Cumulative impact over time</a></li>
+                            <li><a href="#methods-aggregation">Country aggregation &amp; GDP context</a></li>
+                            <li><a href="#methods-limitations">Limitations, uncertainty, &amp; next steps</a></li>
+                        </ol>
+                    </nav>
+
+                    <div class="methods-sections">
+                        <article id="methods-overview" class="method-box">
+                            <h2>1. Analytical framework</h2>
+                            <p>
+                                The pipeline has four main stages:
+                            </p>
+                            <ol>
+                                <li><strong>Project coral cover</strong> at sites across the world under RCP 4.5 and RCP 8.5 for 2050 and 2100.</li>
+                                <li><strong>Assign baseline economic value</strong> to each reef site or country for tourism, fisheries, and coastal protection.</li>
+                                <li><strong>Align</strong> projections of coral cover to economics of local reefs via nearest-neighbour matching in geographic space.</li>
+                                <li><strong>Apply sector-specific depreciation models</strong> to compute remaining value, annual loss, and cumulative opportunity cost.</li>
+                            </ol>
+                            <p>
+                                Results are reported at site level (see <a class="nav-link" data-page="map" href="/map">Map</a>) and aggregated to countries (see <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>).
+                            </p>
+                        </article>
+
+                        <article id="methods-coral-cover" class="method-box">
+                            <h2>2. Coral cover projections</h2>
+                            <p>
+                                Baseline coral cover at reference sites are taken from the Reef Check database. The Reef Check organisation dictates a standardised method of benthic cover (and fish life) assessment which is utilised by trained practitioners all over the world.
+                            </p>
+                            <p>
+                                A benthic survey consists of four 20m transects separated by 5m gaps. Benthic cover is recorded at every 0.5 metres along the survey using the Reef Check classification schema. This includes (living) 'Hard Coral' i.e. scleractinia which form the basis of the structural complexity which forms reefs and provides many of its ecosystem services. For each transect, 'coral cover' is the percentage of points containing 'Hard Coral'.
+                                
+                                # TODO: reef check surveys over time and spatially
+                            </p>
+                            <p>
+                                Future coral cover is modelled in response to various environmental covariates including past and present sea surface temperature, turbidity, and exposure to cyclones as well as proxies of local stressors such as proximate human population. A log-linear response function in a hierarchical Bayesian beta framework achieves reasonable R<sup>2</sup> scores. The model's coefficients (and uncertainties) for each covariate are estimated using a Monte Carlo markov chain schema. 'Hierarchical' refers to the model's structure nesting observations at both site and ecoregion levels. This enables more accurate, while samples which have few (or no) repeat measurements are borrow from the characteristics of the other sites in the shared ecoregion. 
+                                
+                                This hierarchical model is similar to that employed in <a href="https://onlinelibrary.wiley.com/doi/10.1111/gcb.16083" target="_blank" rel="noopener noreferrer">Sully et al. (2022)</a>, but employs features optimised for – and validated under – the task of projecting long-term changes in coral cover projection. The author has also been in communication with Sully about statistical and technical issues with their model: a published erratum to the origianl paper is expected in the coming weeks.
+                                
+
+                                # TODO: forward forecasting methods
+                                # TODO: model diagram
+                            </p>
+
+                            <p>
+                                Coral cover trajectories between 2013 and each scenario endpoint (2050, 2100) are linearly and exponentially interpolated for for cumulative loss calculations, although this makes minimal difference to the resulting values.
+                            </p>
+                        </article>
+
+                        <article id="methods-economic-data" class="method-box">
+                            <h2>3. Economic value datasets</h2>
+                            <p>
+                                The many economic benefits to humans which reefs provide can be divided broadly into three categories: on-reef and reef-adjacent tourism, income/value from reef-sustained fisheries, and infrastructure protected from extreme weather by reef structures.
+                            </p>
+                            <p>
+                                The value and depdence on coral cover of each category is calculated independently before being aggregated by country:
+                            </p>
+
+                            <h3>Tourism</h3>
+                            <p>
+                                Reef tourism value is derived from spatially distributed willingness-to-pay /
+                                trip expenditure surfaces estimated by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X17300635" target="_blank" rel="noopener noreferrer">Spalding et al. (2017)</a>. Values are expressed in USD per year at each reef site.
+                            
+                            </p>
+
+                            <h3>Fisheries</h3>
+                            <p>
+                                Baseline values of fisheries are taken from the <strong>Sea Around Us</strong> public API
+                                (<a href="http://api.seaaroundus.org" target="_blank" rel="noopener noreferrer">api.seaaroundus.org</a>). The Sea Around Us combines official reported fish catch data over several decades from the UN Food and Agriculture Organisation's 'FishStat' database with reconstructed estimates of unreported data, and represents the best-available measure of global fish take and its associated economic value. Data is provided at the country level.
+
+                            </p>
+                            <p>
+                            
+                                National fish take is disaggregated into various categories, including small, medium, and large reef associated fish as well as e.g. pelagics, sharks etc. While we only include the value of these reef associated fish, it is noted that fish which are not singularly associated with reefs, and those higher up the trophic pyramid are in many cases dependent on coral reefs for their early life stages and food. This study therefore likely describes a conservative value for reef associated fisheries.
+                            </p>
+                            
+                            <p>
+                                For each country, the baseline fishery value is the average of the most recent decade for which data is available (2010-2019). The value of fisheries displayed on the <a class="nav-link" data-page="map" href="/map">Map</a>shows a 0.1&deg; raster of this value modified by the spatial in coral cover and weighted by the estimated fishing intensity from a <a href="https://oceanwealth.org/wp-content/uploads/2025/05/Spalding-et-al-Global-Reef-Fisheries-Final-Report.pdf" target="_blank" rel="noopener noreferrer">2021 Ocean Wealth report</a>.
+                            </p>
+                                
+                            <h3>Coastal protection</h3>
+                            <p>
+                                Reef structures provide protection for livelihoods and infrastructure along the coasts by dissipating wave energy. The financial value of infrastructure protected is taken from estimates by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X2200358X" target="_blank" rel="noopener noreferrer"></a>Burke and Spalding (2022)</a>. The spatial distribution of this value is taken from the accompanying dataset (provided by <a href="https://maps.oceanwealth.org/#/coastal" target="_blank" rel="noopener noreferrer"></a>Ocean Wealth</a>) and is expressed as USD spared per coastal grid cell.
+                            </p>
+                        </article>
+
+                        <article id="methods-alignment" class="method-box">
+                            <h2>4. Spatial alignment</h2>
+                            <p>
+                                Each economic feature (reef polygon centroid or fisheries/coastal point) is matched to the nearest coral-cover monitoring site. Economic points beyond 5&deg; from a reef survey site (X% of the economic datasets) are excluded from the analysis.
+
+                            </p>
+                            <p>
+                                While the majority of the economic datasets (X%) lie within 1&deg; (~111km) of a coral cover projection datapoint, the remaining X% for which Reef Check surveys are remote motivates additional targeted survey sampling in order to increase the representiveness of the data.  
+                            </p>
+                            <p>
+                                For smooth spatial visualisation on the <a class="nav-link" data-page="map" href="/map">Map</a> without changing country aggregates, dense point layers are aggregated by mean onto a 0.1&deg; grid.
+                            </p>
+                                
+                        </article>
+
+                        <article id="methods-depreciation" class="method-box method-box-wide">
+                            <h2>5. Economic depreciation models</h2>
+                            <p>
+                                Having mapped economic value to reef surveys and projected coral cover at those points, we need relationships between cover change and value change — reflecting, for example, reefs becoming less attractive to tourists or providing less fish habitat as they degrade.
+                            </p>
+                            <p>
+                                These are deliberate oversimplifications. Regional, temporal, and cultural variation is large, but we apply one functional form per sector globally because finer-scaled estimates are not supported by the data. The results are intended as first-order, discussion-ready projections of how reef degradation may affect currently reef-derived economic services.
+                            </p>
+
+                            <p>
+                                The interactive panels below show how each sector translates coral cover change into remaining economic value. Compound and tipping-point curves appear under tourism as cross-sector sensitivity scenarios.
+                            </p>
+
+                            <div class="methods-subsection chart-section methods-sector-embed">
+                                <div class="chart-header">
+                                    <div>
+                                        <h3 class="chart-title">Tourism — Chen et al. depreciation</h3>
+                                        <p class="chart-subtitle">
+                                            <a href="https://doi.org/10.1016/j.gloenvcha.2014.10.011" target="_blank" rel="noopener noreferrer">Chen et al. (2015)</a> tourism elasticity:
+                                            <strong>3.81% value loss per 1% relative coral loss</strong>
+                                            (<em>V</em><sub>rem</sub> = <em>V</em><sub>0</sub> &times; max(0, 1 + 3.807 &times; <em>&Delta;C</em>/<em>C</em><sub>0</sub>)).
+                                            The compound and tipping-point panels are sensitivity scenarios applied identically across all sectors in the dashboard.
+                                        </p>
+                                    </div>
+                                    <div class="controls">
+                                        <div class="control-group model-cover-control">
+                                            <label class="control-label" for="model-initial-cover">Initial cover <em>C</em><sub>0</sub>:</label>
+                                            <input type="range" id="model-initial-cover" min="10" max="70" step="1" value="35"
+                                                aria-valuemin="10" aria-valuemax="70" aria-valuenow="35">
+                                            <output id="model-initial-cover-value" class="model-cover-value" for="model-initial-cover">35%</output>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p id="model-chart-subtitle" class="chart-subtitle" style="margin-bottom: 1rem;"></p>
+                                <div class="model-charts-row">
+                                    <div id="model-chart" class="model-chart-panel"></div>
+                                    <div id="tipping-point-chart" class="model-chart-panel"></div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <p id="model-chart-subtitle" class="chart-subtitle" style="margin-bottom: 1rem;"></p>
-                    <div class="model-charts-row">
-                        <div id="model-chart" class="model-chart-panel"></div>
-                        <div id="tipping-point-chart" class="model-chart-panel"></div>
-                    </div>
-                    <div class="model-descriptions-panel">
-                        <h3 class="model-descriptions-title">Model descriptions &amp; equations</h3>
-                        <div id="model-descriptions" class="model-descriptions-grid"></div>
+
+                            <div class="methods-subsection chart-section methods-sector-embed">
+                                <div class="chart-header">
+                                    <div>
+                                        <h3 class="chart-title">Fisheries — habitat quality model</h3>
+                                        <p class="chart-subtitle">
+                                            Fisheries value scales with coral cover via a habitat-quality multiplier on Sea Around Us country baselines:
+                                        </p>
+                                        <p class="chart-subtitle methods-equation">
+                                            <em>m</em> = <em>&alpha;</em> + (1 &minus; <em>&alpha;</em>)(<em>C</em><sub>final</sub>/<em>C</em><sub>baseline</sub>),
+                                            &nbsp;<em>V</em><sub>rem</sub> = <em>V</em><sub>0</sub> &times; <em>m</em>
+                                        </p>
+                                        <p class="chart-subtitle">
+                                            <em>&alpha;</em> is the habitat floor: the minimum share of fisheries value retained when coral cover reaches zero.
+                                            The dashboard uses <em>&alpha;</em> = 0.4; use the slider to explore other values.
+                                            At <em>&alpha;</em> = 0, no value remains at zero cover; at <em>&alpha;</em> = 1, cover has no effect.
+                                        </p>
+                                    </div>
+                                    <div class="controls">
+                                        <div class="control-group model-cover-control">
+                                            <label class="control-label" for="habitat-illustration-slider">Explore &alpha;:</label>
+                                            <input type="range" class="habitat-illustration-slider" id="habitat-illustration-slider"
+                                                min="0" max="5" step="1" value="2" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2">
+                                            <output class="habitat-illustration-value model-cover-value" for="habitat-illustration-slider">0.4</output>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="habitat-alpha-chart" style="height: 320px;"></div>
+                            </div>
+
+                            <div class="methods-subsection chart-section methods-sector-embed">
+                                <div class="chart-header">
+                                    <div>
+                                        <h3 class="chart-title">Coastal protection — cover-proportional loss</h3>
+                                        <p class="chart-subtitle">
+                                            Coastal protection value scales <strong>1:1 with relative coral cover change</strong>
+                                            (<a href="https://doi.org/10.1016/j.gloenvcha.2014.10.011" target="_blank" rel="noopener noreferrer">Chen et al., 2015</a>):
+                                        </p>
+                                        <p class="chart-subtitle methods-equation">
+                                            <em>V</em><sub>rem</sub> = <em>V</em><sub>0</sub> &times; (1 + <em>&Delta;C</em>/<em>C</em><sub>0</sub>)
+                                        </p>
+                                        <p class="chart-subtitle">
+                                            Uses the same <em>C</em><sub>0</sub> as the tourism panel above.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="coastal-model-chart" style="height: 320px;"></div>
+                            </div>
+
+                        </article>
+
+                        <article id="methods-cumulative" class="method-box">
+                            <h2>6. Cumulative impact over time</h2>
+                            <p>
+                                Endpoint losses (2050 / 2100) understate long-run harm because value is lost
+                                in every intervening year. We construct coral cover trajectories from a
+                                2013 baseline to each scenario endpoint (linear or exponential interpolation),
+                                then compute year-by-year remaining value and opportunity cost.
+                            </p>
+                            <ul>
+                                <li><strong>Annual loss</strong> — year-over-year decline in remaining value.</li>
+                                <li><strong>Cumulative loss</strong> — sum of annual opportunity cost (<em>V</em><sub>0</sub> − <em>V</em><sub>t</sub>) discounted at 0% by default.</li>
+                                <li>Tipping-point models are evaluated <strong>per site</strong> so reefs with higher <em>C</em><sub>0</sub> cross the collapse threshold later.</li>
+                            </ul>
+                        </article>
+
+                        <article id="methods-aggregation" class="method-box">
+                            <h2>7. Country aggregation &amp; GDP context</h2>
+                            <p>
+                                Site-level <code>original_value</code>, <code>remaining_value</code>, and
+                                <code>value_loss</code> are summed by country (ISO A3). Loss as a share of
+                                national GDP uses World Bank GDP (constant USD) for the reference year.
+                            </p>
+                            <p>
+                                Country charts support annual endpoint loss and cumulative loss scenarios.
+                                The “all datasets” view sums tourism, fisheries, and coastal protection
+                                — note units differ by layer but aggregates are shown for comparative ranking.
+                            </p>
+                        </article>
+
+                        <article id="methods-limitations" class="method-box">
+                            <h2>8. Limitations, uncertainty, &amp; next steps</h2>
+                            <ul>
+                                <li>Coral projections inherit structural and parameter uncertainty from the beta regression; RCP 8.5 is a high-emissions sensitivity, not a forecast.</li>
+                                <li>Nearest-neighbour alignment can mismatch reef ecology and economic activity where monitoring sites are sparse.</li>
+                                <li>Tourism elasticities follow Chen et al. (2015) meta-analysis; fisheries now use SAU country baselines and a habitat floor — both are simplifying assumptions.</li>
+                                <li>SAU values end in 2019; “Others” functional-group buckets may hide taxonomic detail at low API <code>limit</code>.</li>
+                                <li>Coastal protection and tourism layers are static baselines — they do not yet respond dynamically to socio-economic change independent of coral cover.</li>
+                                <li>Compound and tipping-point models illustrate non-linear sensitivities; they are not calibrated independently to reef econometric data.</li>
+                            </ul>
+                        </article>
                     </div>
                 </div>
             </section>
@@ -459,6 +727,6 @@
         </div>
     </main>
 
-    <script src="assets/js/dashboard.js?v=15"></script>
+    <script src="assets/js/dashboard.js?v=28"></script>
 </body>
 </html>
