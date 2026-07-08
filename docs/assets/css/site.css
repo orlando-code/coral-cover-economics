@@ -651,6 +651,11 @@
             background: var(--key-color, var(--text-muted));
         }
 
+        .model-key-item.model-key-border::before {
+            background: transparent;
+            border: 2px solid var(--key-color, var(--text-muted));
+        }
+
         .model-key-hint {
             font-style: italic;
             color: var(--text-muted);
