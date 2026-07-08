@@ -8,6 +8,7 @@
         let cumulativeCountryData = null;
         let gdpImpactData = null;
         let modelCurves = null;
+        let methodsEnvData = null;
         let siteManifest = null;
         let siteGridResolutionDeg = null;
         let currentMapColorScale = null;
@@ -38,20 +39,58 @@
             fisheries: 'Reef fisheries value represented at site points.',
             coastal_protection: 'Coastal protection value represented at site points.',
         };
+
+        const HABITAT_ILLUSTRATION_OPTIONS = [0, 0.25, 0.4, 0.5, 0.75, 1];
+        const MODEL_SORT_ORDER = ['Linear', 'Compound', 'Tipping Point'];
+
+        let CHART_COLORS = {};
+
+        function cssColor(varName, fallback) {
+            const value = getComputedStyle(document.documentElement)
+                .getPropertyValue(varName)
+                .trim();
+            return value || fallback;
+        }
+
+        function initChartColors() {
+            CHART_COLORS = {
+                dataset: {
+                    tourism: cssColor('--dataset-tourism', '#3A9AB2'),
+                    fisheries: cssColor('--dataset-fisheries', '#22c55e'),
+                    coastal_protection: cssColor('--dataset-coastal', '#a78bfa'),
+                },
+                model: {
+                    linear: cssColor('--model-linear', '#E3B710'),
+                    compound: cssColor('--model-compound', '#F11B00'),
+                    tipping: cssColor('--model-tipping', '#dc2626'),
+                },
+                scenario: {
+                    rcp45: cssColor('--scenario-rcp45', '#3498db'),
+                    rcp85: cssColor('--scenario-rcp85', '#e74c3c'),
+                },
+                lossScale: [
+                    cssColor('--loss-low', '#22c55e'),
+                    cssColor('--loss-mid', '#eab308'),
+                    cssColor('--loss-high', '#E3B710'),
+                    cssColor('--loss-extreme', '#F11B00'),
+                ],
+                habitatExportA: Number(cssColor('--habitat-export-a', '0.4')) || 0.4,
+            };
+        }
         
         let APP_BASE_PATH = '';
         let DATA_PATH = 'exported_data/';
         // Increment DATA_VERSION whenever exported_data/ files are regenerated to
         // prevent browsers serving stale JSON from the HTTP cache.
-        const DATA_VERSION = '3';
+        const DATA_VERSION = '7';
 
-        const PAGE_IDS = ['overview', 'map', 'trajectories', 'gdp', 'models'];
+        const PAGE_IDS = ['overview', 'map', 'trajectories', 'gdp', 'methods'];
         const PAGE_TITLES = {
             overview: 'Overview',
             map: 'Map',
             trajectories: 'Trajectories',
             gdp: 'Country-level Impact',
-            models: 'Models',
+            methods: 'Methods',
         };
         const DEFAULT_PAGE = 'overview';
         const POINT_RADIUS_CONFIG = {
@@ -137,15 +176,16 @@
         }
 
         async function fetchGeoJsonWithCache(filename) {
-            if (siteFileCache.has(filename)) {
-                return siteFileCache.get(filename);
+            const cacheKey = `${filename}?v=${DATA_VERSION}`;
+            if (siteFileCache.has(cacheKey)) {
+                return siteFileCache.get(cacheKey);
             }
-            const response = await fetch(DATA_PATH + filename);
+            const response = await fetch(`${DATA_PATH}${filename}?v=${DATA_VERSION}`);
             if (!response.ok) {
                 return null;
             }
             const parsed = await response.json();
-            siteFileCache.set(filename, parsed);
+            siteFileCache.set(cacheKey, parsed);
             return parsed;
         }
 
@@ -155,6 +195,8 @@
          */
         async function loadGriddedSiteFeatures({
             datasetKey,
+            scenarioKey,
+            model,
             scenarioDatasetKey,
             griddedEntry,
         }) {
@@ -180,15 +222,31 @@
                 return [];
             }
 
-            const scenarioMetrics = metricsData.scenarios[scenarioDatasetKey];
+            const metricsScenarios = metricsData.scenarios;
+            const resolvedKey =
+                resolveMetricsScenarioKey(metricsScenarios, datasetKey, scenarioKey, model) ||
+                (metricsScenarios[scenarioDatasetKey] ? scenarioDatasetKey : null) ||
+                Object.keys(metricsScenarios).find(
+                    (key) => key.toLowerCase() === String(scenarioDatasetKey).toLowerCase()
+                ) ||
+                null;
+            const scenarioMetrics = resolvedKey ? metricsScenarios[resolvedKey] : null;
             if (!scenarioMetrics) {
-                console.warn(
-                    'No gridded metrics for scenario',
-                    scenarioDatasetKey,
-                    'available:',
-                    Object.keys(metricsData.scenarios)
-                );
+                console.warn('No gridded metrics for scenario', {
+                    datasetKey,
+                    scenarioKey,
+                    model,
+                    requestedKey: scenarioDatasetKey,
+                    availableKeys: Object.keys(metricsScenarios).filter((key) =>
+                        key.startsWith(`${datasetKey}_${scenarioKey}_`)
+                    ),
+                });
                 return [];
+            }
+            if (resolvedKey !== scenarioDatasetKey) {
+                console.log(
+                    `Resolved metrics scenario key: ${scenarioDatasetKey} -> ${resolvedKey}`
+                );
             }
 
             const resolution = Number(
@@ -352,6 +410,24 @@
             return selected;
         }
 
+        function getOverviewSelectedValueTypes() {
+            const checkboxes = document.querySelectorAll('.overview-value-type-checkbox');
+            return Array.from(checkboxes)
+                .filter((cb) => cb.checked)
+                .map((cb) => cb.value);
+        }
+
+        function valueTypeColor(valueType) {
+            return CHART_COLORS.dataset?.[valueType] || '#94a3b8';
+        }
+
+        function scenarioColor(scenarioKey) {
+            const key = String(scenarioKey || '').toLowerCase();
+            if (key.includes('rcp85')) return CHART_COLORS.scenario?.rcp85 || '#e74c3c';
+            if (key.includes('rcp45')) return CHART_COLORS.scenario?.rcp45 || '#3498db';
+            return '#94a3b8';
+        }
+
         function getMapSelectedValueTypes() {
             const checkboxes = document.querySelectorAll('.map-value-type-checkbox');
             return Array.from(checkboxes)
@@ -439,33 +515,391 @@
             });
         }
         
-        function initAppBasePath() {
-            const parts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
-            const last = parts[parts.length - 1] || '';
+        function sanitizeModelKey(name) {
+            return String(name)
+                .replace(/\s+/g, '_')
+                .replace(/\//g, '_')
+                .replace(/%/g, 'pct')
+                .replace(/[()]/g, '');
+        }
 
-            if (PAGE_IDS.includes(last)) {
-                APP_BASE_PATH = parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : '';
-            } else if (parts.length === 1) {
-                APP_BASE_PATH = `/${parts[0]}`;
-            } else {
-                APP_BASE_PATH = '';
+        function shortModelLabel(name) {
+            if (String(name).includes('Linear')) return 'Linear';
+            if (String(name).includes('Compound')) return 'Compound';
+            if (String(name).includes('Tipping')) return 'Tipping Point';
+            return String(name);
+        }
+
+        function isLinearModelName(name) {
+            const label = shortModelLabel(name);
+            return label === 'Linear';
+        }
+
+        function modelColor(name) {
+            const label = shortModelLabel(name);
+            if (label === 'Tipping Point') return CHART_COLORS.model?.tipping || '#dc2626';
+            if (label === 'Compound') return CHART_COLORS.model?.compound || '#F11B00';
+            if (label === 'Linear') return CHART_COLORS.model?.linear || '#E3B710';
+            return '#94a3b8';
+        }
+
+        function sortModels(models) {
+            return [...models].sort((a, b) => {
+                const ai = MODEL_SORT_ORDER.indexOf(shortModelLabel(a));
+                const bi = MODEL_SORT_ORDER.indexOf(shortModelLabel(b));
+                return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+            });
+        }
+
+        function sortScenarios(scenarios) {
+            const rank = (scenario) => {
+                const s = String(scenario).toLowerCase();
+                const rcp = s.includes('rcp85') ? 2 : 1;
+                const year = s.includes('2100') ? 2 : 1;
+                return rcp * 10 + year;
+            };
+            return [...scenarios].sort((a, b) => rank(a) - rank(b));
+        }
+
+        function lossColorscale(stops) {
+            const [low, mid, high, extreme] = CHART_COLORS.lossScale || [];
+            return [
+                [0, low || '#22c55e'],
+                [stops[0], mid || '#eab308'],
+                [stops[1], high || '#E3B710'],
+                [1, extreme || '#F11B00'],
+            ];
+        }
+
+        function getHabitatExportA() {
+            return CHART_COLORS.habitatExportA ?? 0.4;
+        }
+
+        function getIllustrationHabitatA() {
+            const slider = document.getElementById('habitat-illustration-slider');
+            if (!slider || slider.value === '') {
+                return getHabitatExportA();
+            }
+            const idx = Number(slider.value);
+            return HABITAT_ILLUSTRATION_OPTIONS[idx] ?? getHabitatExportA();
+        }
+
+        function syncIllustrationHabitatControl() {
+            const slider = document.getElementById('habitat-illustration-slider');
+            const output = document.querySelector('.habitat-illustration-value');
+            const a = getIllustrationHabitatA();
+            if (output) {
+                output.textContent = String(a);
+            }
+            if (slider) {
+                slider.setAttribute('aria-valuenow', String(slider.value));
+                slider.setAttribute('aria-valuetext', String(a));
+            }
+        }
+
+        function updateMapHabitatBadge() {
+            const wrap = document.getElementById('map-habitat-alpha-wrap');
+            const badge = document.getElementById('map-habitat-alpha');
+            const model = document.getElementById('map-model')?.value || '';
+            if (!wrap || !badge) return;
+            const show = String(model).includes('Linear');
+            wrap.classList.toggle('is-hidden', !show);
+            badge.textContent = `Fisheries habitat α = ${getHabitatExportA()}`;
+        }
+
+        function scaleFisheriesLinearLoss(loss, habitatA) {
+            const lossValue = Number(loss || 0);
+            const aRef = getHabitatExportA();
+            if (!lossValue || habitatA === aRef) return lossValue;
+            const denom = 1 - aRef;
+            if (denom <= 0) return lossValue;
+            return lossValue * (1 - habitatA) / denom;
+        }
+
+        function mapModelToCountryModel(mapModelValue) {
+            if (!mapModelValue) return mapModelValue;
+            if (String(mapModelValue).includes('(')) return mapModelValue;
+            const models = summaryData?.snapshot_results
+                ? [...new Set(summaryData.snapshot_results.map((r) => r.model))]
+                : countryData
+                  ? [...new Set(countryData.map((c) => c.model))]
+                  : [];
+            const target = sanitizeModelKey(mapModelValue).toLowerCase();
+            return (
+                models.find((m) => sanitizeModelKey(m).toLowerCase() === target) ||
+                mapModelValue
+            );
+        }
+
+        function resolveScenarioDatasetKey(datasetKey, scenarioKey, model, isCumulative) {
+            const manifestKeys = isCumulative
+                ? siteManifest?.cumulative_scenarios || []
+                : siteManifest?.scenarios || [];
+            const prefix = `${datasetKey}_${scenarioKey}_`;
+
+            const suffixCandidates = [];
+            const addSuffix = (suffix) => {
+                if (suffix && !suffixCandidates.includes(suffix)) {
+                    suffixCandidates.push(suffix);
+                }
+            };
+
+            addSuffix(sanitizeModelKey(model));
+            if (!String(model).includes('(')) {
+                addSuffix(model);
+            }
+            const countryModel = mapModelToCountryModel(model);
+            if (countryModel && countryModel !== model) {
+                addSuffix(sanitizeModelKey(countryModel));
+            }
+            if (String(model).toLowerCase().includes('linear')) {
+                addSuffix('Linear_3.81pct_relpct');
+                addSuffix('Linear_3.81pct_pp');
+                addSuffix(sanitizeModelKey('Linear (3.81%/rel%)'));
+                addSuffix(sanitizeModelKey('Linear (3.81%/pp)'));
             }
 
-            DATA_PATH = APP_BASE_PATH ? `${APP_BASE_PATH}/exported_data/` : 'exported_data/';
+            for (const suffix of suffixCandidates) {
+                const key = `${prefix}${suffix}`;
+                if (manifestKeys.includes(key)) {
+                    return key;
+                }
+            }
+
+            const modelLower = String(model).toLowerCase();
+            const fallback = manifestKeys.find((key) => {
+                if (!key.startsWith(prefix)) return false;
+                if (modelLower.includes('linear')) return key.includes('Linear');
+                if (modelLower.includes('compound')) return key.includes('Compound');
+                if (modelLower.includes('tipping')) return key.includes('Tipping');
+                return false;
+            });
+            return fallback || `${prefix}${sanitizeModelKey(countryModel || model)}`;
+        }
+
+        /** Resolve scenario key against actual metrics JSON keys (not cached manifest). */
+        function resolveMetricsScenarioKey(metricsScenarios, datasetKey, scenarioKey, model) {
+            const keys = Object.keys(metricsScenarios || {});
+            if (!keys.length) return null;
+
+            const prefix = `${datasetKey}_${scenarioKey}_`;
+            const countryModel = mapModelToCountryModel(model) || model;
+            const suffixCandidates = [];
+            const addSuffix = (suffix) => {
+                if (suffix && !suffixCandidates.includes(suffix)) {
+                    suffixCandidates.push(suffix);
+                }
+            };
+
+            addSuffix(sanitizeModelKey(model));
+            if (!String(model).includes('(')) {
+                addSuffix(model);
+            }
+            if (countryModel && countryModel !== model) {
+                addSuffix(sanitizeModelKey(countryModel));
+            }
+            if (String(model).toLowerCase().includes('linear') ||
+                String(countryModel).toLowerCase().includes('linear')) {
+                addSuffix('Linear_3.81pct_relpct');
+                addSuffix('Linear_3.81pct_pp');
+                addSuffix(sanitizeModelKey('Linear (3.81%/rel%)'));
+                addSuffix(sanitizeModelKey('Linear (3.81%/pp)'));
+            }
+            if (String(model).toLowerCase().includes('compound') ||
+                String(countryModel).toLowerCase().includes('compound')) {
+                addSuffix('Compound_3.81pct_pp');
+                addSuffix(sanitizeModelKey('Compound (3.81%/pp)'));
+            }
+            if (String(model).toLowerCase().includes('tipping') ||
+                String(countryModel).toLowerCase().includes('tipping')) {
+                addSuffix('Tipping_Point_threshold=10pct');
+                addSuffix(sanitizeModelKey('Tipping Point (threshold=10%)'));
+            }
+
+            for (const suffix of suffixCandidates) {
+                const key = `${prefix}${suffix}`;
+                if (metricsScenarios[key]) {
+                    return key;
+                }
+            }
+
+            const modelLower = String(countryModel).toLowerCase();
+            return keys.find((key) => {
+                if (!key.startsWith(prefix)) return false;
+                if (modelLower.includes('linear')) return key.includes('Linear');
+                if (modelLower.includes('compound')) return key.includes('Compound');
+                if (modelLower.includes('tipping')) return key.includes('Tipping');
+                return false;
+            }) || null;
+        }
+
+        function populateModelSelectors() {
+            const models = summaryData?.snapshot_results
+                ? [...new Set(summaryData.snapshot_results.map((r) => r.model))]
+                : countryData
+                  ? [...new Set(countryData.map((c) => c.model))]
+                  : [];
+            if (!models.length) return;
+
+            const MAP_MODEL_LEGACY_VALUES = {
+                'Linear_3.81pct_relpct': 'Linear (3.81%/rel%)',
+                'Linear_3.81pct_pp': 'Linear (3.81%/rel%)',
+                'Linear (3.81%/pp)': 'Linear (3.81%/rel%)',
+                'Linear (3.81%/rel%)': 'Linear (3.81%/rel%)',
+                'Compound_3.81pct_pp': 'Compound (3.81%/pp)',
+                'Compound (3.81%/pp)': 'Compound (3.81%/pp)',
+                'Tipping_Point_threshold=10pct': 'Tipping Point (threshold=10%)',
+                'Tipping Point (threshold=10%)': 'Tipping Point (threshold=10%)',
+            };
+
+            const fillSelect = (selectId, { useSanitized = false } = {}) => {
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                const current = MAP_MODEL_LEGACY_VALUES[select.value] || select.value;
+                select.innerHTML = '';
+                models.forEach((model) => {
+                    const option = document.createElement('option');
+                    option.value = useSanitized ? sanitizeModelKey(model) : model;
+                    option.textContent = shortModelLabel(model);
+                    select.appendChild(option);
+                });
+                const values = [...select.options].map((o) => o.value);
+                if (values.includes(current)) {
+                    select.value = current;
+                } else if (values.length) {
+                    select.value = values[0];
+                }
+            };
+
+            fillSelect('country-model');
+            fillSelect('gdp-comparison-model');
+            fillSelect('gdp-model');
+            fillSelect('map-model');
+        }
+
+        function pathnameParts() {
+            const parts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+            if (parts.length && parts[parts.length - 1] === 'index.html') {
+                parts.pop();
+            }
+            return parts;
+        }
+
+        /** Derive app root from dashboard.js location (works for /docs/, GitHub Pages, and /map routes). */
+        function detectAppBaseFromScript() {
+            const scripts = document.querySelectorAll('script[src*="dashboard.js"]');
+            const scriptEl = scripts[scripts.length - 1];
+            if (!scriptEl?.src) {
+                return null;
+            }
+            try {
+                const url = new URL(scriptEl.src, window.location.href);
+                return url.pathname.replace(/\/assets\/js\/dashboard\.js(?:\?.*)?$/, '') || '';
+            } catch {
+                return null;
+            }
+        }
+
+        function initAppBasePath() {
+            const scriptBase = detectAppBaseFromScript();
+            if (scriptBase !== null) {
+                APP_BASE_PATH = scriptBase;
+            } else {
+                const parts = pathnameParts();
+                const last = parts[parts.length - 1] || '';
+
+                if (PAGE_IDS.includes(last)) {
+                    APP_BASE_PATH = parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : '';
+                } else if (parts.length >= 1) {
+                    APP_BASE_PATH = `/${parts.join('/')}`;
+                } else {
+                    APP_BASE_PATH = '';
+                }
+            }
+
+            // Always use absolute paths so fetches work regardless of current /map vs /docs/map URL.
+            DATA_PATH = APP_BASE_PATH
+                ? `${APP_BASE_PATH}/exported_data/`
+                : '/exported_data/';
+            siteFileCache.clear();
+            console.log('Dashboard data path:', DATA_PATH);
+        }
+
+        async function fetchJsonData(filename) {
+            const url = `${DATA_PATH}${filename}?v=${DATA_VERSION}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${url} (${response.status})`);
+            }
+            return response.json();
+        }
+
+        function getHashRoute() {
+            return window.location.hash.slice(1) || '';
+        }
+
+        function getMethodsSectionFromHash() {
+            const hash = getHashRoute();
+            return hash.startsWith('methods-') ? hash : null;
         }
 
         function getPageFromPath() {
-            const parts = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean);
+            const hash = getHashRoute();
+            if (hash) {
+                if (hash === 'models') {
+                    return 'methods';
+                }
+                if (PAGE_IDS.includes(hash)) {
+                    return hash;
+                }
+                if (hash.startsWith('methods-')) {
+                    return 'methods';
+                }
+            }
+
+            // Pathname fallback (GitHub Pages 404.html / serve_docs.py SPA mode).
+            const parts = pathnameParts();
             const last = parts[parts.length - 1] || '';
+            if (last === 'models') {
+                return 'methods';
+            }
             return PAGE_IDS.includes(last) ? last : DEFAULT_PAGE;
         }
 
-        function buildPageUrl(page) {
-            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
-            if (targetPage === DEFAULT_PAGE) {
-                return APP_BASE_PATH ? `${APP_BASE_PATH}/` : '/';
+        /** Rewrite /docs/methods-style paths to #methods so refresh works on static servers. */
+        function migratePathUrlToHash() {
+            const hash = getHashRoute();
+            if (hash) {
+                return;
             }
-            return APP_BASE_PATH ? `${APP_BASE_PATH}/${targetPage}` : `/${targetPage}`;
+            const parts = pathnameParts();
+            const last = parts[parts.length - 1] || '';
+            if (!last || last === 'index.html') {
+                return;
+            }
+            let page = null;
+            if (last === 'models') {
+                page = 'methods';
+            } else if (PAGE_IDS.includes(last)) {
+                page = last;
+            }
+            if (!page) {
+                return;
+            }
+            const base = APP_BASE_PATH ? `${APP_BASE_PATH}/` : '/';
+            history.replaceState({ page }, '', `${base}#${page}`);
+        }
+
+        function buildPageUrl(page, { sectionId = null } = {}) {
+            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
+            const base = APP_BASE_PATH ? `${APP_BASE_PATH}/` : '/';
+            if (sectionId) {
+                return `${base}#${sectionId}`;
+            }
+            if (targetPage === DEFAULT_PAGE) {
+                return base;
+            }
+            return `${base}#${targetPage}`;
         }
 
         function updateDocumentTitle(page) {
@@ -512,13 +946,68 @@
             } else if (targetPage === 'gdp') {
                 renderCountryChart();
                 renderGdpComparison();
-            } else if (targetPage === 'models') {
+            } else if (targetPage === 'methods') {
                 renderModelComparison();
+                renderMethodsEnvVisualizations();
+                initMethodsPage();
+            }
+        }
+
+        function getMethodsScrollMargin() {
+            const toc = document.querySelector('.methods-toc');
+            if (!toc) return 88;
+            const stickyTop = parseFloat(getComputedStyle(toc).top) || 76;
+            return stickyTop + toc.offsetHeight + 16;
+        }
+
+        function updateMethodsScrollMargins() {
+            const margin = `${getMethodsScrollMargin()}px`;
+            document.querySelectorAll('.methods-sections .method-box[id]').forEach((box) => {
+                box.style.scrollMarginTop = margin;
+            });
+        }
+
+        function scrollToMethodsSection(sectionId) {
+            const el = document.getElementById(sectionId);
+            if (!el) return;
+            updateMethodsScrollMargins();
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function initMethodsPage() {
+            const toc = document.querySelector('.methods-toc');
+            updateMethodsScrollMargins();
+            if (!window._methodsScrollMarginBound) {
+                window._methodsScrollMarginBound = true;
+                window.addEventListener('resize', updateMethodsScrollMargins);
+            }
+            if (toc && toc.dataset.bound !== '1') {
+                toc.dataset.bound = '1';
+                toc.querySelectorAll('a[href^="#"]').forEach((link) => {
+                    link.addEventListener('click', (event) => {
+                        const id = link.getAttribute('href')?.slice(1);
+                        if (!id) return;
+                        event.preventDefault();
+                        scrollToMethodsSection(id);
+                        const url = buildPageUrl('methods', { sectionId: id });
+                        history.replaceState({ page: 'methods', section: id }, '', url);
+                    });
+                });
+            }
+            const sectionId = getMethodsSectionFromHash();
+            if (sectionId) {
+                setTimeout(() => scrollToMethodsSection(sectionId), 150);
             }
         }
 
         function navigateToPage(page, { replace = false } = {}) {
-            const targetPage = PAGE_IDS.includes(page) ? page : DEFAULT_PAGE;
+            const targetPage =
+                page === 'models' || page === 'methods'
+                    ? 'methods'
+                    : PAGE_IDS.includes(page)
+                        ? page
+                        : DEFAULT_PAGE;
+
             const url = buildPageUrl(targetPage);
             activatePage(targetPage);
 
@@ -531,15 +1020,20 @@
 
         async function loadData() {
             initAppBasePath();
+            migratePathUrlToHash();
             try {
-                const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts] = await Promise.all([
-                    fetch(DATA_PATH + `summary.json?v=${DATA_VERSION}`).then(r => r.json()),
-                    fetch(DATA_PATH + `trajectories.json?v=${DATA_VERSION}`).then(r => r.json()),
-                    fetch(DATA_PATH + `country_results.json?v=${DATA_VERSION}`).then(r => r.json()),
-                    fetch(DATA_PATH + `cumulative_country_results.json?v=${DATA_VERSION}`).then(r => r.json()).catch(() => []),
-                    fetch(DATA_PATH + `model_curves.json?v=${DATA_VERSION}`).then(r => r.json()),
-                    fetch(DATA_PATH + `manifest.json?v=${DATA_VERSION}`).then(r => r.json()),
-                    fetch(DATA_PATH + `gdp_impacts.json?v=${DATA_VERSION}`).then(r => r.json()).catch(() => null),
+                const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts, envLocations, envQdm, envCyclone, envReefcheck] = await Promise.all([
+                    fetchJsonData('summary.json'),
+                    fetchJsonData('trajectories.json'),
+                    fetchJsonData('country_results.json'),
+                    fetchJsonData('cumulative_country_results.json').catch(() => []),
+                    fetchJsonData('model_curves.json'),
+                    fetchJsonData('manifest.json'),
+                    fetchJsonData('gdp_impacts.json').catch(() => null),
+                    fetchJsonData('methods_env_locations.json').catch(() => null),
+                    fetchJsonData('methods_env_qdm.json').catch(() => null),
+                    fetchJsonData('methods_env_cyclone_grid.json').catch(() => null),
+                    fetchJsonData('methods_env_reefcheck.json').catch(() => null),
                 ]);
                 
                 summaryData = summary;
@@ -556,6 +1050,12 @@
                     });
                 }
                 modelCurves = curves;
+                methodsEnvData = envLocations ? {
+                    locations: envLocations,
+                    qdm: envQdm,
+                    cyclone: envCyclone,
+                    reefcheck: envReefcheck,
+                } : null;
                 siteManifest = manifest;
                 const manifestRes = Number(manifest?.cell_resolution_deg);
                 if (Number.isFinite(manifestRes) && manifestRes > 0) {
@@ -596,8 +1096,10 @@
                 initializeDashboard();
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('summary-stats').innerHTML = 
-                    '<p style="color: var(--accent-red);">Error loading data. Please run the export script first.</p>';
+                document.getElementById('summary-stats').innerHTML =
+                    `<p style="color: var(--accent-red);">Error loading data from <code>${DATA_PATH}</code>. ` +
+                    'Serve the site from the <code>docs/</code> folder or open <code>/docs/</code> if using the repo root. ' +
+                    `Details: ${error.message}</p>`;
             }
         }
         
@@ -606,11 +1108,14 @@
         // ============================================================
         
         function initializeDashboard() {
+            initChartColors();
+            populateModelSelectors();
             renderSummaryStats();
             renderScenarioComparison();
             renderOverviewTrajectory('cumulative_loss');
             renderModelComparison();
             initializeMap();
+            updateMapHabitatBadge();
 
             setupNavigation();
             updateNavLinks();
@@ -665,6 +1170,11 @@
                 const page = event.state?.page || getPageFromPath();
                 activatePage(page);
             });
+
+            window.addEventListener('hashchange', () => {
+                const page = getPageFromPath();
+                activatePage(page);
+            });
         }
         
         function setupControls() {
@@ -684,12 +1194,12 @@
                 const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
                 renderOverviewTrajectory(metric);
             });
-            document.getElementById('overview-value-type').addEventListener('change', () => {
-                renderSummaryStats();
-                renderScenarioComparison();
-                const activeBtn = document.querySelector('.toggle-btn[data-metric].active');
-                const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
-                renderOverviewTrajectory(metric);
+            document.querySelectorAll('.overview-value-type-checkbox').forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    const activeBtn = document.querySelector('.toggle-btn[data-metric].active');
+                    const metric = activeBtn ? activeBtn.dataset.metric : 'cumulative_loss';
+                    renderOverviewTrajectory(metric);
+                });
             });
             document.querySelectorAll('.scenario-value-type-checkbox').forEach((checkbox) => {
                 checkbox.addEventListener('change', () => {
@@ -707,7 +1217,10 @@
             };
             
             document.getElementById('map-scenario').addEventListener('change', debouncedLoadSiteData);
-            document.getElementById('map-model').addEventListener('change', debouncedLoadSiteData);
+            document.getElementById('map-model').addEventListener('change', () => {
+                updateMapHabitatBadge();
+                debouncedLoadSiteData();
+            });
             document.querySelectorAll('.map-value-type-checkbox').forEach((checkbox) => {
                 checkbox.addEventListener('change', debouncedLoadSiteData);
             });
@@ -764,6 +1277,16 @@
                     renderModelComparison();
                 });
             }
+            const illustrationSlider = document.getElementById('habitat-illustration-slider');
+            if (illustrationSlider) {
+                illustrationSlider.addEventListener('input', onIllustrationHabitatChange);
+            }
+            syncIllustrationHabitatControl();
+        }
+
+        function onIllustrationHabitatChange() {
+            syncIllustrationHabitatControl();
+            renderHabitatAlphaIllustration();
         }
         
         // ============================================================
@@ -882,7 +1405,7 @@
                                 y: 0.5,
                                 xref: 'paper',
                                 yref: 'paper',
-                                text: 'Select a dataset to see its values',
+                                text: 'Select at least one dataset',
                                 showarrow: false,
                                 font: { size: 16, color: '#94a3b8' },
                             },
@@ -893,103 +1416,93 @@
                 );
                 return;
             }
-            
-            let results = summaryData.snapshot_results || [];
-            results = results.filter((r) => selectedValueTypes.includes(r.value_type));
-            const grouped = new Map();
-            results.forEach((r) => {
-                const key = `${r.scenario}||${r.model}`;
-                if (!grouped.has(key)) {
-                    grouped.set(key, {
-                        ...r,
-                        value_type: 'aggregate_selected',
-                        original_value_billions: 0,
-                        remaining_value_billions: 0,
-                        total_loss_billions: 0,
-                        loss_fraction_pct: 0,
-                    });
-                }
-                const g = grouped.get(key);
-                g.original_value_billions += Number(r.original_value_billions || 0);
-                g.remaining_value_billions += Number(r.remaining_value_billions || 0);
-                g.total_loss_billions += Number(r.total_loss_billions || 0);
-                g.loss_fraction_pct = g.original_value_billions > 0
-                    ? (g.total_loss_billions / g.original_value_billions) * 100
-                    : 0;
-            });
-            results = Array.from(grouped.values());
+
+            const results = (summaryData.snapshot_results || [])
+                .filter((r) => selectedValueTypes.includes(r.value_type));
             if (!results.length) return;
-            
-            const models = [...new Set(results.map(r => r.model))];
-            
-            // Map ugly scenario names to nice labels
+
             const formatScenario = (s) => {
                 const match = s.match(/rcp(\d+)_(\d+)/i);
                 if (match) {
-                    return `RCP ${match[1].charAt(0)}.${match[1].charAt(1)} - ${match[2]}`;
+                    return `RCP ${match[1].charAt(0)}.${match[1].charAt(1)} — ${match[2]}`;
                 }
                 return s.replace('y_future_', '').replace(/_/g, ' ').toUpperCase();
             };
-            
-            // Distinct colors for each model
-            const modelColors = {
-                'Tipping Point (threshold=10%)': '#F11B00',
-                'Compound (3.81%/pp)': '#3A9AB2',
-                'Linear (3.81%/pp)': '#E3B710',
-            };
-            
-            const traces = models.map(model => ({
-                x: results.filter(r => r.model === model).map(r => formatScenario(r.scenario)),
-                y: results.filter(r => r.model === model).map(r => r.total_loss_billions),
-                name: model.includes('Linear') ? 'Linear' : 
-                      model.includes('Compound') ? 'Compound' : 'Tipping Point',
+
+            const habitatA = getHabitatExportA();
+            const scenarios = sortScenarios([...new Set(results.map((r) => r.scenario))]);
+            const models = sortModels([...new Set(results.map((r) => r.model))]);
+
+            // Repeat scenario label once per model so Plotly groups bars side-by-side.
+            const xCategories = scenarios.flatMap((scenario) =>
+                models.map(() => formatScenario(scenario))
+            );
+            const modelLabels = scenarios.flatMap(() =>
+                models.map((model) => shortModelLabel(model))
+            );
+
+            const traces = selectedValueTypes.map((valueType) => ({
+                x: xCategories,
+                y: scenarios.flatMap((scenario) =>
+                    models.map((model) => {
+                        const row = results.find(
+                            (r) =>
+                                r.scenario === scenario &&
+                                r.model === model &&
+                                r.value_type === valueType
+                        );
+                        return row ? Number(row.total_loss_billions || 0) : 0;
+                    })
+                ),
+                customdata: modelLabels,
+                name: formatValueType(valueType),
                 type: 'bar',
                 hovertemplate:
-                    'Scenario: %{x}<br>' +
-                    'Model: %{fullData.name}<br>' +
-                    'Annual Loss: $%{y:.1f}B<extra></extra>',
-                marker: {
-                    color: modelColors[model] || '#94a3b8'
-                }
+                    '%{x}<br>' +
+                    'Model: %{customdata}<br>' +
+                    'Dataset: %{fullData.name}<br>' +
+                    'Annual loss: $%{y:.1f}B<extra></extra>',
+                marker: { color: valueTypeColor(valueType) },
             }));
-            
+
             const layout = {
-                barmode: 'group',
+                barmode: 'stack',
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 hoverlabel: { namelength: -1 },
-                xaxis: { 
+                xaxis: {
                     gridcolor: '#334155',
-                    title: 'Scenario',
-                    tickangle: 0
+                    title: 'Climate scenario',
+                    tickmode: 'array',
+                    tickvals: scenarios.map((_, si) => si * models.length + Math.floor(models.length / 2)),
+                    ticktext: scenarios.map((scenario) => formatScenario(scenario)),
                 },
-                yaxis: { 
+                yaxis: {
                     gridcolor: '#334155',
-                    title: 'Annual Loss ($ Billion)'
+                    title: 'Annual Loss ($ Billion)',
                 },
-                legend: { 
-                    orientation: 'h', 
-                    y: -0.2,
-                    font: { size: 12 }
+                legend: {
+                    orientation: 'h',
+                    y: -0.18,
+                    font: { size: 12 },
                 },
-                margin: { t: 20, r: 20, b: 100, l: 60 }
+                bargap: 0.15,
+                margin: { t: 20, r: 20, b: 90, l: 60 },
             };
-            
-            Plotly.newPlot('scenario-comparison-chart', traces, layout, {responsive: true});
+
+            Plotly.newPlot('scenario-comparison-chart', traces, layout, { responsive: true });
         }
         
         function renderOverviewTrajectory(metric) {
             if (!trajectoryData) return;
             
             const modelFilter = document.getElementById('overview-model').value;
-            const selectedValueType = getSelectedValueType('overview-value-type', 'all');
-            
-            // Color and linestyle config - matching scenario comparison chart
-            // Color = RCP scenario (blue for RCP45, red for RCP85)
+            const selectedValueTypes = getOverviewSelectedValueTypes();
+
             const rcpColors = {
-                'rcp45': '#3498db',  // Blue (matching scenario comparison)
-                'rcp85': '#e74c3c',  // Red (matching scenario comparison)
+                rcp45: CHART_COLORS.scenario?.rcp45 || '#3498db',
+                rcp85: CHART_COLORS.scenario?.rcp85 || '#e74c3c',
             };
             // Linestyle = dataset type
             const datasetLineStyles = {
@@ -1005,11 +1518,27 @@
             };
             const config = metricMap[metric];
 
+            if (selectedValueTypes.length === 0) {
+                Plotly.newPlot('trajectory-chart', [], {
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    font: { color: '#94a3b8', family: 'Instrument Sans' },
+                    xaxis: { gridcolor: '#334155', title: 'Year' },
+                    yaxis: { gridcolor: '#334155', title: config.title },
+                    annotations: [{
+                        x: 0.5, y: 0.5, xref: 'paper', yref: 'paper',
+                        text: 'Select at least one dataset',
+                        showarrow: false,
+                        font: { size: 16, color: '#94a3b8' },
+                    }],
+                    margin: { t: 20, r: 20, b: 80, l: 60 },
+                }, { responsive: true });
+                return;
+            }
+
             // Filter data: use linear interpolation only, apply model filter
             let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
-            if (selectedValueType !== 'all') {
-                filtered = filtered.filter(t => t.value_type === selectedValueType);
-            }
+            filtered = filtered.filter(t => selectedValueTypes.includes(t.value_type));
             if (modelFilter !== 'all') {
                 filtered = filtered.filter(t => {
                     const modelName = t.model.toLowerCase();
@@ -1032,12 +1561,8 @@
                 
                 let yData;
                 if (metric === 'cumulative_loss') {
-                    // Cumulative loss: use cumulative_losses directly (already in trillions from export)
-                    // This is the cumulative sum of opportunity cost
                     yData = t.cumulative_loss || [];
                 } else if (metric === 'annual_loss') {
-                    // Annual loss: year-on-year value lost (value_lost_this_year)
-                    // This is the year-over-year decline in value (already in billions from export)
                     yData = t.annual_value_lost || t.annual_loss || [];
                 }
                 
@@ -1123,8 +1648,8 @@
             
             // Color = RCP scenario (blue for RCP45, red for RCP85) - matching scenario comparison chart
             const rcpColors = {
-                'rcp45': '#3498db',  // Blue
-                'rcp85': '#e74c3c',  // Red
+                'rcp45': CHART_COLORS.scenario?.rcp45 || '#3498db',
+                'rcp85': CHART_COLORS.scenario?.rcp85 || '#e74c3c',
             };
             // Linestyle = dataset
             const datasetLineStyles = {
@@ -1270,15 +1795,14 @@
             // Cumulative loss chart - cumulative sum of opportunity cost
             // Color = RCP scenario, Linestyle = Model
             const cumulativeTraces = economicFiltered.map(t => {
-                // Calculate cumulative sum of opportunity cost
                 const oppCost = t.annual_opportunity_cost || [];
                 let cumulative = 0;
-                const cumulativeOppCost = oppCost.length > 0 
-                    ? oppCost.map(val => {
-                        cumulative += val;
-                        return cumulative / 1e3; // Convert to trillions
+                const cumulativeOppCost = oppCost.length > 0
+                    ? oppCost.map((val) => {
+                        cumulative += Number(val || 0);
+                        return cumulative / 1e3;
                     })
-                    : (t.cumulative_loss || []); // Fallback for old data
+                    : (t.cumulative_loss || []);
                 
                 const scenario = t.scenario.toLowerCase();
                 const color = rcpColors[scenario] || '#94a3b8';
@@ -1324,7 +1848,7 @@
                 return;
             }
             
-            const model = document.getElementById('country-model').value;
+            const model = mapModelToCountryModel(document.getElementById('country-model').value);
             const limitValue = document.getElementById('country-limit').value;
             const metric = document.getElementById('country-metric').value;
             const colorMode = document.getElementById('country-color-mode').value;
@@ -1451,7 +1975,7 @@
                 orientation: 'h',
                 marker: {
                     color: colorValues,
-                    colorscale: [[0, '#22c55e'], [0.25, '#eab308'], [0.5, '#E3B710'], [1, '#F11B00']],
+                    colorscale: lossColorscale([0.25, 0.5]),
                     colorbar: {
                         title: colorbarTitle,
                         tickformat: colorbarFormat
@@ -1536,7 +2060,7 @@
                 orientation: 'h',
                 marker: {
                     color: filtered.map(c => c.loss_as_gdp_pct),
-                    colorscale: [[0, '#22c55e'], [0.1, '#eab308'], [0.3, '#E3B710'], [1, '#F11B00']],
+                    colorscale: lossColorscale([0.1, 0.3]),
                     colorbar: {
                         title: colorbarTitle,
                         tickformat: colorbarFormat
@@ -1570,7 +2094,7 @@
         function renderGdpComparison() {
             if (!gdpImpactData) return;
             
-            const model = document.getElementById('gdp-comparison-model').value;
+            const model = mapModelToCountryModel(document.getElementById('gdp-comparison-model').value);
             const metric = document.getElementById('gdp-comparison-metric').value;
             const limitValue = document.getElementById('gdp-comparison-limit').value;
             const valueType = getSelectedValueType('gdp-value-type', 'all');
@@ -1619,8 +2143,8 @@
             // 2100 is the full bar (lighter), 2050 is overlaid on top (darker)
             // Use custom y positions to group RCP 4.5 and RCP 8.5 side by side
             const rcpScenarios = [
-                { rcp: 'rcp45', color: '#3A9AB2', name: 'RCP 4.5', yOffset: -0.2 },
-                { rcp: 'rcp85', color: '#F11B00', name: 'RCP 8.5', yOffset: 0.2 },
+                { rcp: 'rcp45', color: scenarioColor('rcp45'), name: 'RCP 4.5', yOffset: -0.2 },
+                { rcp: 'rcp85', color: scenarioColor('rcp85'), name: 'RCP 8.5', yOffset: 0.2 },
             ];
             
             const traces = [];
@@ -1778,9 +2302,13 @@
         function syncModelCoverControl() {
             const output = document.getElementById('model-initial-cover-value');
             const slider = document.getElementById('model-initial-cover');
+            const coastalC0 = document.getElementById('coastal-c0-text');
             const pct = getModelInitialCoverPct();
             if (output) {
                 output.textContent = `${pct}%`;
+            }
+            if (coastalC0) {
+                coastalC0.textContent = String(pct);
             }
             if (slider) {
                 slider.setAttribute('aria-valuenow', String(pct));
@@ -1799,17 +2327,47 @@
             return values;
         }
 
+        function computeHabitatRemaining(deltaPp, initialCoverPct, habitatFloorA) {
+            const c0 = initialCoverPct / 100;
+            const delta = deltaPp / 100;
+            if (c0 <= 0) {
+                return 0;
+            }
+            const cFinal = Math.max(c0 + delta, 0);
+            const multiplier = habitatFloorA + (1 - habitatFloorA) * (cFinal / c0);
+            return Math.max(0, 100 * multiplier);
+        }
+
         function computeChenRemaining(deltaPp, initialCoverPct, sector) {
             const c0 = initialCoverPct / 100;
             const delta = deltaPp / 100;
             if (c0 <= 0) {
                 return 0;
             }
+            if (sector === 'fisheries') {
+                return computeHabitatRemaining(deltaPp, initialCoverPct, getHabitatExportA());
+            }
             const relative = delta / c0;
             const fracChange = sector === 'tourism'
                 ? relative * CHEN_TOURISM_ELASTICITY
                 : relative;
             return Math.max(0, 100 * (1 + fracChange));
+        }
+
+        function computeCoastalRemaining(deltaPp, initialCoverPct) {
+            const c0 = initialCoverPct / 100;
+            const cFinal = Math.max(c0 + deltaPp / 100, 0);
+            if (c0 <= 0) {
+                return 0;
+            }
+            const ratio = Math.min(cFinal / c0, 1);
+            return Math.max(0, 100 * ratio);
+        }
+
+        function computeCoastalCurve(deltaPpArray, initialCoverPct) {
+            return deltaPpArray.map((deltaPp) =>
+                computeCoastalRemaining(deltaPp, initialCoverPct)
+            );
         }
 
         function computeChenCurve(deltaPpArray, initialCoverPct, sector) {
@@ -1889,72 +2447,117 @@
             plotFn(elementId, traces, layout, { responsive: true });
         }
 
-        function renderModelDescriptions(metadata) {
-            const container = document.getElementById('model-descriptions');
-            if (!container) return;
+        function renderHabitatAlphaIllustration() {
+            const chartEl = document.getElementById('habitat-alpha-chart');
+            if (!chartEl || !summaryData) return;
 
-            const fallback = {
-                chen_elasticity: {
-                    title: 'Chen et al. (2015) elasticity (default “linear” model)',
-                    short: 'Sector-specific relative-loss functions from Chen et al. (2015).',
-                    equations: [
-                        'Relative cover change: ΔC/C₀ = (C_final − C₀) / C₀',
-                        'Tourism: V_rem = V₀ × max(0, 1 + 3.807 × ΔC/C₀)',
-                        'Fisheries & coastal protection: V_rem = V₀ × (1 + ΔC/C₀)',
-                    ],
-                    notes: [
-                        'Tourism uses relative cover elasticity; fisheries and coastal scale 1:1 with relative change.',
-                    ],
-                },
-                compound: {
-                    title: 'Compound (3.81%/pp)',
-                    short: 'Sensitivity model using compound loss per percentage-point decline.',
-                    equations: ['V_rem = V₀ × (1 − 0.0381)^|ΔC<sub>pp</sub>|'],
-                    notes: ['ΔC<sub>pp</sub> is absolute change in percentage points.'],
-                },
-                tipping_point: {
-                    title: 'Tipping Point (10% threshold)',
-                    short: 'Collapse scenario with catastrophic loss below a cover threshold.',
-                    equations: [
-                        'Pre-threshold: V_rem = V₀ × (1 − 0.0381)^|ΔC<sub>pp</sub>|',
-                        'Post-threshold: V_rem ← V_rem × (1 − λ)',
-                    ],
-                    notes: ['Tipping threshold depends on initial coral cover.'],
-                },
+            syncIllustrationHabitatControl();
+            const selectedAlpha = getIllustrationHabitatA();
+            const rows = (summaryData.snapshot_results || []).filter(
+                (r) => r.value_type === 'fisheries' && isLinearModelName(r.model)
+            );
+            if (!rows.length) return;
+
+            const formatScenario = (s) => {
+                const match = s.match(/rcp(\d+)_(\d+)/i);
+                if (match) {
+                    return `RCP ${match[1].charAt(0)}.${match[1].charAt(1)} — ${match[2]}`;
+                }
+                return s;
             };
 
-            const models = metadata?.models || fallback;
-            const accent = {
-                chen_elasticity: 'var(--accent-blue)',
-                compound: 'var(--accent-coral)',
-                tipping_point: '#dc2626',
-            };
+            const alphaValues = HABITAT_ILLUSTRATION_OPTIONS;
+            const scenarios = sortScenarios([...new Set(rows.map((r) => r.scenario))]);
+            const exportA = getHabitatExportA();
 
-            const formatModelText = (text) =>
-                linkChenCitations(
-                    String(text)
-                        .replace(/ΔC_pp/g, 'ΔC<sub>pp</sub>')
-                        .replace(/C₀/g, 'C<sub>0</sub>')
-                        .replace(/C_0/g, 'C<sub>0</sub>')
-                );
+            const traces = scenarios.map((scenario) => ({
+                x: alphaValues,
+                y: alphaValues.map((alpha) => {
+                    const row = rows.find((r) => r.scenario === scenario);
+                    return row ? scaleFisheriesLinearLoss(row.total_loss_billions, alpha) : 0;
+                }),
+                name: formatScenario(scenario),
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: scenarioColor(scenario), width: 2.5 },
+                marker: { size: 7 },
+                hovertemplate:
+                    `${formatScenario(scenario)}<br>` +
+                    'α = %{x}<br>' +
+                    'Fisheries annual loss: $%{y:.2f}B<extra></extra>',
+            }));
 
-            container.innerHTML = Object.entries(models)
-                .map(([key, info]) => {
-                    const eqList = (info.equations || [])
-                        .map((eq) => `<li>${formatModelText(eq)}</li>`)
-                        .join('');
-                    const noteList = (info.notes || [])
-                        .map((note) => `<li>${formatModelText(note)}</li>`)
-                        .join('');
-                    return `
-                        <div class="model-description-card">
-                            <h4 style="color: ${accent[key] || 'var(--text-primary)'}">${formatModelText(info.title)}</h4>
-                            <p class="model-short">${formatModelText(info.short || '')}</p>
-                            ${eqList ? `<ul class="model-equation-list">${eqList}</ul>` : ''}
-                            ${noteList ? `<ul class="model-notes-list">${noteList}</ul>` : ''}
-                        </div>`;
-                })
-                .join('');
+            traces.push({
+                x: [selectedAlpha, selectedAlpha],
+                y: [0, Math.max(
+                    ...alphaValues.map((alpha) =>
+                        rows.reduce(
+                            (sum, row) => sum + scaleFisheriesLinearLoss(row.total_loss_billions, alpha),
+                            0
+                        )
+                    )
+                ) * 1.05],
+                name: `Selected α = ${selectedAlpha}`,
+                type: 'scatter',
+                mode: 'lines',
+                line: { color: valueTypeColor('fisheries'), width: 2, dash: 'dash' },
+                hoverinfo: 'skip',
+                showlegend: true,
+            });
+
+            const totalAtSelected = rows.reduce(
+                (sum, row) => sum + scaleFisheriesLinearLoss(row.total_loss_billions, selectedAlpha),
+                0
+            );
+
+            Plotly.newPlot('habitat-alpha-chart', traces, {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                hoverlabel: { namelength: -1 },
+                xaxis: {
+                    gridcolor: '#334155',
+                    title: 'Habitat floor α',
+                    tickmode: 'array',
+                    tickvals: alphaValues,
+                    ticktext: alphaValues.map(String),
+                    range: [-0.05, 1.05],
+                },
+                yaxis: {
+                    gridcolor: '#334155',
+                    title: {
+                        text: 'Fisheries annual loss<br>($ Billion, linear model)',
+                        standoff: 18,
+                    },
+                    automargin: true,
+                    range: [0, 4],
+                    fixedrange: true,
+                },
+                legend: { orientation: 'h', y: -0.22, font: { size: 11 } },
+                margin: { t: 20, r: 20, b: 90, l: 80 },
+                annotations: [
+                    {
+                        x: selectedAlpha,
+                        y: totalAtSelected,
+                        text: `$${totalAtSelected.toFixed(2)}B total<br>at α = ${selectedAlpha}`,
+                        showarrow: true,
+                        arrowhead: 2,
+                        ax: 40,
+                        ay: -30,
+                        font: { size: 11, color: valueTypeColor('fisheries') },
+                    },
+                    ...(exportA !== selectedAlpha ? [] : [{
+                        x: exportA,
+                        y: 1.1,
+                        xref: 'x',
+                        yref: 'paper',
+                        text: 'Analysis default α = 0.4',
+                        showarrow: false,
+                        yanchor: 'top',
+                        font: { size: 10, color: '#64748b' },
+                    }]),
+                ],
+            }, { responsive: true });
         }
 
         function renderModelComparison() {
@@ -1967,75 +2570,50 @@
             const subtitleEl = document.getElementById('model-chart-subtitle');
             if (subtitleEl) {
                 subtitleEl.innerHTML =
-                    `${chenPaperLink()} elasticity curves for initial cover C<sub>0</sub> = ${refCover}% (adjust above). ` +
-                    'Compound depreciation is independent of C<sub>0</sub>; ' +
-                    'the tipping-point chart compares fixed scenarios and highlights your selected C<sub>0</sub>.';
+                    `${chenPaperLink()} tourism elasticity and compound sensitivity at C<sub>0</sub> = ${refCover}%.`;
             }
-            renderModelDescriptions(metadata);
 
             const deltaPp = getModelDeltaPpRange(curves);
             const tourismRemaining = computeChenCurve(deltaPp, refCover, 'tourism');
-            const fisheriesRemaining = computeChenCurve(deltaPp, refCover, 'fisheries');
             const compoundRemaining = computeCompoundCurve(deltaPp);
 
-            const traceStyle = {
-                tourism: { color: '#3A9AB2', dash: 'solid', name: 'Chen elasticity — tourism' },
-                fisheries: { color: '#22c55e', dash: 'dot', name: 'Chen elasticity — fisheries/coastal protection' },
-                compound: { color: '#F11B00', dash: 'solid', name: 'Compound (3.81%/pp)' },
-            };
-
-            const standardTraces = ['tourism', 'fisheries', 'compound'].map((key) => {
-                const style = traceStyle[key];
-                const y = key === 'tourism'
-                    ? tourismRemaining
-                    : key === 'fisheries'
-                        ? fisheriesRemaining
-                        : compoundRemaining;
-                return {
+            const tourismTraces = [
+                {
                     x: deltaPp,
-                    y,
-                    name: style.name,
+                    y: tourismRemaining,
+                    name: 'Linear — tourism (3.81%/pp)',
                     hovertemplate:
-                        `${style.name}<br>` +
+                        'Linear — tourism (3.81%/pp)<br>' +
                         `${MODEL_HOVER_DELTA}<br>` +
                         'Remaining value: %{y:.1f}%<extra></extra>',
                     mode: 'lines',
-                    line: { color: style.color, width: 3, dash: style.dash },
-                };
-            });
+                    line: { color: valueTypeColor('tourism'), width: 3, dash: 'solid' },
+                },
+                {
+                    x: deltaPp,
+                    y: compoundRemaining,
+                    name: 'Compound (3.81%/pp of previous value)',
+                    hovertemplate:
+                        'Compound (3.81%/pp of previous value)<br>' +
+                        `${MODEL_HOVER_DELTA}<br>` +
+                        'Remaining value: %{y:.1f}%<extra></extra>',
+                    mode: 'lines',
+                    line: { color: modelColor('Compound'), width: 3, dash: 'solid' },
+                },
+            ];
 
             const tourismZeroX = findTourismCliffPp(refCover);
             const coverZeroX = -refCover;
             const [chenXMin, chenXMax] = getChenChartXRange(refCover);
 
-            const standardShapes = [
-                { type: 'line', x0: 0, x1: 0, y0: 0, y1: 105,
-                  line: { color: '#64748b', width: 1, dash: 'dot' } },
-                { type: 'line', x0: coverZeroX, x1: coverZeroX, y0: 0, y1: 105,
-                  line: { color: '#475569', width: 1, dash: 'longdash' } },
-                { type: 'line', x0: tourismZeroX, x1: tourismZeroX, y0: 0, y1: 105,
-                  line: { color: '#3A9AB2', width: 1, dash: 'dash' } },
-            ];
-
-            const standardAnnotations = [
-                { x: coverZeroX, y: 102, text: `C<sub>0</sub>→0`,
-                  showarrow: false, font: { color: '#64748b', size: 9 },
-                  xanchor: 'right', xshift: -4 },
-                { x: tourismZeroX, y: 55,
-                  text: `Tourism zero<br>(${tourismZeroX.toFixed(1)} pp)`,
-                  showarrow: true, arrowhead: 2, arrowsize: 0.8,
-                  arrowcolor: '#3A9AB2', ax: -35, ay: 0,
-                  font: { color: '#3A9AB2', size: 9 } },
-            ];
-
-            const standardLayout = {
+            plotModelChart('model-chart', tourismTraces, {
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent',
                 font: { color: '#94a3b8', family: 'Instrument Sans' },
                 hoverlabel: { namelength: -1 },
                 autosize: true,
                 title: {
-                    text: 'Chen elasticity vs compound depreciation',
+                    text: 'Tourism — linear & compound',
                     font: { size: 14, color: '#e2e8f0' },
                     x: 0.5,
                 },
@@ -2053,16 +2631,30 @@
                 },
                 legend: { orientation: 'h', y: -0.18 },
                 margin: { t: 50, r: 30, b: 80, l: 60 },
-                shapes: standardShapes,
-                annotations: standardAnnotations,
-            };
-
-            plotModelChart('model-chart', standardTraces, standardLayout);
+                shapes: [
+                    { type: 'line', x0: 0, x1: 0, y0: 0, y1: 105,
+                      line: { color: '#64748b', width: 1, dash: 'dot' } },
+                    { type: 'line', x0: coverZeroX, x1: coverZeroX, y0: 0, y1: 105,
+                      line: { color: '#475569', width: 1, dash: 'longdash' } },
+                    { type: 'line', x0: tourismZeroX, x1: tourismZeroX, y0: 0, y1: 105,
+                      line: { color: valueTypeColor('tourism'), width: 1, dash: 'dash' } },
+                ],
+                annotations: [
+                    { x: coverZeroX, y: 102, text: `C<sub>0</sub>→0`,
+                      showarrow: false, font: { color: '#64748b', size: 9 },
+                      xanchor: 'right', xshift: -4 },
+                    { x: tourismZeroX, y: 55,
+                      text: `Tourism value zero<br>(${tourismZeroX.toFixed(1)} pp)`,
+                      showarrow: true, arrowhead: 2, arrowsize: 0.8,
+                      arrowcolor: valueTypeColor('tourism'), ax: -35, ay: 0,
+                      font: { color: valueTypeColor('tourism'), size: 9 } },
+                ],
+            });
 
             const TP_COLORS = {
                 '0.15': '#ef4444',
                 '0.25': '#f97316',
-                '0.4': '#a78bfa',
+                '0.4': valueTypeColor('coastal_protection'),
                 '0.6': '#38bdf8',
             };
 
@@ -2134,7 +2726,7 @@
                 hoverlabel: { namelength: -1 },
                 autosize: true,
                 title: {
-                    text: 'Tipping-point model: effect of initial cover',
+                    text: 'Tipping-point sensitivity (all sectors)',
                     font: { size: 14, color: '#e2e8f0' },
                     x: 0.5,
                 },
@@ -2164,6 +2756,598 @@
                 [...tippingPointTraces, ...tippingPointMarkers],
                 tippingPointLayout
             );
+
+            renderCoastalDepreciationChart(refCover, metadata);
+            renderHabitatAlphaIllustration();
+        }
+
+        function renderCoastalDepreciationChart(refCover, metadata) {
+            const chartEl = document.getElementById('coastal-model-chart');
+            if (!chartEl) return;
+
+            const { curves } = getModelCurvesPayload();
+            if (!curves || Object.keys(curves).length === 0) return;
+
+            const deltaPp = getModelDeltaPpRange(curves);
+            const coastalRemaining = computeCoastalCurve(deltaPp, refCover);
+            const coverZeroX = -refCover;
+
+            plotModelChart('coastal-model-chart', [{
+                x: deltaPp,
+                y: coastalRemaining,
+                name: 'Cover-proportional — coastal protection',
+                hovertemplate:
+                    'Cover-proportional — coastal protection<br>' +
+                    `${MODEL_HOVER_DELTA}<br>` +
+                    'Remaining value: %{y:.1f}%<extra></extra>',
+                mode: 'lines',
+                line: { color: valueTypeColor('coastal_protection'), width: 3 },
+            }], {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                hoverlabel: { namelength: -1 },
+                xaxis: {
+                    gridcolor: '#334155',
+                    title: MODEL_DELTA_AXIS_TITLE,
+                    zeroline: true,
+                    zerolinecolor: '#64748b',
+                    range: [-55, 5],
+                },
+                yaxis: {
+                    gridcolor: '#334155',
+                    title: metadata?.y_axis || 'Remaining value (% of baseline)',
+                    range: [0, 105],
+                },
+                legend: { orientation: 'h', y: -0.15 },
+                margin: { t: 20, r: 20, b: 70, l: 60 },
+                shapes: [
+                    { type: 'line', x0: 0, x1: 0, y0: 0, y1: 105,
+                      line: { color: '#64748b', width: 1, dash: 'dot' } },
+                    { type: 'line', x0: coverZeroX, x1: coverZeroX, y0: 0, y1: 105,
+                      line: { color: '#475569', width: 1, dash: 'longdash' } },
+                ],
+                annotations: [
+                    { x: coverZeroX, y: 102, text: `C<sub>0</sub>→0`,
+                      showarrow: false, font: { color: '#64748b', size: 9 },
+                      xanchor: 'right', xshift: -4 },
+                ],
+            });
+        }
+
+        // ============================================================
+        // METHODS — ENVIRONMENTAL COVARIATE VISUALIZATIONS
+        // ============================================================
+
+        const ENV_MAP_TARGETS = {
+            historical: { selectId: 'env-metric-historical', chartId: 'env-map-historical' },
+            recent: { selectId: 'env-metric-recent', chartId: 'env-map-recent' },
+            forecast: { chartId: 'env-map-forecast' },
+            turbidity: { selectId: 'env-metric-turbidity', chartId: 'env-map-turbidity' },
+        };
+
+        const ENV_FORECAST_WINDOWS = {
+            '2015_2050': '2015–2050',
+            '2051_2099': '2051–2099',
+        };
+
+        const ENV_FORECAST_STATS = {
+            mean: 'ensemble mean',
+            std: 'ensemble std dev',
+            min: 'ensemble min',
+            max: 'ensemble max',
+        };
+
+        const ENV_FORECAST_SCENARIOS = {
+            ssp245: 'SSP2-4.5',
+            ssp370: 'SSP3-7.0',
+            ssp585: 'SSP5-8.5',
+        };
+
+        const ENV_COLORSCALES = {
+            historical: 'RdYlBu_r',
+            recent: 'YlOrRd',
+            forecast: 'RdYlBu_r',
+            turbidity: 'Viridis',
+            cyclone: 'Hot',
+            reefcheck: 'Viridis',
+        };
+
+        function methodsEnvPlotLayout(extraLayout = {}) {
+            return {
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#94a3b8', family: 'Instrument Sans' },
+                hoverlabel: { namelength: -1 },
+                margin: { t: 24, r: 16, b: 24, l: 16 },
+                ...extraLayout,
+            };
+        }
+
+        function methodsEnvGeoLayout(colorbarTitle, { logScale = false, colorscale = 'Viridis' } = {}) {
+            const coloraxis = {
+                colorscale,
+                colorbar: {
+                    orientation: 'h',
+                    title: { text: colorbarTitle, font: { size: 11 }, side: 'bottom' },
+                    tickfont: { size: 10 },
+                    len: 0.72,
+                    thickness: 14,
+                    y: -0.06,
+                    yanchor: 'top',
+                    x: 0.5,
+                    xanchor: 'center',
+                },
+            };
+            if (logScale) {
+                coloraxis.type = 'log';
+            }
+            return methodsEnvPlotLayout({
+                margin: { t: 24, r: 16, b: 72, l: 16 },
+                geo: {
+                    bgcolor: 'rgba(0,0,0,0)',
+                    lakecolor: '#0f172a',
+                    landcolor: '#1e293b',
+                    subunitcolor: '#334155',
+                    countrycolor: '#475569',
+                    showland: true,
+                    showcountries: true,
+                    coastlinewidth: 0.4,
+                    projection: { type: 'natural earth' },
+                    domain: { x: [0, 1], y: [0.08, 1] },
+                },
+                coloraxis,
+            });
+        }
+
+        function getEnvForecastScenario() {
+            const select = document.getElementById('env-scenario-forecast');
+            return select?.value || 'ssp370';
+        }
+
+        function getEnvForecastMetricKey() {
+            const scenario = getEnvForecastScenario();
+            const window = document.getElementById('env-window-forecast')?.value || '2015_2050';
+            const stat = document.getElementById('env-stat-forecast')?.value || 'mean';
+            return `sst_mean_${window}__${scenario}__model_${stat}`;
+        }
+
+        function getEnvForecastMetricLabel() {
+            const scenario = getEnvForecastScenario();
+            const window = document.getElementById('env-window-forecast')?.value || '2015_2050';
+            const stat = document.getElementById('env-stat-forecast')?.value || 'mean';
+            const windowLabel = ENV_FORECAST_WINDOWS[window] || window;
+            const statLabel = ENV_FORECAST_STATS[stat] || stat;
+            const scenarioLabel = ENV_FORECAST_SCENARIOS[scenario] || scenario;
+            return `Mean SST (${windowLabel}), ${scenarioLabel} — ${statLabel}`;
+        }
+
+        function getEnvQdmExample() {
+            const qdmRoot = methodsEnvData?.qdm;
+            if (!qdmRoot) return null;
+            if (qdmRoot.examples) {
+                const select = document.getElementById('env-qdm-location');
+                const locId = select?.value || qdmRoot.metadata?.default_loc_id;
+                return qdmRoot.examples[locId] || Object.values(qdmRoot.examples)[0] || null;
+            }
+            if (qdmRoot.annual) return qdmRoot;
+            return null;
+        }
+
+        function populateQdmExampleSelect() {
+            const select = document.getElementById('env-qdm-location');
+            const qdmRoot = methodsEnvData?.qdm;
+            if (!select || !qdmRoot?.example_list?.length) return;
+
+            const current = select.value;
+            select.innerHTML = qdmRoot.example_list.map((ex) =>
+                `<option value="${ex.loc_id}">${ex.label}</option>`
+            ).join('');
+            const defaultId = qdmRoot.metadata?.default_loc_id;
+            const hasCurrent = current && qdmRoot.example_list.some((ex) => ex.loc_id === current);
+            select.value = hasCurrent ? current : (defaultId || qdmRoot.example_list[0].loc_id);
+        }
+
+        function getEnvMetricsByGroup(group) {
+            const meta = methodsEnvData?.locations?.metadata?.metrics || {};
+            const entries = Object.entries(meta).filter(([, info]) => info.group === group);
+            const sorted = entries.map(([key, info]) => ({ key, ...info }));
+            sorted.sort((a, b) => (a.label || a.key).localeCompare(b.label || b.key));
+            return sorted;
+        }
+
+        function populateEnvMetricSelects() {
+            Object.entries(ENV_MAP_TARGETS).forEach(([group, { selectId }]) => {
+                if (!selectId) return;
+                const select = document.getElementById(selectId);
+                if (!select) return;
+                const metrics = getEnvMetricsByGroup(group);
+                if (!metrics.length) return;
+
+                const current = select.value;
+                select.innerHTML = metrics.map((m) =>
+                    `<option value="${m.key}">${m.label}</option>`
+                ).join('');
+                const hasCurrent = current && metrics.some((m) => m.key === current);
+                select.value = hasCurrent ? current : metrics[0].key;
+            });
+        }
+
+        function renderEnvMetricMap(group) {
+            const target = ENV_MAP_TARGETS[group];
+            if (!target || !methodsEnvData?.locations) return;
+
+            const chartEl = document.getElementById(target.chartId);
+            if (!chartEl) return;
+
+            let metricKey;
+            let metricMeta;
+            if (group === 'forecast') {
+                metricKey = getEnvForecastMetricKey();
+                metricMeta = methodsEnvData.locations.metadata?.metrics?.[metricKey] || {
+                    label: getEnvForecastMetricLabel(),
+                    unit: '°C',
+                };
+            } else {
+                const select = document.getElementById(target.selectId);
+                if (!select) return;
+                metricKey = select.value || getEnvMetricsByGroup(group)[0]?.key;
+                if (!metricKey) return;
+                metricMeta = methodsEnvData.locations.metadata?.metrics?.[metricKey] || {};
+            }
+            const { lat, lon, metrics } = methodsEnvData.locations;
+            const values = metrics[metricKey] || [];
+            const filtered = lat.map((la, i) => ({
+                lat: la,
+                lon: lon[i],
+                value: values[i],
+            })).filter((row) => row.lat != null && row.lon != null && Number.isFinite(row.value));
+
+            const useLog = group === 'turbidity' || metricMeta.log_scale === 'true';
+            const colorscale = ENV_COLORSCALES[group] || 'Viridis';
+            const colorValues = filtered.map((r) => (
+                useLog ? Math.max(r.value, 1e-4) : r.value
+            ));
+
+            const plotFn = chartEl.data ? Plotly.react : Plotly.newPlot;
+            plotFn(target.chartId, [{
+                type: 'scattergeo',
+                lat: filtered.map((r) => r.lat),
+                lon: filtered.map((r) => r.lon),
+                marker: {
+                    size: 5,
+                    opacity: 0.75,
+                    color: colorValues,
+                    coloraxis: 'coloraxis',
+                },
+                hovertemplate:
+                    `lat: %{lat:.2f}°<br>lon: %{lon:.2f}°<br>${metricMeta.label || metricKey}: %{customdata:.4f}${metricMeta.unit ? ` ${metricMeta.unit}` : ''}<extra></extra>`,
+                customdata: filtered.map((r) => r.value),
+            }], methodsEnvGeoLayout(metricMeta.label || metricKey, { logScale: useLog, colorscale }), { responsive: true });
+        }
+
+        function renderEnvQdmCharts() {
+            const qdm = getEnvQdmExample();
+            if (!qdm?.annual) return;
+
+            const meta = qdm.metadata || {};
+            const subtitle = document.getElementById('env-qdm-subtitle');
+            if (subtitle) {
+                subtitle.innerHTML =
+                    `Example reef <strong>${meta.loc_id || ''}</strong> ` +
+                    `(${meta.lat?.toFixed?.(2) ?? meta.lat}°, ${meta.lon?.toFixed?.(2) ?? meta.lon}°). ` +
+                    `Raw historic → QDM forecast jump: <strong>${meta.jump_raw_to_qdm_forecast_c ?? '—'} °C</strong>; ` +
+                    `after quantile mapping: <strong>${meta.jump_mapped_to_forecast_c ?? '—'} °C</strong>; ` +
+                    `stitched series: <strong>${meta.jump_continuous_c ?? '—'} °C</strong>.`;
+            }
+
+            const refShape = [{
+                type: 'rect',
+                xref: 'x',
+                yref: 'paper',
+                x0: 1985,
+                x1: 2014,
+                y0: 0,
+                y1: 1,
+                fillcolor: 'rgba(148, 163, 184, 0.12)',
+                line: { width: 0 },
+                layer: 'below',
+            }, {
+                type: 'line',
+                xref: 'x',
+                yref: 'paper',
+                x0: 2015,
+                x1: 2015,
+                y0: 0,
+                y1: 1,
+                line: { color: '#64748b', width: 1, dash: 'dash' },
+            }];
+
+            const annualEl = document.getElementById('env-qdm-annual');
+            if (annualEl) {
+                const plotFn = annualEl.data ? Plotly.react : Plotly.newPlot;
+                plotFn('env-qdm-annual', [
+                    {
+                        x: qdm.annual.year,
+                        y: qdm.annual.raw_cmip_c,
+                        name: 'Raw CMIP historic',
+                        mode: 'lines',
+                        opacity: 0.45,
+                        line: { color: '#3b82f6', width: 0.8, dash: 'dot' },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.annual.year,
+                        y: qdm.annual.qm_mapped_historic_c,
+                        name: 'QM-mapped historic',
+                        mode: 'lines',
+                        line: { color: '#E3B710', width: 1.2 },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.annual.year,
+                        y: qdm.annual.qdm_historic_c,
+                        name: 'QDM historic',
+                        mode: 'lines',
+                        line: { color: '#94a3b8', width: 1, dash: 'dash' },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.annual.year,
+                        y: qdm.annual.qdm_forecast_c,
+                        name: `QDM forecast (${meta.scenario || 'ssp370'})`,
+                        mode: 'lines',
+                        line: { color: '#F11B00', width: 1.2 },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.annual.year,
+                        y: qdm.annual.continuous_c,
+                        name: 'Stitched continuous',
+                        mode: 'lines',
+                        line: { color: valueTypeColor('tourism'), width: 1.6 },
+                        connectgaps: false,
+                    },
+                ], methodsEnvPlotLayout({
+                    height: 340,
+                    xaxis: { gridcolor: '#334155', title: 'Year', range: [1978, 2057] },
+                    yaxis: { gridcolor: '#334155', title: 'SST (°C)' },
+                    legend: { orientation: 'h', y: -0.28, font: { size: 10 } },
+                    margin: { t: 16, r: 16, b: 72, l: 52 },
+                    shapes: refShape,
+                    annotations: [{
+                        x: 1999.5,
+                        y: 1.03,
+                        yref: 'paper',
+                        text: 'QDM calibration',
+                        showarrow: false,
+                        font: { size: 10, color: '#94a3b8' },
+                    }],
+                }), { responsive: true });
+            }
+
+            const boundaryEl = document.getElementById('env-qdm-boundary');
+            if (boundaryEl && qdm.boundary_zoom) {
+                const plotFn = boundaryEl.data ? Plotly.react : Plotly.newPlot;
+                plotFn('env-qdm-boundary', [
+                    {
+                        x: qdm.boundary_zoom.time,
+                        y: qdm.boundary_zoom.raw_cmip_c,
+                        name: 'Raw CMIP',
+                        mode: 'lines',
+                        opacity: 0.45,
+                        line: { color: '#3b82f6', width: 0.8, dash: 'dot' },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.boundary_zoom.time,
+                        y: qdm.boundary_zoom.qm_mapped_historic_c,
+                        name: 'QM-mapped historic',
+                        mode: 'lines',
+                        line: { color: '#E3B710', width: 1.2 },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.boundary_zoom.time,
+                        y: qdm.boundary_zoom.qdm_historic_c,
+                        name: 'QDM historic',
+                        mode: 'lines',
+                        line: { color: '#94a3b8', width: 1, dash: 'dash' },
+                        connectgaps: false,
+                    },
+                    {
+                        x: qdm.boundary_zoom.time,
+                        y: qdm.boundary_zoom.qdm_forecast_c,
+                        name: 'QDM forecast',
+                        mode: 'lines',
+                        line: { color: '#F11B00', width: 1.2 },
+                        connectgaps: false,
+                    },
+                ], methodsEnvPlotLayout({
+                    height: 340,
+                    xaxis: { gridcolor: '#334155', title: 'Month' },
+                    yaxis: { gridcolor: '#334155', title: 'SST (°C)' },
+                    legend: { orientation: 'h', y: -0.28, font: { size: 10 } },
+                    margin: { t: 16, r: 16, b: 72, l: 52 },
+                    shapes: [{
+                        type: 'rect',
+                        xref: 'x',
+                        yref: 'paper',
+                        x0: '2010-01',
+                        x1: '2014-12',
+                        y0: 0,
+                        y1: 1,
+                        fillcolor: 'rgba(148, 163, 184, 0.12)',
+                        line: { width: 0 },
+                        layer: 'below',
+                    }, {
+                        type: 'line',
+                        x0: '2015-01',
+                        x1: '2015-01',
+                        y0: 0,
+                        y1: 1,
+                        yref: 'paper',
+                        line: { color: '#64748b', width: 1, dash: 'dash' },
+                    }],
+                }), { responsive: true });
+            }
+        }
+
+        function renderEnvCycloneChart() {
+            const cyclone = methodsEnvData?.cyclone;
+            const locations = methodsEnvData?.locations;
+            const chartEl = document.getElementById('env-cyclone-chart');
+            if (!cyclone || !chartEl) return;
+
+            const traces = [{
+                type: 'scattergeo',
+                lat: cyclone.lat,
+                lon: cyclone.lon,
+                marker: {
+                    size: 3,
+                    opacity: 0.35,
+                    color: cyclone.value,
+                    colorscale: ENV_COLORSCALES.cyclone,
+                    coloraxis: 'coloraxis',
+                    cmin: 0,
+                },
+                name: 'Cyclone frequency grid',
+                hovertemplate: 'lat: %{lat:.1f}°<br>lon: %{lon:.1f}°<br>freq: %{marker.color:.3f}<extra></extra>',
+            }];
+
+            if (locations?.lat?.length) {
+                const reefVals = locations.metrics?.cyclone_freq || [];
+                traces.push({
+                    type: 'scattergeo',
+                    lat: locations.lat,
+                    lon: locations.lon,
+                    marker: {
+                        size: 4,
+                        color: '#f8fafc',
+                        line: { color: '#0f172a', width: 0.5 },
+                        opacity: 0.85,
+                    },
+                    name: 'Reef locations',
+                    hovertemplate:
+                        'Reef<br>lat: %{lat:.2f}°<br>lon: %{lon:.2f}°<br>freq: %{customdata:.3f}<extra></extra>',
+                    customdata: reefVals,
+                });
+            }
+
+            const plotFn = chartEl.data ? Plotly.react : Plotly.newPlot;
+            plotFn('env-cyclone-chart', traces, methodsEnvGeoLayout('storms / cell / yr', { colorscale: ENV_COLORSCALES.cyclone }), { responsive: true });
+        }
+
+        function renderEnvReefcheckCharts() {
+            const rc = methodsEnvData?.reefcheck;
+            if (!rc) return;
+
+            const yearEl = document.getElementById('env-reefcheck-year-chart');
+            if (yearEl && rc.by_year?.length) {
+                const years = rc.by_year.map((r) => r.year);
+                const plotFn = yearEl.data ? Plotly.react : Plotly.newPlot;
+                plotFn('env-reefcheck-year-chart', [
+                    {
+                        x: years,
+                        y: rc.by_year.map((r) => r.n_surveys),
+                        type: 'bar',
+                        name: 'Surveys',
+                        marker: { color: valueTypeColor('tourism') },
+                    },
+                    {
+                        x: years,
+                        y: rc.by_year.map((r) => r.n_sites),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: 'Unique sites',
+                        yaxis: 'y2',
+                        line: { color: '#eab308', width: 2 },
+                        marker: { size: 5 },
+                    },
+                ], methodsEnvPlotLayout({
+                    barmode: 'overlay',
+                    xaxis: { gridcolor: '#334155', title: 'Year', dtick: 5 },
+                    yaxis: { gridcolor: '#334155', title: 'Surveys', rangemode: 'tozero' },
+                    yaxis2: {
+                        title: 'Unique sites',
+                        overlaying: 'y',
+                        side: 'right',
+                        gridcolor: 'rgba(51,65,85,0.3)',
+                        rangemode: 'tozero',
+                    },
+                    legend: { orientation: 'h', y: -0.18 },
+                    margin: { t: 16, r: 55, b: 50, l: 50 },
+                }), { responsive: true });
+            }
+
+            const mapEl = document.getElementById('env-reefcheck-map');
+            if (mapEl && rc.points?.lat?.length) {
+                const plotFn = mapEl.data ? Plotly.react : Plotly.newPlot;
+                plotFn('env-reefcheck-map', [{
+                    type: 'scattergeo',
+                    lat: rc.points.lat,
+                    lon: rc.points.lon,
+                    marker: {
+                        size: 3,
+                        color: rc.points.year,
+                        colorscale: ENV_COLORSCALES.reefcheck,
+                        coloraxis: 'coloraxis',
+                        opacity: 0.55,
+                        cmin: rc.metadata?.year_min,
+                        cmax: rc.metadata?.year_max,
+                    },
+                    hovertemplate: 'lat: %{lat:.2f}°<br>lon: %{lon:.2f}°<br>year: %{marker.color}<extra></extra>',
+                }], methodsEnvGeoLayout('Survey year', { colorscale: ENV_COLORSCALES.reefcheck }), { responsive: true });
+            }
+        }
+
+        function bindEnvMetricControls() {
+            document.querySelectorAll('.env-metric-select').forEach((select) => {
+                if (select.dataset.bound === '1') return;
+                select.dataset.bound = '1';
+                select.addEventListener('change', () => {
+                    const group = select.dataset.envGroup;
+                    if (group) renderEnvMetricMap(group);
+                });
+            });
+
+            const scenarioSelect = document.getElementById('env-scenario-forecast');
+            if (scenarioSelect && scenarioSelect.dataset.bound !== '1') {
+                scenarioSelect.dataset.bound = '1';
+                scenarioSelect.addEventListener('change', () => renderEnvMetricMap('forecast'));
+            }
+
+            document.querySelectorAll('.env-forecast-control').forEach((select) => {
+                if (select.id === 'env-scenario-forecast' || select.dataset.bound === '1') return;
+                select.dataset.bound = '1';
+                select.addEventListener('change', () => renderEnvMetricMap('forecast'));
+            });
+
+            const qdmSelect = document.getElementById('env-qdm-location');
+            if (qdmSelect && qdmSelect.dataset.bound !== '1') {
+                qdmSelect.dataset.bound = '1';
+                qdmSelect.addEventListener('change', () => renderEnvQdmCharts());
+            }
+        }
+
+        function renderMethodsEnvVisualizations() {
+            if (!methodsEnvData?.locations && !methodsEnvData?.reefcheck) return;
+
+            const countEls = document.querySelectorAll('.env-locations-count');
+            if (countEls.length && methodsEnvData?.locations) {
+                const n = String(methodsEnvData.locations.metadata?.n_locations ?? '—');
+                countEls.forEach((el) => { el.textContent = n; });
+            }
+
+            if (methodsEnvData?.locations) {
+                populateEnvMetricSelects();
+                Object.keys(ENV_MAP_TARGETS).forEach(renderEnvMetricMap);
+                populateQdmExampleSelect();
+                renderEnvQdmCharts();
+                renderEnvCycloneChart();
+            }
+            renderEnvReefcheckCharts();
+            bindEnvMetricControls();
         }
         
         // ============================================================
@@ -2290,7 +3474,7 @@
             }
             
             const scenario = document.getElementById('map-scenario').value;
-            const model = document.getElementById('map-model').value;
+            const model = mapModelToCountryModel(document.getElementById('map-model').value);
             const selectedValueTypes = getMapSelectedValueTypes();
             
             if (!scenario || !model) {
@@ -2311,15 +3495,6 @@
                 scenarioKey = `cumulative_${rcp}_${year}`;
             }
             
-            // Sanitize model name to match export format
-            const sanitizeModelName = (name) => {
-                return name.replace(/\s+/g, '_')
-                    .replace(/\//g, '_')
-                    .replace(/%/g, 'pct')
-                    .replace(/[()]/g, '');
-            };
-            
-            const sanitizedModel = sanitizeModelName(model);
             const metric = document.getElementById('map-metric').value;
             const scale = getColorScale(isCumulative, metric);
             const showChoropleth = document.getElementById('map-choropleth-toggle').checked;
@@ -2336,7 +3511,10 @@
                 return;
             }
             setMapEmptyState('');
-            const buildScenarioKey = (datasetKey) => `${datasetKey}_${scenarioKey}_${sanitizedModel}`;
+
+            // Resolve manifest scenario key (handles linear relpct vs legacy pp suffixes).
+            const buildScenarioKey = (datasetKey) =>
+                resolveScenarioDatasetKey(datasetKey, scenarioKey, model, isCumulative);
             const datasetsToLoad = selectedValueTypes;
             const scenarioDatasetKeys = datasetsToLoad.map(buildScenarioKey);
 
@@ -2358,8 +3536,11 @@
                         datasetsToLoad.map((datasetKey) =>
                             loadGriddedSiteFeatures({
                                 datasetKey,
+                                scenarioKey,
+                                model,
                                 scenarioDatasetKey: buildScenarioKey(datasetKey),
                                 griddedEntry: griddedManifest[datasetKey],
+                                isCumulative,
                             })
                         )
                     );
@@ -2373,12 +3554,14 @@
                     }
                     setMapEmptyState('');
                     console.log(`✓ Loaded ${features.length} gridded cell features`);
+                    isRendering = false;
                     renderSites({ type: 'FeatureCollection', features }, isCumulative, currentView);
                     isInitialMapLoad = false;
                     return;
                 } catch (error) {
                     console.error('Error loading gridded site data:', error);
                     setMapEmptyState('Error loading gridded map data.');
+                    isRendering = false;
                     return;
                 }
             }
@@ -2747,6 +3930,14 @@
                 html += `
                     <div class="legend-item">
                         <span class="legend-note">${statusMessage}</span>
+                    </div>`;
+            }
+
+            const mapModel = document.getElementById('map-model')?.value || '';
+            if (String(mapModel).includes('Linear')) {
+                html += `
+                    <div class="legend-item">
+                        <span class="legend-note">Fisheries linear: habitat α = ${getHabitatExportA()}</span>
                     </div>`;
             }
 
@@ -3263,28 +4454,16 @@
                 return;
             }
             
-            const model = document.getElementById('map-model').value;
+            const model = mapModelToCountryModel(document.getElementById('map-model').value);
 
             console.log('Rendering choropleth for scenario:', scenario, 'model:', model, 'isCumulative:', isCumulative, 'metric:', metric);
-            
-            // Normalize model names for matching
-            const normalizeModelName = (name) => {
-                return name.toLowerCase()
-                    .replace(/\s+/g, '_')
-                    .replace(/\//g, '_')
-                    .replace(/%/g, 'pct')
-                    .replace(/[()]/g, '')
-                    .replace(/=/g, '');
-            };
             
             // Filter country data for current scenario and model
             const filtered = dataSource.filter(c => {
                 const cScenario = c.scenario.toLowerCase();
                 const targetScenario = scenario.toLowerCase();
-                const cModel = normalizeModelName(c.model);
-                const targetModel = normalizeModelName(model);
                 const scenarioMatch = cScenario === targetScenario;
-                const modelMatch = cModel === targetModel;
+                const modelMatch = c.model === model;
                 const valueTypeMatch = selectedValueTypes.includes(c.value_type);
                 return scenarioMatch && modelMatch && valueTypeMatch;
             });
