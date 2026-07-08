@@ -1371,9 +1371,9 @@
                 </div>
                 <div class="summary-row summary-row-bottom">
                     <div class="stat-card">
-                        <div class="stat-label">Worst-Case Aggregate Annual Loss</div>
+                        <div class="stat-label">Worst-Case End-point Loss</div>
                         <div class="stat-value loss">-${formatBillions(worstAnnualLoss)}</div>
-                        <div class="stat-detail">Summed across all three datasets</div>
+                        <div class="stat-detail">Value lost by 2100 under worst-case emissions and depreciation scenario</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Worst-Case Aggregate Cumulative Loss</div>
@@ -1386,10 +1386,18 @@
             document.getElementById('summary-stats').innerHTML = html;
         }
         
+        function scenarioComparisonModelTag(modelKey) {
+            if (modelKey === 'Tipping Point') return 'Tipping';
+            return modelKey;
+        }
+
         function renderScenarioComparison() {
             if (!summaryData) return;
             const selectedValueTypes = getScenarioComparisonValueTypes();
-            if (selectedValueTypes.length === 0) {
+            const stackOrder = ['tourism', 'fisheries', 'coastal_protection'];
+            const orderedValueTypes = stackOrder.filter((vt) => selectedValueTypes.includes(vt));
+
+            if (orderedValueTypes.length === 0) {
                 Plotly.newPlot(
                     'scenario-comparison-chart',
                     [],
@@ -1418,7 +1426,7 @@
             }
 
             const results = (summaryData.snapshot_results || [])
-                .filter((r) => selectedValueTypes.includes(r.value_type));
+                .filter((r) => orderedValueTypes.includes(r.value_type));
             if (!results.length) return;
 
             const formatScenario = (s) => {
@@ -1429,40 +1437,87 @@
                 return s.replace('y_future_', '').replace(/_/g, ' ').toUpperCase();
             };
 
-            const habitatA = getHabitatExportA();
             const scenarios = sortScenarios([...new Set(results.map((r) => r.scenario))]);
             const models = sortModels([...new Set(results.map((r) => r.model))]);
+            const scenarioLabels = scenarios.map((scenario) => formatScenario(scenario));
 
-            // Repeat scenario label once per model so Plotly groups bars side-by-side.
-            const xCategories = scenarios.flatMap((scenario) =>
-                models.map(() => formatScenario(scenario))
-            );
-            const modelLabels = scenarios.flatMap(() =>
-                models.map((model) => shortModelLabel(model))
-            );
+            const getLoss = (scenario, model, valueType) => {
+                const row = results.find(
+                    (r) =>
+                        r.scenario === scenario &&
+                        r.model === model &&
+                        r.value_type === valueType
+                );
+                return row ? Number(row.total_loss_billions || 0) : 0;
+            };
 
-            const traces = selectedValueTypes.map((valueType) => ({
-                x: xCategories,
-                y: scenarios.flatMap((scenario) =>
-                    models.map((model) => {
-                        const row = results.find(
-                            (r) =>
-                                r.scenario === scenario &&
-                                r.model === model &&
-                                r.value_type === valueType
-                        );
-                        return row ? Number(row.total_loss_billions || 0) : 0;
-                    })
-                ),
-                customdata: modelLabels,
+            const barWidth = 0.25;
+            const intraGap = 0.04;
+            const clusterGap = 0.55;
+            const clusterInnerWidth = models.length * barWidth + (models.length - 1) * intraGap;
+            const clusterStride = clusterInnerWidth + clusterGap;
+            const barX = (index) => {
+                const clusterIndex = Math.floor(index / models.length);
+                const positionInCluster = index % models.length;
+                const clusterStart = clusterIndex * clusterStride;
+                return clusterStart + positionInCluster * (barWidth + intraGap);
+            };
+
+            const barSlots = scenarios.flatMap((scenario) =>
+                models.map((model) => ({
+                    scenario,
+                    model,
+                    modelKey: shortModelLabel(model),
+                }))
+            );
+            const xValues = barSlots.map((_, index) => barX(index));
+            const clusterCenters = scenarios.map(
+                (_, scenarioIndex) => scenarioIndex * clusterStride + clusterInnerWidth / 2
+            );
+            const xMax = (scenarios.length - 1) * clusterStride + clusterInnerWidth - intraGap;
+
+            const traces = orderedValueTypes.map((valueType) => ({
+                x: xValues,
+                y: barSlots.map((slot) => getLoss(slot.scenario, slot.model, valueType)),
+                width: barWidth,
+                customdata: barSlots.map((slot) => ({
+                    scenario: formatScenario(slot.scenario),
+                    model: slot.modelKey,
+                    dataset: formatValueType(valueType),
+                })),
                 name: formatValueType(valueType),
                 type: 'bar',
                 hovertemplate:
-                    '%{x}<br>' +
-                    'Model: %{customdata}<br>' +
-                    'Dataset: %{fullData.name}<br>' +
+                    '%{customdata.scenario}<br>' +
+                    'Model: %{customdata.model}<br>' +
+                    'Dataset: %{customdata.dataset}<br>' +
                     'Annual loss: $%{y:.1f}B<extra></extra>',
-                marker: { color: valueTypeColor(valueType) },
+                marker: {
+                    color: valueTypeColor(valueType),
+                    line: { width: 0 },
+                },
+            }));
+
+            const modelLabelAnnotations = barSlots.map((slot, index) => ({
+                x: xValues[index],
+                y: -0.05,
+                xref: 'x',
+                yref: 'paper',
+                text: scenarioComparisonModelTag(slot.modelKey),
+                showarrow: false,
+                yanchor: 'top',
+                font: { size: 10, color: '#94a3b8' },
+            }));
+
+            const scenarioLabelAnnotations = scenarios.map((scenario, scenarioIndex) => ({
+                x: clusterCenters[scenarioIndex],
+                y: -0.13,
+                xref: 'x',
+                yref: 'paper',
+                text: scenarioLabels[scenarioIndex],
+                showarrow: false,
+                yanchor: 'top',
+                font: { size: 12, color: '#cbd5e1' },
             }));
 
             const layout = {
@@ -1473,10 +1528,12 @@
                 hoverlabel: { namelength: -1 },
                 xaxis: {
                     gridcolor: '#334155',
-                    title: 'Climate scenario',
-                    tickmode: 'array',
-                    tickvals: scenarios.map((_, si) => si * models.length + Math.floor(models.length / 2)),
-                    ticktext: scenarios.map((scenario) => formatScenario(scenario)),
+                    title: {
+                        text: 'Climate scenario',
+                        standoff: 42,
+                    },
+                    showticklabels: false,
+                    range: [-barWidth * 0.5, xMax + barWidth * 0.5],
                 },
                 yaxis: {
                     gridcolor: '#334155',
@@ -1484,11 +1541,13 @@
                 },
                 legend: {
                     orientation: 'h',
-                    y: -0.18,
+                    x: 0.5,
+                    xanchor: 'center',
+                    y: -0.34,
                     font: { size: 12 },
                 },
-                bargap: 0.15,
-                margin: { t: 20, r: 20, b: 90, l: 60 },
+                annotations: [...modelLabelAnnotations, ...scenarioLabelAnnotations],
+                margin: { t: 20, r: 20, b: 132, l: 60 },
             };
 
             Plotly.newPlot('scenario-comparison-chart', traces, layout, { responsive: true });
