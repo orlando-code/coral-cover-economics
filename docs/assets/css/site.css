@@ -3,10 +3,10 @@
             --bg-secondary: #111827;
             --bg-card: #1a2332;
             --bg-card-hover: #1f2937;
-            --accent-blue: #3A9AB2;
-            --accent-coral: #E3B710;
+            --accent-blue: var(--dataset-tourism, #3A9AB2);
+            --accent-coral: var(--model-linear, #E3B710);
             --accent-teal: #14b8a6;
-            --accent-red: #F11B00;
+            --accent-red: var(--model-compound, #F11B00);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
@@ -585,8 +585,12 @@
             color: var(--text-secondary);
         }
 
-        /* Models page */
-        .model-charts-row {
+        /* Models page (embedded in Methods) */
+            .methods-toc-list {
+                columns: 1;
+            }
+
+            .model-charts-row {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
@@ -621,6 +625,53 @@
             font-size: 0.9rem;
             color: var(--text-primary);
             font-variant-numeric: tabular-nums;
+        }
+
+        .chart-model-key {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .model-key-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .model-key-item::before {
+            content: '';
+            width: 0.65rem;
+            height: 0.65rem;
+            border-radius: 2px;
+            background: var(--key-color, var(--text-muted));
+        }
+
+        .model-key-hint {
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        .habitat-alpha-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid color-mix(in srgb, var(--dataset-fisheries) 45%, var(--border));
+            background: color-mix(in srgb, var(--dataset-fisheries) 12%, transparent);
+            color: var(--dataset-fisheries);
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        #map-habitat-alpha-wrap.is-hidden {
+            display: none;
         }
 
         .model-descriptions-panel {
@@ -686,6 +737,245 @@
 
         .model-notes-list li {
             margin-bottom: 0.3rem;
+        }
+
+        /* Methods page */
+        .methods-page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        .methods-hero {
+            text-align: center;
+            padding: 1rem 0 2rem;
+        }
+
+        .methods-hero h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .methods-hero p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 720px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* 1em gap between consecutive paragraphs (methods prose) */
+        .methods-page p + p {
+            margin-top: 1em;
+        }
+
+        .method-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .method-box h2 {
+            font-size: 1.35rem;
+            margin-bottom: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .method-box h3 {
+            font-size: 1.05rem;
+            margin: 1.25rem 0 0.5rem;
+            color: var(--accent-teal);
+        }
+
+        .method-box h4 {
+            font-size: 0.95rem;
+            margin: 1em 0 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        #methods-coral-cover p,
+        #methods-coral-cover li,
+        #methods-coral-cover .chart-subtitle,
+        #methods-coral-cover .methods-env-embed .chart-title {
+            color: var(--text-secondary);
+        }
+
+        #methods-coral-cover strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .method-box p,
+        .method-box li {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .method-box p + p,
+        .method-box p + ul,
+        .method-box p + ol,
+        .method-box ul + p,
+        .method-box ol + p {
+            margin-top: 1em;
+        }
+
+        .method-box ul,
+        .method-box ol {
+            margin: 0.5rem 0 0.75rem 1.25rem;
+        }
+
+        .method-box code {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 0.85em;
+            background: var(--bg-secondary);
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+        }
+
+        .method-box-wide {
+            max-width: 100%;
+        }
+
+        .methods-toc {
+            position: sticky;
+            top: 76px;
+            z-index: 10;
+            margin-bottom: 1.5rem;
+        }
+
+        .methods-toc-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .methods-toc-list {
+            margin: 0;
+            padding-left: 1.25rem;
+            columns: 2;
+            column-gap: 2rem;
+        }
+
+        .methods-toc-list li {
+            margin-bottom: 0.35rem;
+            break-inside: avoid;
+        }
+
+        .methods-toc-list a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+
+        .methods-toc-list a:hover {
+            color: var(--accent-teal);
+            text-decoration: underline;
+        }
+
+        .methods-page a:not(.nav-link) {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .methods-page a:not(.nav-link):hover {
+            color: var(--accent-teal);
+            text-decoration: underline;
+        }
+
+        .methods-sector-embed.chart-section,
+        .methods-models-embed.chart-section,
+        .methods-env-embed.chart-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+            margin-top: 1.25rem;
+        }
+
+        .env-map-panel {
+            height: 380px;
+            min-height: 320px;
+        }
+
+        .env-qdm-row,
+        .env-reefcheck-stack {
+            display: grid;
+            gap: 1.25rem;
+        }
+
+        .env-reefcheck-stack {
+            justify-items: center;
+        }
+
+        .env-reefcheck-panel {
+            width: 100%;
+            max-width: 880px;
+            text-align: center;
+        }
+
+        .env-reefcheck-panel .chart-subtitle {
+            margin-bottom: 0.75rem;
+        }
+
+        .env-reefcheck-panel .env-map-panel {
+            max-width: 880px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 960px) {
+            .env-qdm-row {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+        }
+
+        #env-qdm-annual,
+        #env-qdm-boundary {
+            height: 340px;
+        }
+
+        #env-reefcheck-year-chart {
+            height: 340px;
+        }
+
+        .methods-equation {
+            text-align: center;
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        .methods-model-summary {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .methods-dl {
+            display: grid;
+            gap: 0.75rem 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .methods-dl dt {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .methods-dl dd {
+            margin: 0.15rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            line-height: 1.5;
         }
         
         /* Responsive */

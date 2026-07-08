@@ -134,5 +134,11 @@
     "tourism_cumulative_rcp85_2100_Linear_3.81pct_relpct",
     "tourism_cumulative_rcp85_2100_Tipping_Point_threshold=10pct"
   ],
-  "cell_resolution_deg": 0.1
+  "cell_resolution_deg": 0.1,
+  "methods_env": {
+    "locations": "methods_env_locations.json",
+    "qdm": "methods_env_qdm.json",
+    "cyclone_grid": "methods_env_cyclone_grid.json",
+    "reefcheck": "methods_env_reefcheck.json"
+  }
 }
