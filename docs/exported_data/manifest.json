@@ -4,8 +4,8 @@
       "grid_file": "sites_grid_tourism.json",
       "metrics_file": "sites_metrics_annual_tourism.json",
       "geom_type": "polygon",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 17768,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3497,
       "n_sites_raw": 63180,
       "n_scenarios": 12
     },
@@ -13,8 +13,8 @@
       "grid_file": "sites_grid_fisheries.json",
       "metrics_file": "sites_metrics_annual_fisheries.json",
       "geom_type": "grid",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 20260,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3266,
       "n_sites_raw": 810182,
       "n_scenarios": 12
     },
@@ -22,8 +22,8 @@
       "grid_file": "sites_grid_coastal_protection.json",
       "metrics_file": "sites_metrics_annual_coastal_protection.json",
       "geom_type": "grid",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 12748,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 2471,
       "n_sites_raw": 313487,
       "n_scenarios": 12
     }
@@ -72,8 +72,8 @@
       "grid_file": "sites_grid_tourism.json",
       "metrics_file": "sites_metrics_cumulative_tourism.json",
       "geom_type": "polygon",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 17768,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3497,
       "n_sites_raw": 63180,
       "n_scenarios": 12
     },
@@ -81,8 +81,8 @@
       "grid_file": "sites_grid_fisheries.json",
       "metrics_file": "sites_metrics_cumulative_fisheries.json",
       "geom_type": "grid",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 20260,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 3266,
       "n_sites_raw": 810182,
       "n_scenarios": 12
     },
@@ -90,8 +90,8 @@
       "grid_file": "sites_grid_coastal_protection.json",
       "metrics_file": "sites_metrics_cumulative_coastal_protection.json",
       "geom_type": "grid",
-      "grid_resolution_deg": 0.1,
-      "n_cells": 12748,
+      "grid_resolution_deg": 0.5,
+      "n_cells": 2471,
       "n_sites_raw": 313487,
       "n_scenarios": 12
     }
@@ -134,11 +134,12 @@
     "tourism_cumulative_rcp85_2100_Linear_3.81pct_relpct",
     "tourism_cumulative_rcp85_2100_Tipping_Point_threshold=10pct"
   ],
-  "cell_resolution_deg": 0.1,
+  "cell_resolution_deg": 0.5,
   "methods_env": {
     "locations": "methods_env_locations.json",
     "qdm": "methods_env_qdm.json",
     "cyclone_grid": "methods_env_cyclone_grid.json",
-    "reefcheck": "methods_env_reefcheck.json"
+    "reefcheck": "methods_env_reefcheck.json",
+    "cotw_ecoregions": "methods_cotw_ecoregions.json"
   }
 }

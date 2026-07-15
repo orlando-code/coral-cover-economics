@@ -38,7 +38,7 @@
             --habitat-export-a: 0.4;
         }
     </style>
-    <link rel="stylesheet" href="assets/css/site.css?v=21" />
+    <link rel="stylesheet" href="assets/css/site.css?v=22" />
 
 </head>
 <body>
@@ -87,6 +87,7 @@
                 <div class="hero">
                     <h1>Economic Impact of Coral Cover Loss</h1>
                     <p>Projected loss of the human-associated benefits of coral reefs under two climate change scenarios (RCPs 4.5 & 8.5) throughout the century via linear, compound, and ecosystem tipping point economic depreciation models.</p>
+                    <p>Note: this is a work in progress and the data is not yet finalized.</p>
                 </div>
                 
                 <div class="stats-grid" id="summary-stats">
@@ -107,12 +108,12 @@
                                     <span style="color: var(--dataset-tourism)">Tourism</span>
                                 </label>
                                 <label class="toggle-label">
-                                    <input type="checkbox" class="scenario-value-type-checkbox" value="fisheries" checked />
-                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
-                                </label>
-                                <label class="toggle-label">
                                     <input type="checkbox" class="scenario-value-type-checkbox" value="coastal_protection" checked />
                                     <span style="color: var(--dataset-coastal)">Coastal protection</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="scenario-value-type-checkbox" value="fisheries" checked />
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
                                 </label>
                             </div>
                         </div>
@@ -134,12 +135,12 @@
                                     <span style="color: var(--dataset-tourism)">Tourism</span>
                                 </label>
                                 <label class="toggle-label">
-                                    <input type="checkbox" class="overview-value-type-checkbox" value="fisheries" checked />
-                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
-                                </label>
-                                <label class="toggle-label">
                                     <input type="checkbox" class="overview-value-type-checkbox" value="coastal_protection" checked />
                                     <span style="color: var(--dataset-coastal)">Coastal protection</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="overview-value-type-checkbox" value="fisheries" checked />
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
                                 </label>
                             </div>
                             <div class="control-group">
@@ -177,12 +178,12 @@
                                     <span>Tourism</span>
                                 </label>
                                 <label class="toggle-label">
-                                    <input type="checkbox" class="map-value-type-checkbox" value="fisheries" checked />
-                                    <span>Fisheries</span>
-                                </label>
-                                <label class="toggle-label">
                                     <input type="checkbox" class="map-value-type-checkbox" value="coastal_protection" checked />
                                     <span>Coastal protection</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="map-value-type-checkbox" value="fisheries" checked />
+                                    <span>Fisheries</span>
                                 </label>
                             </div>
                             <div class="control-group">
@@ -276,12 +277,12 @@
                                     <span style="color: var(--dataset-tourism)">Tourism</span>
                                 </label>
                                 <label class="toggle-label">
-                                    <input type="checkbox" class="traj-value-type-checkbox" value="fisheries" checked />
-                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
-                                </label>
-                                <label class="toggle-label">
                                     <input type="checkbox" class="traj-value-type-checkbox" value="coastal_protection" checked />
                                     <span style="color: var(--dataset-coastal)">Coastal protection</span>
+                                </label>
+                                <label class="toggle-label">
+                                    <input type="checkbox" class="traj-value-type-checkbox" value="fisheries" checked />
+                                    <span style="color: var(--dataset-fisheries)">Fisheries</span>
                                 </label>
                             </div>
                         </div>
@@ -335,8 +336,8 @@
                                 <select id="country-value-type">
                                     <option value="all" selected>All datasets (aggregate)</option>
                                     <option value="tourism">Tourism</option>
-                                    <option value="fisheries">Fisheries</option>
                                     <option value="coastal_protection">Coastal protection</option>
+                                    <option value="fisheries">Fisheries</option>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -406,8 +407,8 @@
                                 <select id="gdp-value-type">
                                     <option value="all" selected>All datasets (aggregate)</option>
                                     <option value="tourism">Tourism</option>
-                                    <option value="fisheries">Fisheries</option>
                                     <option value="coastal_protection">Coastal protection</option>
+                                    <option value="fisheries">Fisheries</option>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -464,7 +465,7 @@
                     <header class="methods-hero">
                         <h1>Methods</h1>
                         <p>
-                            Coral reefs are being rapidly degraded under climate change. This project estimates the impact of coral cover declines on economic benefits of nature associated with coral reefs attributable to tourism, fisheries, and coastal protection.
+                            Coral reefs are being rapidly degraded under climate change. This project estimates the impact of coral cover declines on economic benefits of nature associated with coral reefs attributable to tourism, coastal protection, and fisheries.
                         </p>
                         <p>
                             This page documents data and methodologies employed in the impact accounting throughout the dashboard.
@@ -475,6 +476,7 @@
 
                     </header>
 
+                    <div class="methods-layout">
                     <nav class="methods-toc method-box" aria-label="Table of contents">
                         <h2 class="methods-toc-title">Contents</h2>
                         <ol class="methods-toc-list">
@@ -497,7 +499,7 @@
                             </p>
                             <ol>
                                 <li><strong>Project coral cover</strong> at sites across the world under RCP 4.5 and RCP 8.5 for 2050 and 2100.</li>
-                                <li><strong>Assign baseline economic value</strong> to each reef site or country for tourism, fisheries, and coastal protection.</li>
+                                <li><strong>Assign baseline economic value</strong> to each reef site or country for tourism, coastal protection, and fisheries.</li>
                                 <li><strong>Align</strong> projections of coral cover to economics of local reefs via nearest-neighbour matching in geographic space.</li>
                                 <li><strong>Apply sector-specific depreciation models</strong> to compute remaining value, annual loss, and cumulative opportunity cost.</li>
                             </ol>
@@ -541,6 +543,27 @@
                             <p>
                                 Coral cover trajectories between 2013 and each scenario endpoint (2050, 2100) are linearly and exponentially interpolated for for cumulative loss calculations, although this makes minimal difference to the resulting values.
                             </p>
+
+                            <p>
+                                Ecoregion-level random effects in the hierarchical model are informed by species richness from the Coral Reefs of the World (COTW) ecoregion classification. Each monitoring site is assigned to a COTW polygon; total scleractinian species counts per ecoregion are z-scored and included as a predictor of ecoregion intercepts (<code>diversity.standardized</code> in the model).
+                            </p>
+                            <div class="methods-subsection chart-section methods-env-embed">
+                                <div class="chart-header">
+                                    <div>
+                                        <p class="chart-subtitle">COTW ecoregion polygons coloured by diversity statistics (<span class="env-cotw-match-count">—</span> of <span class="env-cotw-polygon-count">—</span> polygons matched to species data).</p>
+                                    </div>
+                                    <div class="controls">
+                                        <div class="control-group">
+                                            <label class="control-label" for="env-cotw-diversity-metric">Colour by:</label>
+                                            <select id="env-cotw-diversity-metric" class="env-cotw-metric-select">
+                                                <option value="total_species_number" selected>Total species count</option>
+                                                <option value="diversity_standardized">Standardized species richness (z-score)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="env-cotw-diversity-map" class="env-map-panel env-cotw-map-panel"></div>
+                            </div>
 
                             <h3>Environmental covariates</h3>
                             <p>
@@ -698,7 +721,7 @@
                         <article id="methods-economic-data" class="method-box">
                             <h2>3. Economic value datasets</h2>
                             <p>
-                                The many economic benefits to humans which reefs provide can be divided broadly into three categories: on-reef and reef-adjacent tourism, income/value from reef-sustained fisheries, and infrastructure protected from extreme weather by reef structures.
+                                The many economic benefits to humans which reefs provide can be divided broadly into three categories: on-reef and reef-adjacent tourism, infrastructure protected from extreme weather by reef structures, and income/value from reef-sustained fisheries.
                             </p>
                             <p>
                                 The value and depdence on coral cover of each category is calculated independently before being aggregated by country:
@@ -709,6 +732,11 @@
                                 Reef tourism value is derived from spatially distributed willingness-to-pay /
                                 trip expenditure surfaces estimated by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X17300635" target="_blank" rel="noopener noreferrer">Spalding et al. (2017)</a>. Values are expressed in USD per year at each reef site.
                             
+                            </p>
+
+                            <h3>Coastal protection</h3>
+                            <p>
+                                Reef structures provide protection for livelihoods and infrastructure along the coasts by dissipating wave energy. The financial value of infrastructure protected is taken from estimates by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X2200358X" target="_blank" rel="noopener noreferrer"></a>Burke and Spalding (2022)</a>. The spatial distribution of this value is taken from the accompanying dataset (provided by <a href="https://maps.oceanwealth.org/#/coastal" target="_blank" rel="noopener noreferrer"></a>Ocean Wealth</a>) and is expressed as USD spared per coastal grid cell.
                             </p>
 
                             <h3>Fisheries</h3>
@@ -726,11 +754,7 @@
                                 For each country, the baseline fishery value is the average of the most recent decade for which data is available (2010-2019). The value of fisheries displayed on the <a class="nav-link" data-page="map" href="/map">Map</a>shows a 0.1&deg; raster of this value modified by the spatial in coral cover and weighted by the estimated fishing intensity from a <a href="https://oceanwealth.org/wp-content/uploads/2025/05/Spalding-et-al-Global-Reef-Fisheries-Final-Report.pdf" target="_blank" rel="noopener noreferrer">2021 Ocean Wealth report</a>.
                             </p>
                                 
-                            <h3>Coastal protection</h3>
-                            <p>
-                                Reef structures provide protection for livelihoods and infrastructure along the coasts by dissipating wave energy. The financial value of infrastructure protected is taken from estimates by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X2200358X" target="_blank" rel="noopener noreferrer"></a>Burke and Spalding (2022)</a>. The spatial distribution of this value is taken from the accompanying dataset (provided by <a href="https://maps.oceanwealth.org/#/coastal" target="_blank" rel="noopener noreferrer"></a>Ocean Wealth</a>) and is expressed as USD spared per coastal grid cell.
-                            </p>
-                        </article>
+                            </article>
 
                         <article id="methods-alignment" class="method-box">
                             <h2>4. Spatial alignment</h2>
@@ -790,6 +814,38 @@
                             <div class="methods-subsection chart-section methods-sector-embed">
                                 <div class="chart-header">
                                     <div>
+                                        <h3 class="chart-title">Coastal protection — cover-proportional loss</h3>
+                                        <p class="chart-subtitle">
+                                            Coastal protection value is assumed to scale <strong>1:1 with live coral cover</strong>: at each site, the full baseline value is retained when cover equals the site baseline, and protection (and value) falls linearly to zero when cover reaches zero:
+                                        </p>
+                                        <p class="chart-subtitle methods-equation">
+                                            <em>V</em><sub>remaining</sub> = <em>V</em><sub>0</sub> &times;
+                                            <span style="display:inline-block; vertical-align:middle;">&thinsp;
+                                                <span style="display:inline-block; text-align:center;">
+                                                    <span style="border-bottom:1px solid #666; display:inline-block; min-width:2.1em;">
+                                                        <em>C</em><sub>final</sub>
+                                                    </span><br>
+                                                    <span>
+                                                        <em>C</em><sub>baseline</sub>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </p>
+                                        <p class="chart-subtitle">
+                                            This is a simple structural assumption that reef-mediated flood protection is proportional to remaining coral cover.
+                                        </p>
+                                        <p>
+                                            N.B. the graph below uses the same (adjustable) <em>C</em><sub>0</sub> as the slider in the tourism panel above (<span id="coastal-c0-text"></span>%). 
+                                       
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="coastal-model-chart" style="height: 320px;"></div>
+                            </div>
+
+                            <div class="methods-subsection chart-section methods-sector-embed">
+                                <div class="chart-header">
+                                    <div>
                                         <h3 class="chart-title">Fisheries — habitat quality model</h3>
                                         <p class="chart-subtitle">
                                             Fisheries value scales with coral cover via a habitat-quality multiplier on Sea Around Us country baselines:
@@ -827,38 +883,6 @@
                                 <div id="habitat-alpha-chart" style="height: 320px;"></div>
                             </div>
 
-                            <div class="methods-subsection chart-section methods-sector-embed">
-                                <div class="chart-header">
-                                    <div>
-                                        <h3 class="chart-title">Coastal protection — cover-proportional loss</h3>
-                                        <p class="chart-subtitle">
-                                            Coastal protection value is assumed to scale <strong>1:1 with live coral cover</strong>: at each site, the full baseline value is retained when cover equals the site baseline, and protection (and value) falls linearly to zero when cover reaches zero:
-                                        </p>
-                                        <p class="chart-subtitle methods-equation">
-                                            <em>V</em><sub>remaining</sub> = <em>V</em><sub>0</sub> &times;
-                                            <span style="display:inline-block; vertical-align:middle;">&thinsp;
-                                                <span style="display:inline-block; text-align:center;">
-                                                    <span style="border-bottom:1px solid #666; display:inline-block; min-width:2.1em;">
-                                                        <em>C</em><sub>final</sub>
-                                                    </span><br>
-                                                    <span>
-                                                        <em>C</em><sub>baseline</sub>
-                                                    </span>
-                                                </span>
-                                            </span>
-                                        </p>
-                                        <p class="chart-subtitle">
-                                            This is a simple structural assumption that reef-mediated flood protection is proportional to remaining coral cover.
-                                        </p>
-                                        <p>
-                                            N.B. the graph below uses the same (adjustable) <em>C</em><sub>0</sub> as the slider in the tourism panel above (<span id="coastal-c0-text"></span>%). 
-                                       
-                                        </p>
-                                    </div>
-                                </div>
-                                <div id="coastal-model-chart" style="height: 320px;"></div>
-                            </div>
-
                         </article>
 
                         <article id="methods-cumulative" class="method-box">
@@ -885,7 +909,7 @@
                             </p>
                             <p>
                                 Country charts support annual endpoint loss and cumulative loss scenarios.
-                                The “all datasets” view sums tourism, fisheries, and coastal protection
+                                The “all datasets” view sums tourism, coastal protection, and fisheries
                                 — note units differ by layer but aggregates are shown for comparative ranking.
                             </p>
                         </article>
@@ -918,12 +942,13 @@
 
                         </article>
                     </div>
+                    </div>
                 </div>
             </section>
             
         </div>
     </main>
 
-    <script src="assets/js/dashboard.js?v=37"></script>
+    <script src="assets/js/dashboard.js?v=39"></script>
 </body>
 </html>
