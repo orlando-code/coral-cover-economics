@@ -27,7 +27,7 @@
         let isRendering = false;  // Prevent concurrent renders
         let useVectorTilesForSites = false;
         const siteFileCache = new Map();
-        const VALUE_TYPES = ['tourism', 'fisheries', 'coastal_protection'];
+        const VALUE_TYPES = ['tourism', 'coastal_protection', 'fisheries'];
         const VALUE_TYPE_LABELS = {
             all: 'All datasets',
             tourism: 'Tourism',
@@ -950,14 +950,42 @@
                 renderModelComparison();
                 renderMethodsEnvVisualizations();
                 initMethodsPage();
+                setTimeout(updateMethodsTocActive, 200);
             }
         }
 
         function getMethodsScrollMargin() {
-            const toc = document.querySelector('.methods-toc');
-            if (!toc) return 88;
-            const stickyTop = parseFloat(getComputedStyle(toc).top) || 76;
-            return stickyTop + toc.offsetHeight + 16;
+            const navInner = document.querySelector('.nav-inner');
+            return (navInner?.offsetHeight || 64) + 16;
+        }
+
+        function updateMethodsTocActive() {
+            const page = document.getElementById('page-methods');
+            if (!page?.classList.contains('active')) return;
+
+            const sections = document.querySelectorAll('.methods-sections .method-box[id]');
+            const links = document.querySelectorAll('.methods-toc a[href^="#"]');
+            if (!sections.length || !links.length) return;
+
+            const margin = getMethodsScrollMargin();
+            let currentId = sections[0]?.id || null;
+            sections.forEach((section) => {
+                if (section.getBoundingClientRect().top <= margin + 12) {
+                    currentId = section.id;
+                }
+            });
+
+            links.forEach((link) => {
+                const id = link.getAttribute('href')?.slice(1);
+                link.classList.toggle('is-active', id === currentId);
+            });
+        }
+
+        function bindMethodsTocScrollSpy() {
+            if (window._methodsTocScrollSpyBound) return;
+            window._methodsTocScrollSpyBound = true;
+            window.addEventListener('scroll', updateMethodsTocActive, { passive: true });
+            window.addEventListener('resize', updateMethodsTocActive);
         }
 
         function updateMethodsScrollMargins() {
@@ -977,6 +1005,8 @@
         function initMethodsPage() {
             const toc = document.querySelector('.methods-toc');
             updateMethodsScrollMargins();
+            bindMethodsTocScrollSpy();
+            updateMethodsTocActive();
             if (!window._methodsScrollMarginBound) {
                 window._methodsScrollMarginBound = true;
                 window.addEventListener('resize', updateMethodsScrollMargins);
@@ -991,6 +1021,9 @@
                         scrollToMethodsSection(id);
                         const url = buildPageUrl('methods', { sectionId: id });
                         history.replaceState({ page: 'methods', section: id }, '', url);
+                        if (window.matchMedia('(max-width: 1023px)').matches) {
+                            link.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+                        }
                     });
                 });
             }
@@ -1022,7 +1055,7 @@
             initAppBasePath();
             migratePathUrlToHash();
             try {
-                const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts, envLocations, envQdm, envCyclone, envReefcheck] = await Promise.all([
+                const [summary, trajectories, countries, cumulativeCountries, curves, manifest, gdpImpacts, envLocations, envQdm, envCyclone, envReefcheck, cotwEcoregions] = await Promise.all([
                     fetchJsonData('summary.json'),
                     fetchJsonData('trajectories.json'),
                     fetchJsonData('country_results.json'),
@@ -1034,6 +1067,7 @@
                     fetchJsonData('methods_env_qdm.json').catch(() => null),
                     fetchJsonData('methods_env_cyclone_grid.json').catch(() => null),
                     fetchJsonData('methods_env_reefcheck.json').catch(() => null),
+                    fetchJsonData('methods_cotw_ecoregions.json').catch(() => null),
                 ]);
                 
                 summaryData = summary;
@@ -1050,11 +1084,12 @@
                     });
                 }
                 modelCurves = curves;
-                methodsEnvData = envLocations ? {
+                methodsEnvData = (envLocations || envQdm || envCyclone || envReefcheck || cotwEcoregions) ? {
                     locations: envLocations,
                     qdm: envQdm,
                     cyclone: envCyclone,
                     reefcheck: envReefcheck,
+                    cotwEcoregions: cotwEcoregions,
                 } : null;
                 siteManifest = manifest;
                 const manifestRes = Number(manifest?.cell_resolution_deg);
@@ -1394,8 +1429,7 @@
         function renderScenarioComparison() {
             if (!summaryData) return;
             const selectedValueTypes = getScenarioComparisonValueTypes();
-            const stackOrder = ['tourism', 'fisheries', 'coastal_protection'];
-            const orderedValueTypes = stackOrder.filter((vt) => selectedValueTypes.includes(vt));
+            const orderedValueTypes = VALUE_TYPES.filter((vt) => selectedValueTypes.includes(vt));
 
             if (orderedValueTypes.length === 0) {
                 Plotly.newPlot(
@@ -1598,6 +1632,9 @@
             // Filter data: use linear interpolation only, apply model filter
             let filtered = trajectoryData.filter(t => t.interpolation === 'linear');
             filtered = filtered.filter(t => selectedValueTypes.includes(t.value_type));
+            filtered = [...filtered].sort(
+                (a, b) => VALUE_TYPES.indexOf(a.value_type) - VALUE_TYPES.indexOf(b.value_type)
+            );
             if (modelFilter !== 'all') {
                 filtered = filtered.filter(t => {
                     const modelName = t.model.toLowerCase();
@@ -1661,13 +1698,13 @@
                     hoverinfo: 'skip'
                 },
                 {
-                    x: [null], y: [null], mode: 'lines', name: 'Fisheries',
-                    line: { color: '#cbd5e1', dash: datasetLineStyles.fisheries, width: 3 },
+                    x: [null], y: [null], mode: 'lines', name: 'Coastal protection',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.coastal_protection, width: 3 },
                     hoverinfo: 'skip'
                 },
                 {
-                    x: [null], y: [null], mode: 'lines', name: 'Coastal protection',
-                    line: { color: '#cbd5e1', dash: datasetLineStyles.coastal_protection, width: 3 },
+                    x: [null], y: [null], mode: 'lines', name: 'Fisheries',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.fisheries, width: 3 },
                     hoverinfo: 'skip'
                 },
             ];
@@ -1762,6 +1799,9 @@
                 economicFiltered = economicFiltered.filter(t => t.model.includes(modelFilter));
             }
             economicFiltered = economicFiltered.filter(t => selectedValueTypes.includes(t.value_type));
+            economicFiltered = [...economicFiltered].sort(
+                (a, b) => VALUE_TYPES.indexOf(a.value_type) - VALUE_TYPES.indexOf(b.value_type)
+            );
 
             if (selectedValueTypes.length === 0) {
                 const emptyLayout = (title) => ({
@@ -1830,13 +1870,13 @@
                     hoverinfo: 'skip'
                 },
                 {
-                    x: [null], y: [null], mode: 'lines', name: 'Fisheries',
-                    line: { color: '#cbd5e1', dash: datasetLineStyles.fisheries, width: 3 },
+                    x: [null], y: [null], mode: 'lines', name: 'Coastal protection',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.coastal_protection, width: 3 },
                     hoverinfo: 'skip'
                 },
                 {
-                    x: [null], y: [null], mode: 'lines', name: 'Coastal protection',
-                    line: { color: '#cbd5e1', dash: datasetLineStyles.coastal_protection, width: 3 },
+                    x: [null], y: [null], mode: 'lines', name: 'Fisheries',
+                    line: { color: '#cbd5e1', dash: datasetLineStyles.fisheries, width: 3 },
                     hoverinfo: 'skip'
                 },
             ];
@@ -3360,6 +3400,68 @@
             }
         }
 
+        function renderCotwDiversityMap() {
+            const root = methodsEnvData?.cotwEcoregions;
+            const chartEl = document.getElementById('env-cotw-diversity-map');
+            if (!root?.geojson?.features?.length || !chartEl) return;
+
+            const meta = root.metadata || {};
+            document.querySelectorAll('.env-cotw-match-count').forEach((el) => {
+                el.textContent = String(meta.n_with_diversity ?? '—');
+            });
+            document.querySelectorAll('.env-cotw-polygon-count').forEach((el) => {
+                el.textContent = String(meta.n_polygons ?? '—');
+            });
+
+            const metric = document.getElementById('env-cotw-diversity-metric')?.value || 'diversity_standardized';
+            const metricLabels = {
+                diversity_standardized: 'Standardized (z-score) diversity (species count)',
+                total_species_number: 'Total species count',
+            };
+            const features = root.geojson.features;
+            const locations = [];
+            const values = [];
+            const hoverData = [];
+
+            features.forEach((feature) => {
+                const props = feature.properties || {};
+                locations.push(String(props.erg));
+                const raw = props[metric];
+                values.push(raw != null && Number.isFinite(raw) ? raw : null);
+                hoverData.push([
+                    props.ecoregion || props.cotw_ecoregion_name || props.erg,
+                    props.total_species_number,
+                    props.diversity_standardized,
+                ]);
+            });
+
+            const useLog = metric === 'total_species_number';
+            const colorValues = values.map((value) => (
+                useLog && value != null ? Math.max(value, 1) : value
+            ));
+
+            const plotFn = chartEl.data ? Plotly.react : Plotly.newPlot;
+            plotFn('env-cotw-diversity-map', [{
+                type: 'choropleth',
+                geojson: root.geojson,
+                featureidkey: 'properties.erg',
+                locations,
+                z: colorValues,
+                marker: {
+                    line: { color: '#475569', width: 0.35 },
+                },
+                hovertemplate:
+                    '<b>%{customdata[0]}</b><br>' +
+                    'Species: %{customdata[1]}<br>' +
+                    'Std diversity: %{customdata[2]:.3f}<extra></extra>',
+                customdata: hoverData,
+                coloraxis: 'coloraxis',
+            }], methodsEnvGeoLayout(metricLabels[metric] || metric, {
+                logScale: useLog,
+                colorscale: 'Viridis',
+            }), { responsive: true });
+        }
+
         function bindEnvMetricControls() {
             document.querySelectorAll('.env-metric-select').forEach((select) => {
                 if (select.dataset.bound === '1') return;
@@ -3387,10 +3489,16 @@
                 qdmSelect.dataset.bound = '1';
                 qdmSelect.addEventListener('change', () => renderEnvQdmCharts());
             }
+
+            const cotwSelect = document.getElementById('env-cotw-diversity-metric');
+            if (cotwSelect && cotwSelect.dataset.bound !== '1') {
+                cotwSelect.dataset.bound = '1';
+                cotwSelect.addEventListener('change', () => renderCotwDiversityMap());
+            }
         }
 
         function renderMethodsEnvVisualizations() {
-            if (!methodsEnvData?.locations && !methodsEnvData?.reefcheck) return;
+            if (!methodsEnvData) return;
 
             const countEls = document.querySelectorAll('.env-locations-count');
             if (countEls.length && methodsEnvData?.locations) {
@@ -3406,6 +3514,7 @@
                 renderEnvCycloneChart();
             }
             renderEnvReefcheckCharts();
+            renderCotwDiversityMap();
             bindEnvMetricControls();
         }
         
