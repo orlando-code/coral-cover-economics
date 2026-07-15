@@ -27,6 +27,11 @@
             color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: clip;
+        }
+
+        html {
+            scroll-padding-top: 80px;
         }
         
         /* Navigation */
@@ -586,11 +591,7 @@
         }
 
         /* Models page (embedded in Methods) */
-            .methods-toc-list {
-                columns: 1;
-            }
-
-            .model-charts-row {
+        .model-charts-row {
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
@@ -746,9 +747,19 @@
 
         /* Methods page */
         .methods-page {
-            max-width: 960px;
+            max-width: 1280px;
             margin: 0 auto;
             padding-bottom: 3rem;
+        }
+
+        .methods-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .methods-sections {
+            min-width: 0;
         }
 
         .methods-hero {
@@ -847,10 +858,7 @@
         }
 
         .methods-toc {
-            position: sticky;
-            top: 76px;
-            z-index: 10;
-            margin-bottom: 1.5rem;
+            z-index: 20;
         }
 
         .methods-toc-title {
@@ -864,13 +872,11 @@
         .methods-toc-list {
             margin: 0;
             padding-left: 1.25rem;
-            columns: 2;
-            column-gap: 2rem;
+            list-style: decimal;
         }
 
         .methods-toc-list li {
             margin-bottom: 0.35rem;
-            break-inside: avoid;
         }
 
         .methods-toc-list a {
@@ -878,11 +884,109 @@
             text-decoration: none;
             font-size: 0.92rem;
             font-weight: 500;
+            line-height: 1.4;
+            transition: color 0.15s ease;
         }
 
-        .methods-toc-list a:hover {
+        .methods-toc-list a:hover,
+        .methods-toc-list a.is-active {
             color: var(--accent-teal);
+        }
+
+        .methods-toc-list a.is-active {
+            font-weight: 600;
             text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        @media (min-width: 1024px) {
+            .methods-layout {
+                display: grid;
+                grid-template-columns: minmax(210px, 250px) minmax(0, 1fr);
+                gap: 1.5rem 2rem;
+                align-items: start;
+            }
+
+            .methods-toc {
+                position: sticky;
+                top: 80px;
+                align-self: start;
+                margin-bottom: 0;
+                max-height: calc(100vh - 96px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                padding: 1.15rem 1.25rem;
+            }
+
+            .methods-toc-list {
+                padding-left: 1.1rem;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            .methods-page {
+                padding-bottom: calc(3rem + 4.5rem + env(safe-area-inset-bottom, 0px));
+            }
+
+            .methods-toc {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                top: auto;
+                margin: 0;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+                padding: 0.65rem 0.85rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+                background: rgba(26, 35, 50, 0.97);
+                backdrop-filter: blur(12px);
+                box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.35);
+            }
+
+            .methods-toc-title {
+                display: none;
+            }
+
+            .methods-toc-list {
+                display: flex;
+                flex-direction: row;
+                gap: 0.45rem;
+                padding: 0;
+                margin: 0;
+                list-style: none;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scroll-snap-type: x proximity;
+                scrollbar-width: none;
+            }
+
+            .methods-toc-list::-webkit-scrollbar {
+                display: none;
+            }
+
+            .methods-toc-list li {
+                flex: 0 0 auto;
+                margin: 0;
+                scroll-snap-align: start;
+            }
+
+            .methods-toc-list a {
+                display: inline-block;
+                padding: 0.42rem 0.8rem;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                font-size: 0.78rem;
+                white-space: nowrap;
+            }
+
+            .methods-toc-list a.is-active {
+                background: color-mix(in srgb, var(--accent-teal) 18%, var(--bg-secondary));
+                border-color: var(--accent-teal);
+                text-decoration: none;
+            }
         }
 
         .methods-page a:not(.nav-link) {
@@ -951,6 +1055,10 @@
             height: 340px;
         }
 
+        .env-cotw-map-panel {
+            height: 420px;
+        }
+
         .methods-equation {
             text-align: center;
             font-style: italic;
@@ -984,6 +1092,42 @@
         }
         
         /* Responsive */
+        @media (max-width: 1100px) {
+            .summary-row-middle,
+            .summary-row-bottom {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            html {
+                scroll-padding-top: 64px;
+            }
+
+            .methods-hero h1 {
+                font-size: 1.9rem;
+            }
+
+            .method-box {
+                padding: 1.15rem 1.25rem;
+            }
+
+            .env-map-panel {
+                height: 320px;
+                min-height: 260px;
+            }
+
+            .env-cotw-map-panel {
+                height: 340px;
+            }
+
+            .model-chart-panel {
+                height: 420px;
+                min-width: 0;
+                max-width: 100%;
+            }
+        }
+
         @media (max-width: 768px) {
             .nav {
                 padding: 0 1rem;
@@ -1000,6 +1144,11 @@
             .nav-menu-toggle {
                 display: flex;
             }
+
+            .nav-mobile-menu {
+                top: 56px;
+                max-height: calc(100vh - 56px);
+            }
             
             .nav-brand-text {
                 font-size: 0.95rem;
@@ -1008,9 +1157,41 @@
             .main {
                 padding-top: 56px;
             }
+
+            html {
+                scroll-padding-top: 56px;
+            }
             
             .container {
                 padding: 1rem;
+            }
+
+            .methods-hero {
+                padding: 0.75rem 0 1.5rem;
+            }
+
+            .methods-hero h1 {
+                font-size: 1.65rem;
+            }
+
+            .methods-hero p {
+                font-size: 0.95rem;
+            }
+
+            .method-box h2 {
+                font-size: 1.2rem;
+            }
+
+            .methods-env-embed.chart-section {
+                padding: 1rem;
+            }
+
+            .methods-env-embed .chart-header {
+                align-items: stretch;
+            }
+
+            .methods-env-embed .controls {
+                width: 100%;
             }
             
             .hero {

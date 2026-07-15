@@ -1,5 +1,5 @@
 {
-  "generated": "2026-07-06T14:46:10.610518",
+  "generated": "2026-07-15T14:02:40.978145",
   "snapshot_results": [
     {
       "scenario": "y_future_rcp45_2050",
@@ -114,9 +114,9 @@
       "value_type": "fisheries",
       "model": "Linear (3.81%/rel%)",
       "original_value_billions": 7.045825249005444,
-      "remaining_value_billions": 6.256354064111486,
-      "total_loss_billions": 0.7894711848939581,
-      "loss_fraction_pct": 11.204807910973894
+      "remaining_value_billions": 6.453721860334975,
+      "total_loss_billions": 0.5921033886704693,
+      "loss_fraction_pct": 8.403605933230432
     },
     {
       "scenario": "y_future_rcp45_2050",
@@ -141,9 +141,9 @@
       "value_type": "fisheries",
       "model": "Linear (3.81%/rel%)",
       "original_value_billions": 7.045825249005444,
-      "remaining_value_billions": 5.915700450856067,
-      "total_loss_billions": 1.1301247981493758,
-      "loss_fraction_pct": 16.03963706464192
+      "remaining_value_billions": 6.198231650393412,
+      "total_loss_billions": 0.847593598612032,
+      "loss_fraction_pct": 12.029727798481439
     },
     {
       "scenario": "y_future_rcp45_2100",
@@ -168,9 +168,9 @@
       "value_type": "fisheries",
       "model": "Linear (3.81%/rel%)",
       "original_value_billions": 7.045825249005444,
-      "remaining_value_billions": 5.990813164930742,
-      "total_loss_billions": 1.0550120840747013,
-      "loss_fraction_pct": 14.973577214728993
+      "remaining_value_billions": 6.254566185949417,
+      "total_loss_billions": 0.7912590630560264,
+      "loss_fraction_pct": 11.23018291104675
     },
     {
       "scenario": "y_future_rcp85_2050",
@@ -195,9 +195,9 @@
       "value_type": "fisheries",
       "model": "Linear (3.81%/rel%)",
       "original_value_billions": 7.045825249005444,
-      "remaining_value_billions": 4.800632715437107,
-      "total_loss_billions": 2.2451925335683365,
-      "loss_fraction_pct": 31.86557222498894
+      "remaining_value_billions": 5.361930848829191,
+      "total_loss_billions": 1.6838944001762524,
+      "loss_fraction_pct": 23.899179168741703
     },
     {
       "scenario": "y_future_rcp85_2100",
@@ -221,127 +221,112 @@
       "scenario": "y_future_rcp45_2050",
       "value_type": "coastal_protection",
       "model": "Linear (3.81%/rel%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.08646191875698253,
-      "total_loss_billions": 0.022562838243017466,
-      "loss_fraction_pct": 20.69515114169662
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 8.64577409523845,
+      "total_loss_billions": 2.2567016047615507,
+      "loss_fraction_pct": 20.69898311960054
     },
     {
       "scenario": "y_future_rcp45_2050",
       "value_type": "coastal_protection",
       "model": "Compound (3.81%/pp)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.09622085512754887,
-      "total_loss_billions": 0.012803901872451126,
-      "loss_fraction_pct": 11.7440315619792
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 9.622085512754886,
+      "total_loss_billions": 1.2803901872451133,
+      "loss_fraction_pct": 11.744031561979206
     },
     {
       "scenario": "y_future_rcp45_2050",
       "value_type": "coastal_protection",
       "model": "Tipping Point (threshold=10%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.06916172802827564,
-      "total_loss_billions": 0.03986302897172436,
-      "loss_fraction_pct": 36.563281651454965
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 6.916172802827563,
+      "total_loss_billions": 3.9863028971724366,
+      "loss_fraction_pct": 36.56328165145497
     },
     {
       "scenario": "y_future_rcp45_2100",
       "value_type": "coastal_protection",
       "model": "Linear (3.81%/rel%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.07811927297522499,
-      "total_loss_billions": 0.030905484024775012,
-      "loss_fraction_pct": 28.34721660950367
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 7.806318436641524,
+      "total_loss_billions": 3.0961572633584757,
+      "loss_fraction_pct": 28.398662363984684
     },
     {
       "scenario": "y_future_rcp45_2100",
       "value_type": "coastal_protection",
       "model": "Compound (3.81%/pp)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.09127582740274644,
-      "total_loss_billions": 0.017748929597253563,
-      "loss_fraction_pct": 16.279724060521005
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 9.127582740274644,
+      "total_loss_billions": 1.774892959725357,
+      "loss_fraction_pct": 16.279724060521016
     },
     {
       "scenario": "y_future_rcp45_2100",
       "value_type": "coastal_protection",
       "model": "Tipping Point (threshold=10%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.06437046561430594,
-      "total_loss_billions": 0.04465429138569406,
-      "loss_fraction_pct": 40.95793709101691
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 6.437046561430593,
+      "total_loss_billions": 4.465429138569407,
+      "loss_fraction_pct": 40.95793709101692
     },
     {
       "scenario": "y_future_rcp85_2050",
       "value_type": "coastal_protection",
       "model": "Linear (3.81%/rel%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.0802692143859798,
-      "total_loss_billions": 0.028755542614020198,
-      "loss_fraction_pct": 26.37524118858637
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 8.02692143859798,
+      "total_loss_billions": 2.8755542614020193,
+      "loss_fraction_pct": 26.37524118858636
     },
     {
       "scenario": "y_future_rcp85_2050",
       "value_type": "coastal_protection",
       "model": "Compound (3.81%/pp)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.09240117367264453,
-      "total_loss_billions": 0.016623583327355473,
-      "loss_fraction_pct": 15.247530730433523
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 9.240117367264453,
+      "total_loss_billions": 1.662358332735546,
+      "loss_fraction_pct": 15.247530730433512
     },
     {
       "scenario": "y_future_rcp85_2050",
       "value_type": "coastal_protection",
       "model": "Tipping Point (threshold=10%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.0648787991481842,
-      "total_loss_billions": 0.044145957851815805,
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 6.48787991481842,
+      "total_loss_billions": 4.4145957851815805,
       "loss_fraction_pct": 40.4916819505645
     },
     {
       "scenario": "y_future_rcp85_2100",
       "value_type": "coastal_protection",
       "model": "Linear (3.81%/rel%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.05697125746720652,
-      "total_loss_billions": 0.05205349953279348,
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 5.697125746720651,
+      "total_loss_billions": 5.205349953279349,
       "loss_fraction_pct": 47.74465998836712
     },
     {
       "scenario": "y_future_rcp85_2100",
       "value_type": "coastal_protection",
       "model": "Compound (3.81%/pp)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.07534361763004534,
-      "total_loss_billions": 0.03368113936995466,
-      "loss_fraction_pct": 30.89311115818828
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 7.534361763004534,
+      "total_loss_billions": 3.3681139369954662,
+      "loss_fraction_pct": 30.893111158188287
     },
     {
       "scenario": "y_future_rcp85_2100",
       "value_type": "coastal_protection",
       "model": "Tipping Point (threshold=10%)",
-      "original_value_billions": 0.109024757,
-      "remaining_value_billions": 0.045917194970634546,
-      "total_loss_billions": 0.06310756202936545,
+      "original_value_billions": 10.9024757,
+      "remaining_value_billions": 4.591719497063455,
+      "total_loss_billions": 6.310756202936545,
       "loss_fraction_pct": 57.883698864254704
     }
   ],
   "cumulative_results": [
-    {
-      "key": "tourism_rcp85_linear_Linear (3.81%/rel%)",
-      "value_type": "tourism",
-      "scenario": "rcp85",
-      "interpolation": "linear",
-      "model": "Linear (3.81%/rel%)",
-      "period": "2013-2100",
-      "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 22.14888725842882,
-      "cover_change_pp": -10.895244319658332,
-      "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 0.17774730698357988,
-      "annual_loss_at_end_billions": 0.02211493271351287,
-      "total_cumulative_loss_trillions": 1.8628709628623945
-    },
     {
       "key": "tourism_rcp45_linear_Linear (3.81%/rel%)",
       "value_type": "tourism",
@@ -358,19 +343,19 @@
       "total_cumulative_loss_trillions": 1.1874333066663278
     },
     {
-      "key": "tourism_rcp45_exponential_Linear (3.81%/rel%)",
+      "key": "tourism_rcp85_linear_Linear (3.81%/rel%)",
       "value_type": "tourism",
-      "scenario": "rcp45",
-      "interpolation": "exponential",
+      "scenario": "rcp85",
+      "interpolation": "linear",
       "model": "Linear (3.81%/rel%)",
       "period": "2013-2100",
       "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 28.036810738187164,
-      "cover_change_pp": -5.007320839899992,
+      "final_cover_pct": 22.14888725842882,
+      "cover_change_pp": -10.895244319658332,
       "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 12.542835923036266,
-      "annual_loss_at_end_billions": 0.1400895666070675,
-      "total_cumulative_loss_trillions": 1.196350002300829
+      "final_value_billions": 0.17774730698357988,
+      "annual_loss_at_end_billions": 0.02211493271351287,
+      "total_cumulative_loss_trillions": 1.8628709628623945
     },
     {
       "key": "tourism_rcp85_exponential_Linear (3.81%/rel%)",
@@ -386,6 +371,21 @@
       "final_value_billions": 0.17774730698357988,
       "annual_loss_at_end_billions": 0.020106939971039347,
       "total_cumulative_loss_trillions": 1.8897539659912506
+    },
+    {
+      "key": "tourism_rcp45_exponential_Linear (3.81%/rel%)",
+      "value_type": "tourism",
+      "scenario": "rcp45",
+      "interpolation": "exponential",
+      "model": "Linear (3.81%/rel%)",
+      "period": "2013-2100",
+      "baseline_cover_pct": 33.04413157808715,
+      "final_cover_pct": 28.036810738187164,
+      "cover_change_pp": -5.007320839899992,
+      "baseline_value_billions": 34.34247243885314,
+      "final_value_billions": 12.542835923036266,
+      "annual_loss_at_end_billions": 0.1400895666070675,
+      "total_cumulative_loss_trillions": 1.196350002300829
     },
     {
       "key": "tourism_rcp45_linear_Compound (3.81%/pp)",
@@ -418,21 +418,6 @@
       "total_cumulative_loss_trillions": 0.5473523427737805
     },
     {
-      "key": "tourism_rcp85_exponential_Compound (3.81%/pp)",
-      "value_type": "tourism",
-      "scenario": "rcp85",
-      "interpolation": "exponential",
-      "model": "Compound (3.81%/pp)",
-      "period": "2013-2100",
-      "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 22.14888725842882,
-      "cover_change_pp": -10.895244319658332,
-      "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 22.683054725679405,
-      "annual_loss_at_end_billions": 0.09317693652660845,
-      "total_cumulative_loss_trillions": 0.557198996277385
-    },
-    {
       "key": "tourism_rcp45_exponential_Compound (3.81%/pp)",
       "value_type": "tourism",
       "scenario": "rcp45",
@@ -446,6 +431,21 @@
       "final_value_billions": 28.220307227362056,
       "annual_loss_at_end_billions": 0.03832188817746406,
       "total_cumulative_loss_trillions": 0.3376434061732143
+    },
+    {
+      "key": "tourism_rcp85_exponential_Compound (3.81%/pp)",
+      "value_type": "tourism",
+      "scenario": "rcp85",
+      "interpolation": "exponential",
+      "model": "Compound (3.81%/pp)",
+      "period": "2013-2100",
+      "baseline_cover_pct": 33.04413157808715,
+      "final_cover_pct": 22.14888725842882,
+      "cover_change_pp": -10.895244319658332,
+      "baseline_value_billions": 34.34247243885314,
+      "final_value_billions": 22.683054725679405,
+      "annual_loss_at_end_billions": 0.09317693652660845,
+      "total_cumulative_loss_trillions": 0.557198996277385
     },
     {
       "key": "tourism_rcp45_linear_Tipping Point (threshold=10%)",
@@ -478,21 +478,6 @@
       "total_cumulative_loss_trillions": 0.7353901451724086
     },
     {
-      "key": "tourism_rcp45_exponential_Tipping Point (threshold=10%)",
-      "value_type": "tourism",
-      "scenario": "rcp45",
-      "interpolation": "exponential",
-      "model": "Tipping Point (threshold=10%)",
-      "period": "2013-2100",
-      "baseline_cover_pct": 33.04413157808715,
-      "final_cover_pct": 28.036810738187164,
-      "cover_change_pp": -5.007320839899992,
-      "baseline_value_billions": 34.34247243885314,
-      "final_value_billions": 26.247309681574546,
-      "annual_loss_at_end_billions": 0.03756986698747225,
-      "total_cumulative_loss_trillions": 0.4633421778039435
-    },
-    {
       "key": "tourism_rcp85_exponential_Tipping Point (threshold=10%)",
       "value_type": "tourism",
       "scenario": "rcp85",
@@ -508,6 +493,21 @@
       "total_cumulative_loss_trillions": 0.7496412926049107
     },
     {
+      "key": "tourism_rcp45_exponential_Tipping Point (threshold=10%)",
+      "value_type": "tourism",
+      "scenario": "rcp45",
+      "interpolation": "exponential",
+      "model": "Tipping Point (threshold=10%)",
+      "period": "2013-2100",
+      "baseline_cover_pct": 33.04413157808715,
+      "final_cover_pct": 28.036810738187164,
+      "cover_change_pp": -5.007320839899992,
+      "baseline_value_billions": 34.34247243885314,
+      "final_value_billions": 26.247309681574546,
+      "annual_loss_at_end_billions": 0.03756986698747225,
+      "total_cumulative_loss_trillions": 0.4633421778039435
+    },
+    {
       "key": "fisheries_rcp45_linear_Linear (3.81%/rel%)",
       "value_type": "fisheries",
       "scenario": "rcp45",
@@ -518,9 +518,9 @@
       "final_cover_pct": 29.988699750159142,
       "cover_change_pp": -5.030549316381549,
       "baseline_value_billions": 6.8751448481244966,
-      "final_value_billions": 5.989749950372992,
-      "annual_loss_at_end_billions": 0.00571414410548467,
-      "total_cumulative_loss_trillions": 0.04885036267006052
+      "final_value_billions": 6.211098674810825,
+      "annual_loss_at_end_billions": 0.004285608079113643,
+      "total_cumulative_loss_trillions": 0.036637772002545234
     },
     {
       "key": "fisheries_rcp45_exponential_Linear (3.81%/rel%)",
@@ -533,9 +533,9 @@
       "final_cover_pct": 29.988699750159142,
       "cover_change_pp": -5.030549316381549,
       "baseline_value_billions": 6.8751448481244966,
-      "final_value_billions": 5.989749950372992,
-      "annual_loss_at_end_billions": 0.00550844067577812,
-      "total_cumulative_loss_trillions": 0.049202181333762564
+      "final_value_billions": 6.211098674810825,
+      "annual_loss_at_end_billions": 0.004131330506833777,
+      "total_cumulative_loss_trillions": 0.036901636000322084
     },
     {
       "key": "fisheries_rcp85_linear_Linear (3.81%/rel%)",
@@ -548,9 +548,9 @@
       "final_cover_pct": 23.82965595427711,
       "cover_change_pp": -11.189593112263582,
       "baseline_value_billions": 6.8751448481244966,
-      "final_value_billions": 4.985490174281957,
-      "annual_loss_at_end_billions": 0.02144247738292979,
-      "total_cumulative_loss_trillions": 0.0837487841872529
+      "final_value_billions": 5.457903842742752,
+      "annual_loss_at_end_billions": 0.016081858037198003,
+      "total_cumulative_loss_trillions": 0.06281158814043926
     },
     {
       "key": "fisheries_rcp85_exponential_Linear (3.81%/rel%)",
@@ -563,9 +563,9 @@
       "final_cover_pct": 23.82965595427711,
       "cover_change_pp": -11.189593112263582,
       "baseline_value_billions": 6.8751448481244966,
-      "final_value_billions": 4.985490174281957,
-      "annual_loss_at_end_billions": 0.018724523793238655,
-      "total_cumulative_loss_trillions": 0.08540971269379025
+      "final_value_billions": 5.457903842742752,
+      "annual_loss_at_end_billions": 0.014043392844929172,
+      "total_cumulative_loss_trillions": 0.06405728452034253
     },
     {
       "key": "fisheries_rcp45_linear_Compound (3.81%/pp)",
@@ -697,10 +697,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.08471319125978695,
-      "annual_loss_at_end_billions": 0.00011099061697242262,
-      "total_cumulative_loss_trillions": 0.0010502253374705902
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 8.466060818902948,
+      "annual_loss_at_end_billions": 0.011099061697242231,
+      "total_cumulative_loss_trillions": 0.10502253374705892
     },
     {
       "key": "coastal_protection_rcp45_exponential_Linear (3.81%/rel%)",
@@ -712,10 +712,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.08471319125978695,
-      "annual_loss_at_end_billions": 0.00010653214241021383,
-      "total_cumulative_loss_trillions": 0.0010587155590366872
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 8.466060818902948,
+      "annual_loss_at_end_billions": 0.010653214241021633,
+      "total_cumulative_loss_trillions": 0.10587155590366842
     },
     {
       "key": "coastal_protection_rcp85_linear_Linear (3.81%/rel%)",
@@ -727,10 +727,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.06466897056563624,
-      "annual_loss_at_end_billions": 0.0004231880646609651,
-      "total_cumulative_loss_trillions": 0.00174741255633355
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 6.466897056563459,
+      "annual_loss_at_end_billions": 0.042318806466096974,
+      "total_cumulative_loss_trillions": 0.17474125563335496
     },
     {
       "key": "coastal_protection_rcp85_exponential_Linear (3.81%/rel%)",
@@ -742,10 +742,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.06466897056563624,
-      "annual_loss_at_end_billions": 0.00036480030221273105,
-      "total_cumulative_loss_trillions": 0.0017845885507666798
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 6.466897056563459,
+      "annual_loss_at_end_billions": 0.03648003022127321,
+      "total_cumulative_loss_trillions": 0.17845885507666867
     },
     {
       "key": "coastal_protection_rcp45_linear_Compound (3.81%/pp)",
@@ -757,10 +757,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.0855844844027461,
-      "annual_loss_at_end_billions": 9.608471703107259e-05,
-      "total_cumulative_loss_trillions": 0.0010174209544787755
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 8.558448440274548,
+      "annual_loss_at_end_billions": 0.00960847170310712,
+      "total_cumulative_loss_trillions": 0.10174209544787763
     },
     {
       "key": "coastal_protection_rcp45_exponential_Compound (3.81%/pp)",
@@ -772,10 +772,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.0855844844027461,
-      "annual_loss_at_end_billions": 9.255132459272267e-05,
-      "total_cumulative_loss_trillions": 0.0010247634375890248
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 8.558448440274548,
+      "annual_loss_at_end_billions": 0.009255132459272262,
+      "total_cumulative_loss_trillions": 0.10247634375890204
     },
     {
       "key": "coastal_protection_rcp85_linear_Compound (3.81%/pp)",
@@ -787,10 +787,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.06965227463004635,
-      "annual_loss_at_end_billions": 0.00029941369137492227,
-      "total_cumulative_loss_trillions": 0.0016107821885782332
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 6.965227463004504,
+      "annual_loss_at_end_billions": 0.0299413691374923,
+      "total_cumulative_loss_trillions": 0.16107821885782322
     },
     {
       "key": "coastal_protection_rcp85_exponential_Compound (3.81%/pp)",
@@ -802,10 +802,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.06965227463004635,
-      "annual_loss_at_end_billions": 0.000259385628247338,
-      "total_cumulative_loss_trillions": 0.0016405221558046345
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 6.965227463004504,
+      "annual_loss_at_end_billions": 0.02593856282473302,
+      "total_cumulative_loss_trillions": 0.1640522155804635
     },
     {
       "key": "coastal_protection_rcp45_linear_Tipping Point (threshold=10%)",
@@ -817,10 +817,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.07783424456057811,
-      "annual_loss_at_end_billions": 9.254704886613699e-05,
-      "total_cumulative_loss_trillions": 0.0016542356625342232
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 7.783424456057769,
+      "annual_loss_at_end_billions": 0.009254704886613563,
+      "total_cumulative_loss_trillions": 0.16542356625342228
     },
     {
       "key": "coastal_protection_rcp45_exponential_Tipping Point (threshold=10%)",
@@ -832,10 +832,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 29.667989172226832,
       "cover_change_pp": -4.9401907278216415,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.07783424456057811,
-      "annual_loss_at_end_billions": 8.918978307690131e-05,
-      "total_cumulative_loss_trillions": 0.001662039702153079
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 7.783424456057769,
+      "annual_loss_at_end_billions": 0.008918978307690064,
+      "total_cumulative_loss_trillions": 0.16620397021530722
     },
     {
       "key": "coastal_protection_rcp85_linear_Tipping Point (threshold=10%)",
@@ -847,10 +847,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.048835773878256744,
-      "annual_loss_at_end_billions": 0.0003352793129239121,
-      "total_cumulative_loss_trillions": 0.0025070671913432993
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 4.88357738782565,
+      "annual_loss_at_end_billions": 0.03352793129239133,
+      "total_cumulative_loss_trillions": 0.2507067191343296
     },
     {
       "key": "coastal_protection_rcp85_exponential_Tipping Point (threshold=10%)",
@@ -862,10 +862,10 @@
       "baseline_cover_pct": 34.608179900048476,
       "final_cover_pct": 23.657047295136206,
       "cover_change_pp": -10.951132604912269,
-      "baseline_value_billions": 0.103333414,
-      "final_value_billions": 0.048835773878256744,
-      "annual_loss_at_end_billions": 0.00030240857011246797,
-      "total_cumulative_loss_trillions": 0.0025624856880037817
+      "baseline_value_billions": 10.3333414,
+      "final_value_billions": 4.88357738782565,
+      "annual_loss_at_end_billions": 0.0302408570112465,
+      "total_cumulative_loss_trillions": 0.2562485688003781
     }
   ]
 }
