@@ -4,7 +4,7 @@
             --bg-card: #1a2332;
             --bg-card-hover: #1f2937;
             --accent-blue: var(--dataset-tourism, #3A9AB2);
-            --accent-coral: var(--model-linear, #E3B710);
+            --accent-coral: var(--model-linear, #1b1a18);
             --accent-teal: #14b8a6;
             --accent-red: var(--model-compound, #F11B00);
             --text-primary: #f8fafc;
@@ -28,6 +28,11 @@
             line-height: 1.6;
             min-height: 100vh;
             overflow-x: clip;
+        }
+
+        /* Consecutive paragraphs get a clear break after the global margin reset */
+        p + p {
+            margin-top: 1em;
         }
 
         html {
@@ -210,7 +215,8 @@
             font-size: 1.1rem;
             color: var(--text-secondary);
             max-width: 700px;
-            margin: 0 auto;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         /* Stats grid */
@@ -590,6 +596,34 @@
             color: var(--text-secondary);
         }
 
+        .legend-discrete-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1 1 100%;
+            min-width: min(100%, 760px);
+        }
+
+        .legend-discrete-bar-swatches {
+            display: grid;
+            height: 14px;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .legend-discrete-bar-swatches > div {
+            height: 100%;
+        }
+
+        .legend-discrete-bar-labels {
+            display: grid;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.2;
+        }
+
         /* Models page (embedded in Methods) */
         .model-charts-row {
             display: flex;
@@ -777,13 +811,35 @@
             color: var(--text-secondary);
             font-size: 1.05rem;
             max-width: 720px;
-            margin: 0 auto;
+            margin-left: auto;
+            margin-right: auto;
             line-height: 1.7;
         }
 
-        /* 1em gap between consecutive paragraphs (methods prose) */
-        .methods-page p + p {
-            margin-top: 1em;
+        .methods-figure {
+            margin: 1.25rem 0 1.75rem;
+            text-align: center;
+        }
+
+        .methods-figure img {
+            display: block;
+            width: 80%;
+            max-width: 736px;
+            height: auto;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+        }
+
+        .methods-figure figcaption {
+            margin-top: 0.65rem;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 656px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .method-box {
@@ -832,7 +888,6 @@
             line-height: 1.7;
         }
 
-        .method-box p + p,
         .method-box p + ul,
         .method-box p + ol,
         .method-box ul + p,

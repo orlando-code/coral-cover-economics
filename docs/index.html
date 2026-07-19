@@ -38,7 +38,7 @@
             --habitat-export-a: 0.4;
         }
     </style>
-    <link rel="stylesheet" href="assets/css/site.css?v=22" />
+    <link rel="stylesheet" href="assets/css/site.css?v=25" />
 
 </head>
 <body>
@@ -87,7 +87,8 @@
                 <div class="hero">
                     <h1>Economic Impact of Coral Cover Loss</h1>
                     <p>Projected loss of the human-associated benefits of coral reefs under two climate change scenarios (RCPs 4.5 & 8.5) throughout the century via linear, compound, and ecosystem tipping point economic depreciation models.</p>
-                    <p>Note: this is a work in progress and the data is not yet finalized.</p>
+
+                    <p><strong>Note</strong>: See the 'Methods' tab for more details about how these figures are generated.</p>
                 </div>
                 
                 <div class="stats-grid" id="summary-stats">
@@ -217,8 +218,9 @@
                             <div class="control-group">
                                 <span class="control-label">Colour by:</span>
                                 <select id="map-metric">
-                                    <option value="absolute_value" selected>Economic Loss Value ($)</option>
+                                    <option value="absolute_value" selected>Projected loss ($)</option>
                                     <option value="loss_percent">Loss %</option>
+                                    <option value="baseline_value">Baseline value ($)</option>
                                 </select>
                             </div>
                             <div class="control-group">
@@ -533,11 +535,7 @@
                                 Future coral cover is modelled in response to various environmental covariates including past and present sea surface temperature, turbidity, and exposure to cyclones as well as proxies of local stressors such as proximate human population. A log-linear response function in a hierarchical Bayesian beta framework achieves reasonable R<sup>2</sup> scores. The model's coefficients (and uncertainties) for each covariate are estimated using a Monte Carlo markov chain schema. 'Hierarchical' refers to the model's structure nesting observations at both site and ecoregion levels. This enables more accurate, while samples which have few (or no) repeat measurements are borrow from the characteristics of the other sites in the shared ecoregion. 
                             </p>
                             <p>
-                                This hierarchical model is similar to that employed in <a href="https://onlinelibrary.wiley.com/doi/10.1111/gcb.16083" target="_blank" rel="noopener noreferrer">Sully et al. (2022)</a>, but employs features optimised for – and validated under – the task of projecting long-term changes in coral cover projection. The author has also been in communication with Sully about statistical and technical issues with their model: a published erratum to the original paper is expected in the coming weeks.
-                                
-                                
-                                # TODO: forward forecasting methods
-                                # TODO: model diagram
+                                This hierarchical model is similar to that employed in <a href="https://onlinelibrary.wiley.com/doi/10.1111/gcb.16083" target="_blank" rel="noopener noreferrer">Sully et al. (2022)</a>, but employs features optimised for – and validated under – the task of projecting long-term changes in coral cover projection.
                             </p>
 
                             <p>
@@ -731,27 +729,35 @@
                             <p>
                                 Reef tourism value is derived from spatially distributed willingness-to-pay /
                                 trip expenditure surfaces estimated by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X17300635" target="_blank" rel="noopener noreferrer">Spalding et al. (2017)</a>. Values are expressed in USD per year at each reef site.
-                            
                             </p>
+                            <figure class="methods-figure">
+                                <img src="assets/figures/flow_tourism.png" alt="Flowchart of reef tourism valuation: jurisdictional tourism spending is spatially distributed with photo-user days and hotel occupancy, filtered to coastal non-urban areas near reefs, then split into on-reef and reef-adjacent tourism before attribution to reefs." loading="lazy" />
+                                <figcaption>Workflow for attributing on-reef and reef-adjacent tourism value to reefs (after Spalding et al., 2017).</figcaption>
+                            </figure>
 
                             <h3>Coastal protection</h3>
                             <p>
-                                Reef structures provide protection for livelihoods and infrastructure along the coasts by dissipating wave energy. The financial value of infrastructure protected is taken from estimates by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X2200358X" target="_blank" rel="noopener noreferrer"></a>Burke and Spalding (2022)</a>. The spatial distribution of this value is taken from the accompanying dataset (provided by <a href="https://maps.oceanwealth.org/#/coastal" target="_blank" rel="noopener noreferrer"></a>Ocean Wealth</a>) and is expressed as USD spared per coastal grid cell.
+                                Reef structures provide protection for livelihoods and infrastructure along the coasts by dissipating wave energy. The financial value of infrastructure protected is taken from estimates by <a href="https://www.sciencedirect.com/science/article/pii/S0308597X2200358X" target="_blank" rel="noopener noreferrer">Burke and Spalding (2022)</a>. The spatial distribution of this value is taken from the accompanying dataset (provided by <a href="https://maps.oceanwealth.org/#/coastal" target="_blank" rel="noopener noreferrer">Ocean Wealth</a>) and is expressed as USD spared per coastal grid cell.
                             </p>
+                            <figure class="methods-figure">
+                                <img src="assets/figures/flow_coastal.png" alt="Flowchart of coastal protection valuation: low-lying coastal assets and wind-wave hazard are combined into hazard-adjusted exposure, fringing and barrier reef protection are combined into relative coastal protection, then exposure is adjusted by reef protection to estimate assets avoiding damage." loading="lazy" />
+                                <figcaption>Workflow for estimating the value of coastal assets protected by coral reefs (after Burke &amp; Spalding, 2022 / Ocean Wealth).</figcaption>
+                            </figure>
 
                             <h3>Fisheries</h3>
                             <p>
                                 Baseline values of fisheries are taken from the <strong>Sea Around Us</strong> public API
                                 (<a href="http://api.seaaroundus.org" target="_blank" rel="noopener noreferrer">api.seaaroundus.org</a>). The Sea Around Us combines official reported fish catch data over several decades from the UN Food and Agriculture Organisation's 'FishStat' database with reconstructed estimates of unreported data, and represents the best-available measure of global fish take and its associated economic value. Data is provided at the country level.
-
                             </p>
+                            <figure class="methods-figure">
+                                <img src="assets/figures/flow_fish.png" alt="Flowchart of Sea Around Us catch reconstruction: reported FAO and national baselines are expanded with missing sectors, alternative sources, and anchor points, then interpolated into complete catch time series with quantified uncertainty." loading="lazy" />
+                                <figcaption>Sea Around Us catch-reconstruction workflow used for national reef-associated fishery baselines.</figcaption>
+                            </figure>
                             <p>
-                            
                                 National fish take is disaggregated into various categories, including small, medium, and large reef associated fish as well as e.g. pelagics, sharks etc. While we only include the value of these reef associated fish, it is noted that fish which are not singularly associated with reefs, and those higher up the trophic pyramid are in many cases dependent on coral reefs for their early life stages and food. This study therefore likely describes a conservative value for reef associated fisheries.
                             </p>
-                            
                             <p>
-                                For each country, the baseline fishery value is the average of the most recent decade for which data is available (2010-2019). The value of fisheries displayed on the <a class="nav-link" data-page="map" href="/map">Map</a>shows a 0.1&deg; raster of this value modified by the spatial in coral cover and weighted by the estimated fishing intensity from a <a href="https://oceanwealth.org/wp-content/uploads/2025/05/Spalding-et-al-Global-Reef-Fisheries-Final-Report.pdf" target="_blank" rel="noopener noreferrer">2021 Ocean Wealth report</a>.
+                                For each country, the baseline fishery value is the average of the most recent decade for which data is available (2010-2019). The value of fisheries displayed on the <a class="nav-link" data-page="map" href="/map">Map</a> shows a 0.1&deg; raster of this value modified by the spatial in coral cover and weighted by the estimated fishing intensity from a <a href="https://oceanwealth.org/wp-content/uploads/2025/05/Spalding-et-al-Global-Reef-Fisheries-Final-Report.pdf" target="_blank" rel="noopener noreferrer">2021 Ocean Wealth report</a>.
                             </p>
                                 
                             </article>
@@ -864,7 +870,7 @@
                                             where <em>&alpha;</em> is the habitat floor: the minimum share of fisheries value retained when coral cover reaches zero. <em>C</em><sub>final</sub> and <em>C</em><sub>baseline</sub> are the final and baseline coral covers respectively.
                                         </p>
                                         <p>
-                                            The dashboard uses <em>&alpha;</em> = 0.4 DUE TO WHAT PAPER; use the slider to explore the effect of other values of <em>&alpha;</em> on the value lost under as coral cover changes:
+                                            The dashboard uses <em>&alpha;</em> = 0.4 as indicated in  <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1365-2486.2006.01252.x" target="_blank" rel="noopener noreferrer">Wilson et al. (2006)</a>; use the slider to explore the effect of other values of <em>&alpha;</em> on the value lost under as coral cover changes:
                                             <ul>
                                                 <li>At <em>&alpha;</em> = 0, no fishery value remains at zero cover;</li>
                                                 <li>at <em>&alpha;</em> = 1, changes to cover have no effect on fishery value.</li>
@@ -949,6 +955,6 @@
         </div>
     </main>
 
-    <script src="assets/js/dashboard.js?v=39"></script>
+    <script src="assets/js/dashboard.js?v=40"></script>
 </body>
 </html>
