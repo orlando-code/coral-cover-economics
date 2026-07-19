@@ -37,7 +37,7 @@
         const VALUE_TYPE_DESCRIPTIONS = {
             tourism: 'Reef-associated tourism value layer.',
             fisheries: 'Reef fisheries value represented at site points.',
-            coastal_protection: 'Coastal protection value represented at site points.',
+            coastal_protection: 'Coastal protection value at shoreline points (zoom in to load).',
         };
 
         const HABITAT_ILLUSTRATION_OPTIONS = [0, 0.25, 0.4, 0.5, 0.75, 1];
@@ -82,7 +82,7 @@
         let DATA_PATH = 'exported_data/';
         // Increment DATA_VERSION whenever exported_data/ files are regenerated to
         // prevent browsers serving stale JSON from the HTTP cache.
-        const DATA_VERSION = '7';
+        const DATA_VERSION = '10';
 
         const PAGE_IDS = ['overview', 'map', 'trajectories', 'gdp', 'methods'];
         const PAGE_TITLES = {
@@ -387,6 +387,74 @@
             );
 
             return perTileFeatures.flat();
+        }
+
+        /**
+         * Load map features per dataset, mixing gridded layers (tourism, fisheries)
+         * with viewport-tiled point layers (coastal protection).
+         */
+        async function loadSelectedSiteFeatures({
+            datasetsToLoad,
+            scenarioKey,
+            model,
+            isCumulative,
+            buildScenarioKey,
+            griddedManifest,
+            datasetTileIndex,
+            datasetTileZoom,
+            mapBounds,
+            mapZoom,
+        }) {
+            const minPointMapZoom = Number(siteManifest?.site_dataset_min_map_zoom ?? 4);
+            const canLoadPointsAtZoom = mapZoom >= minPointMapZoom;
+            const effectiveTileZoom = Number.isFinite(datasetTileZoom) ? datasetTileZoom : null;
+            const visibleTileKeys = effectiveTileZoom && mapBounds
+                ? getTileKeysForBounds(mapBounds, effectiveTileZoom)
+                : [];
+
+            const featureLists = await Promise.all(
+                datasetsToLoad.map(async (datasetKey) => {
+                    const tileEntry = datasetTileIndex?.[datasetKey];
+                    if (tileEntry?.geometry && tileEntry?.attributes) {
+                        if (!canLoadPointsAtZoom) {
+                            return [];
+                        }
+                        return loadDatasetWidePointTileFeatures({
+                            datasetKey,
+                            scenarioDatasetKey: buildScenarioKey(datasetKey),
+                            tileKeys: visibleTileKeys,
+                            datasetTileIndex,
+                        });
+                    }
+
+                    const griddedEntry = griddedManifest?.[datasetKey];
+                    if (griddedEntry) {
+                        return loadGriddedSiteFeatures({
+                            datasetKey,
+                            scenarioKey,
+                            model,
+                            scenarioDatasetKey: buildScenarioKey(datasetKey),
+                            griddedEntry,
+                            isCumulative,
+                        });
+                    }
+
+                    console.warn('No map data source for dataset', datasetKey);
+                    return [];
+                })
+            );
+
+            const skippedPointDatasets = datasetsToLoad.filter((datasetKey) => {
+                const tileEntry = datasetTileIndex?.[datasetKey];
+                return tileEntry?.geometry && tileEntry?.attributes && !canLoadPointsAtZoom;
+            });
+
+            return {
+                features: featureLists.flat(),
+                skippedPointDatasets,
+                minPointMapZoom,
+                canLoadPointsAtZoom,
+            };
         }
 
         function getSelectedValueType(controlId, fallback = 'all') {
@@ -2926,8 +2994,8 @@
         };
 
         const ENV_FORECAST_WINDOWS = {
-            '2015_2050': '2015–2050',
-            '2051_2099': '2051–2099',
+            '2040_2050': '2040–2050',
+            '2090_2100': '2090–2100',
         };
 
         const ENV_FORECAST_STATS = {
@@ -3006,14 +3074,14 @@
 
         function getEnvForecastMetricKey() {
             const scenario = getEnvForecastScenario();
-            const window = document.getElementById('env-window-forecast')?.value || '2015_2050';
+            const window = document.getElementById('env-window-forecast')?.value || '2040_2050';
             const stat = document.getElementById('env-stat-forecast')?.value || 'mean';
             return `sst_mean_${window}__${scenario}__model_${stat}`;
         }
 
         function getEnvForecastMetricLabel() {
             const scenario = getEnvForecastScenario();
-            const window = document.getElementById('env-window-forecast')?.value || '2015_2050';
+            const window = document.getElementById('env-window-forecast')?.value || '2040_2050';
             const stat = document.getElementById('env-stat-forecast')?.value || 'mean';
             const windowLabel = ENV_FORECAST_WINDOWS[window] || window;
             const statLabel = ENV_FORECAST_STATS[stat] || stat;
@@ -3333,8 +3401,16 @@
                 });
             }
 
+            // Move legend below the chart (orientation: horizontal, y below 0)
+            const layout = methodsEnvGeoLayout('storms / cell / yr', { colorscale: ENV_COLORSCALES.cyclone });
+            layout.legend = layout.legend || {};
+            layout.legend.orientation = 'h';
+            layout.legend.y = -0.2; // set y below the chart to place legend underneath
+            layout.legend.x = 0.5;
+            layout.legend.xanchor = 'center';
+
             const plotFn = chartEl.data ? Plotly.react : Plotly.newPlot;
-            plotFn('env-cyclone-chart', traces, methodsEnvGeoLayout('storms / cell / yr', { colorscale: ENV_COLORSCALES.cyclone }), { responsive: true });
+            plotFn('env-cyclone-chart', traces, layout, { responsive: true });
         }
 
         function renderEnvReefcheckCharts() {
@@ -3534,11 +3610,12 @@
                 maxZoom: 18
             }).addTo(map);
 
-            // Pane ordering (Leaflet tilePane = 200):
+            // Pane ordering (Leaflet tilePane = 200; popupPane = 700):
             //   siteBackPane    250 – fisheries/coastal grid cells
             //   choroplethPane  380 – country choropleth
             //   sitePointPane   500 – legacy point markers
-            //   sitePolygonPane 700 – tourism reef polygons (always top geometry)
+            //   sitePolygonPane 550 – tourism reef polygons (top map geometry;
+            //                         keep below Leaflet popup/tooltip panes)
             map.createPane('siteBackPane');
             map.getPane('siteBackPane').style.zIndex = 250;
             map.createPane('choroplethPane');
@@ -3546,7 +3623,7 @@
             map.createPane('sitePointPane');
             map.getPane('sitePointPane').style.zIndex = 500;
             map.createPane('sitePolygonPane');
-            map.getPane('sitePolygonPane').style.zIndex = 700;
+            map.getPane('sitePolygonPane').style.zIndex = 550;
 
             // Dedicated renderers pinned to their panes so canvas batching cannot
             // paint grid cells above tourism polygons.
@@ -3686,57 +3763,10 @@
             const datasetsToLoad = selectedValueTypes;
             const scenarioDatasetKeys = datasetsToLoad.map(buildScenarioKey);
 
-            // Prefer compact gridded export (sites_grid_*.json + sites_metrics_*.json).
+            // Load gridded and/or viewport-tiled point datasets (mixed per value_type).
             const griddedManifest = isCumulative
                 ? (siteManifest?.gridded_sites_cumulative || {})
                 : (siteManifest?.gridded_sites_annual || {});
-            const canUseGridded = datasetsToLoad.every((k) => Boolean(griddedManifest[k]));
-
-            if (canUseGridded) {
-                try {
-                    console.log('Loading gridded site data', {
-                        scenario,
-                        model,
-                        scenarioDatasetKeys,
-                        datasetsToLoad,
-                    });
-                    const featureLists = await Promise.all(
-                        datasetsToLoad.map((datasetKey) =>
-                            loadGriddedSiteFeatures({
-                                datasetKey,
-                                scenarioKey,
-                                model,
-                                scenarioDatasetKey: buildScenarioKey(datasetKey),
-                                griddedEntry: griddedManifest[datasetKey],
-                                isCumulative,
-                            })
-                        )
-                    );
-                    const features = featureLists.flat();
-                    if (features.length === 0) {
-                        setMapEmptyState('No map data found for selected datasets.');
-                        updateMapLegend(scale, showChoropleth, 'No gridded data for selection');
-                        clearSiteDataLayers();
-                        currentSiteGeojson = null;
-                        return;
-                    }
-                    setMapEmptyState('');
-                    console.log(`✓ Loaded ${features.length} gridded cell features`);
-                    isRendering = false;
-                    renderSites({ type: 'FeatureCollection', features }, isCumulative, currentView);
-                    isInitialMapLoad = false;
-                    return;
-                } catch (error) {
-                    console.error('Error loading gridded site data:', error);
-                    setMapEmptyState('Error loading gridded map data.');
-                    isRendering = false;
-                    return;
-                }
-            }
-
-            const vectorTileIndex = siteManifest?.vector_tile_scenarios || {};
-            const pointChunkIndex = siteManifest?.site_point_chunks || {};
-            const chunkZoom = Number(siteManifest?.site_point_chunk_zoom);
             const datasetTileIndex = isCumulative
                 ? (siteManifest?.site_dataset_tiles_cumulative || {})
                 : (siteManifest?.site_dataset_tiles_annual || {});
@@ -3745,6 +3775,72 @@
                     ? siteManifest?.site_dataset_tile_zoom_cumulative
                     : siteManifest?.site_dataset_tile_zoom_annual
             );
+            const hasAnyMapSource = datasetsToLoad.some((datasetKey) =>
+                Boolean(griddedManifest[datasetKey] || datasetTileIndex?.[datasetKey])
+            );
+
+            if (hasAnyMapSource) {
+                try {
+                    console.log('Loading site map data', {
+                        scenario,
+                        model,
+                        scenarioDatasetKeys,
+                        datasetsToLoad,
+                    });
+                    const {
+                        features,
+                        skippedPointDatasets,
+                        minPointMapZoom,
+                        canLoadPointsAtZoom,
+                    } = await loadSelectedSiteFeatures({
+                        datasetsToLoad,
+                        scenarioKey,
+                        model,
+                        isCumulative,
+                        buildScenarioKey,
+                        griddedManifest,
+                        datasetTileIndex,
+                        datasetTileZoom,
+                        mapBounds: map.getBounds(),
+                        mapZoom: map.getZoom(),
+                    });
+
+                    if (features.length === 0) {
+                        if (
+                            skippedPointDatasets.length > 0 &&
+                            skippedPointDatasets.length === datasetsToLoad.length
+                        ) {
+                            setMapEmptyState(
+                                `Zoom in further to load coastal protection points.`
+                            );
+                            updateMapLegend(scale, showChoropleth, 'Point datasets load when zoomed in');
+                        } else {
+                            setMapEmptyState('No map data found for selected datasets.');
+                            updateMapLegend(scale, showChoropleth, 'No map data for selection');
+                        }
+                        clearSiteDataLayers();
+                        currentSiteGeojson = null;
+                        isRendering = false;
+                        return;
+                    }
+
+                    setMapEmptyState('');
+                    console.log(`✓ Loaded ${features.length} map features`);
+                    isRendering = false;
+                    renderSites({ type: 'FeatureCollection', features }, isCumulative, currentView);
+                    isInitialMapLoad = false;
+                    return;
+                } catch (error) {
+                    console.error('Error loading site map data:', error);
+                    setMapEmptyState('Error loading map data.');
+                    isRendering = false;
+                    return;
+                }
+            }
+
+            const vectorTileIndex = siteManifest?.vector_tile_scenarios || {};
+            const pointChunkIndex = siteManifest?.site_point_chunks || {};
+            const chunkZoom = Number(siteManifest?.site_point_chunk_zoom);
             const effectiveTileZoom = Number.isFinite(datasetTileZoom) ? datasetTileZoom : chunkZoom;
             const visibleTileKeys = Number.isFinite(effectiveTileZoom)
                 ? getTileKeysForBounds(map.getBounds(), effectiveTileZoom)
@@ -3860,7 +3956,7 @@
                     clearSiteDataLayers();
                     currentSiteGeojson = null;
                     if (!canLoadDatasetWidePointsAtZoom && datasetsToLoad.some((k) => Boolean(datasetTileIndex?.[k]))) {
-                        setMapEmptyState(`Zoom in to at least ${minPointMapZoom} to load point datasets.`);
+                        setMapEmptyState(`Zoom in further to load point datasets.`);
                         updateMapLegend(scale, showChoropleth, 'Point datasets load when zoomed in');
                     } else {
                         setMapEmptyState('No map data found for selected datasets.');
@@ -3899,42 +3995,118 @@
         // Four-bin palette tuned for dark basemaps (green → lime → orange → red).
         const MAP_LOSS_COLORS = ['#2d9f4f', '#b8d62e', '#ff8c42', '#e01a4f'];
 
+        // Eleven-bin baseline palette (matches notebooks/economic_datasets.ipynb prices_df).
+        const MAP_BASELINE_VALUE_COLORS = [
+            '#828282', '#2892c8', '#74b474', '#52bf81', '#59d95e',
+            '#58f230', '#f6e058', '#e6ac3e', '#d57726', '#bf4713', '#730000',
+        ];
+        const MAP_BASELINE_VALUE_BREAKS = [
+            4000, 8000, 12000, 24000, 44000, 92000, 172000, 352000, 908000,
+        ];
+        const MAP_BASELINE_VALUE_LABELS = [
+            'no value',
+            '≤4',
+            '4–8',
+            '8–12',
+            '12–24',
+            '24–44',
+            '44–92',
+            '92–172',
+            '172–352',
+            '352–908',
+            '>908',
+        ];
+        const MAP_BASELINE_VALUE_SCALE = {
+            breaks: MAP_BASELINE_VALUE_BREAKS,
+            colors: MAP_BASELINE_VALUE_COLORS,
+            labels: MAP_BASELINE_VALUE_LABELS,
+            title: 'Baseline economic value (thousands USD)',
+            subtitle: 'Fixed log-spaced bins',
+            binMode: 'fixedUpperBounds',
+        };
+
         const COLOR_SCALE_DEFAULTS = {
             loss_percent_annual: {
                 breaks: [0.05, 0.15, 0.35],
                 labels: ['< 5%', '5–15%', '15–35%', '≥ 35%'],
                 title: 'Annual loss %',
+                colors: MAP_LOSS_COLORS,
+                subtitle: 'Quartile bins (visible extent)',
             },
             loss_percent_cumulative: {
                 breaks: [0.05, 0.15, 0.35],
                 labels: ['< 5%', '5–15%', '15–35%', '≥ 35%'],
                 title: 'Annual loss % (endpoint year)',
+                colors: MAP_LOSS_COLORS,
+                subtitle: 'Quartile bins (visible extent)',
             },
             absolute_annual: {
                 breaks: [50000, 500000, 5000000],
                 labels: ['< $50k', '$50k–$500k', '$500k–$5M', '≥ $5M'],
-                title: 'Annual loss (USD)',
+                title: 'Projected annual loss (USD)',
+                colors: MAP_LOSS_COLORS,
+                subtitle: 'Log-scaled quartile bins (visible extent); loss from coral decline',
             },
             absolute_cumulative: {
                 breaks: [500000, 5000000, 50000000],
                 labels: ['< $500k', '$500k–$5M', '$5M–$50M', '≥ $50M'],
-                title: 'Cumulative loss (USD)',
+                title: 'Projected cumulative loss (USD)',
+                colors: MAP_LOSS_COLORS,
+                subtitle: 'Log-scaled quartile bins (visible extent); loss from coral decline',
+            },
+            baseline_value: {
+                ...MAP_BASELINE_VALUE_SCALE,
             },
         };
 
         function getScaleKey(isCumulative, metric) {
+            if (metric === 'baseline_value') {
+                return 'baseline_value';
+            }
             if (metric === 'loss_percent') {
                 return isCumulative ? 'loss_percent_cumulative' : 'loss_percent_annual';
             }
             return isCumulative ? 'absolute_cumulative' : 'absolute_annual';
         }
 
+        function resolveFeatureMetricValue(props, metric, isCumulative) {
+            if (metric === 'baseline_value') {
+                return Number(props.original_value || 0);
+            }
+            if (metric === 'loss_percent') {
+                return props.loss_fraction || 0;
+            }
+            return isCumulative
+                ? (props.cumulative_loss || 0)
+                : (props.value_loss || props.annual_loss || 0);
+        }
+
+        function resolveCountryMetricValue(countryRow, metric, isCumulative) {
+            if (metric === 'baseline_value') {
+                return Number(countryRow.original_value || 0);
+            }
+            if (metric === 'loss_percent') {
+                return countryRow.loss_fraction || 0;
+            }
+            return isCumulative
+                ? (countryRow.cumulative_loss || 0)
+                : (countryRow.value_loss || 0);
+        }
+
         function getColorScale(isCumulative, metric) {
             const key = getScaleKey(isCumulative, metric);
             const defaults = COLOR_SCALE_DEFAULTS[key];
+            if (metric === 'baseline_value') {
+                return {
+                    ...MAP_BASELINE_VALUE_SCALE,
+                    metric,
+                    min: 0,
+                    max: MAP_BASELINE_VALUE_BREAKS[MAP_BASELINE_VALUE_BREAKS.length - 1],
+                };
+            }
             return {
                 ...defaults,
-                colors: MAP_LOSS_COLORS,
+                colors: defaults.colors || MAP_LOSS_COLORS,
                 metric,
                 min: 0,
                 max: defaults.breaks[2],
@@ -3964,16 +4136,28 @@
 
         function buildColorScaleFromValues(values, metric, isCumulative) {
             const defaults = getColorScale(isCumulative, metric);
-            const clean = values.filter((v) => Number.isFinite(v));
+            if (metric === 'baseline_value') {
+                return {
+                    ...MAP_BASELINE_VALUE_SCALE,
+                    metric,
+                    dataDriven: false,
+                };
+            }
+            // Monetary layers are highly right-skewed, so log bins produce a more
+            // interpretable discrete legend than linear spacing.
+            const useLogScale = metric !== 'loss_percent';
+            const clean = values.filter((v) => Number.isFinite(v) && (!useLogScale || v > 0));
             if (clean.length === 0) {
                 return { ...defaults, dataDriven: false };
             }
 
-            const sorted = [...clean].sort((a, b) => a - b);
-            const min = sorted[0];
-            const max = sorted[sorted.length - 1];
+            const scaleValues = useLogScale ? clean.map((v) => Math.log10(v)) : clean;
+            const sorted = [...scaleValues].sort((a, b) => a - b);
+            const sortedClean = [...clean].sort((a, b) => a - b);
+            const min = sortedClean[0];
+            const max = sortedClean[sortedClean.length - 1];
 
-            if (min === max) {
+            if (sorted[0] === sorted[sorted.length - 1]) {
                 return {
                     ...defaults,
                     breaks: [min, min, min],
@@ -3994,8 +4178,11 @@
                 quantile(sorted, 0.5),
                 quantile(sorted, 0.75),
             ];
-            const span = Math.max(max - min, Number.EPSILON);
-            const epsilon = span * 0.02;
+            if (useLogScale) {
+                breaks = breaks.map((b) => 10 ** b);
+            }
+            const span = Math.max((useLogScale ? max / min : max - min), Number.EPSILON);
+            const epsilon = useLogScale ? span * 0.02 : span * 0.02;
             for (let i = 0; i < breaks.length; i += 1) {
                 if (i > 0 && breaks[i] <= breaks[i - 1]) {
                     breaks[i] = breaks[i - 1] + epsilon;
@@ -4017,9 +4204,10 @@
 
             return {
                 breaks,
-                colors: MAP_LOSS_COLORS,
+                colors: defaults.colors || MAP_LOSS_COLORS,
                 labels,
-                title: `${defaults.title} (visible data)`,
+                title: defaults.title,
+                subtitle: defaults.subtitle,
                 metric,
                 min,
                 max,
@@ -4028,21 +4216,22 @@
         }
 
         function getColorFromScale(value, scale) {
+            if (scale.binMode === 'fixedUpperBounds') {
+                if (value == null || !Number.isFinite(value) || value <= 0) {
+                    return scale.colors[0];
+                }
+                for (let i = 0; i < scale.breaks.length; i += 1) {
+                    if (value <= scale.breaks[i]) {
+                        return scale.colors[i + 1];
+                    }
+                }
+                return scale.colors[scale.colors.length - 1];
+            }
             if (!Number.isFinite(value)) return scale.colors[0];
             if (value < scale.breaks[0]) return scale.colors[0];
             if (value < scale.breaks[1]) return scale.colors[1];
             if (value < scale.breaks[2]) return scale.colors[2];
             return scale.colors[3];
-        }
-
-        function steppedGradientCss(colors) {
-            const n = colors.length;
-            const stops = colors.flatMap((color, i) => {
-                const start = ((i / n) * 100).toFixed(1);
-                const end = (((i + 1) / n) * 100).toFixed(1);
-                return [`${color} ${start}%`, `${color} ${end}%`];
-            });
-            return `linear-gradient(to right, ${stops.join(', ')})`;
         }
 
         function setMapEmptyState(message = '') {
@@ -4060,30 +4249,33 @@
             const legendEl = document.getElementById('map-legend');
             if (!legendEl) return;
 
-            const metric = scale.metric || 'loss_percent';
-            const subtitle = scale.dataDriven
-                ? 'Bins scaled to visible map extent'
-                : 'Default bins (no visible data)';
+            const subtitle = scale.subtitle
+                || (scale.dataDriven ? 'Quartile bins (visible extent)' : 'Default bins (no visible data)');
 
             let html = `
                 <div class="legend-scale-header">
                     <div class="legend-title">${scale.title}</div>
                     <div class="legend-subtitle">${subtitle}</div>
-                </div>
-                <div class="legend-colorbar">
-                    <div class="legend-colorbar-gradient" style="background: ${steppedGradientCss(scale.colors)};"></div>
-                    <div class="legend-colorbar-labels">
-                        <span>${formatMetricValue(scale.min, metric)}</span>
-                        <span>${formatMetricValue(scale.max, metric)}</span>
-                    </div>
                 </div>`;
 
-            for (let i = 0; i < scale.colors.length; i += 1) {
+            if (scale.binMode === 'fixedUpperBounds') {
                 html += `
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: ${scale.colors[i]};"></div>
-                        <span>${scale.labels[i]}</span>
+                    <div class="legend-discrete-bar">
+                        <div class="legend-discrete-bar-swatches" style="grid-template-columns: repeat(${scale.colors.length}, 1fr);">
+                            ${scale.colors.map((color) => `<div style="background:${color};"></div>`).join('')}
+                        </div>
+                        <div class="legend-discrete-bar-labels" style="grid-template-columns: repeat(${scale.colors.length}, 1fr);">
+                            ${scale.labels.map((label) => `<span>${label}</span>`).join('')}
+                        </div>
                     </div>`;
+            } else {
+                for (let i = 0; i < scale.colors.length; i += 1) {
+                    html += `
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: ${scale.colors[i]};"></div>
+                            <span>${scale.labels[i]}</span>
+                        </div>`;
+                }
             }
 
             if (showChoropleth) {
@@ -4240,13 +4432,8 @@
                 return `$${val.toFixed(0)}`;
             };
 
-            const getFeatureColorValue = (props) => {
-                const lossFraction = Number(props?.loss_fraction || 0);
-                const lossValue = isCumulative
-                    ? Number(props?.cumulative_loss || 0)
-                    : Number(props?.value_loss || props?.annual_loss || 0);
-                return metric === 'loss_percent' ? lossFraction : lossValue;
-            };
+            const getFeatureColorValue = (props) =>
+                resolveFeatureMetricValue(props || {}, metric, isCumulative);
 
             const styleByGeometry = (properties, z, geometryDimension) => {
                 const colorValue = getFeatureColorValue(properties || {});
@@ -4358,13 +4545,8 @@
                 return type === 'Point' || type === 'MultiPoint';
             };
 
-            const getFeatureColorValue = (props) => {
-                const lossFraction = props.loss_fraction || 0;
-                const lossValue = isCumulative
-                    ? (props.cumulative_loss || 0)
-                    : (props.value_loss || props.annual_loss || 0);
-                return metric === 'loss_percent' ? lossFraction : lossValue;
-            };
+            const getFeatureColorValue = (props) =>
+                resolveFeatureMetricValue(props || {}, metric, isCumulative);
 
             const visibleValues = filteredGeoJSON.features
                 .map((feature) => getFeatureColorValue(feature.properties || {}))
@@ -4397,19 +4579,7 @@
             const styleFunction = (feature) => {
                 const props = feature.properties;
                 
-                // Get loss data based on cumulative vs annual
-                const lossFraction = props.loss_fraction || 0;
-                const lossValue = isCumulative ?
-                    (props.cumulative_loss || 0) :
-                    (props.value_loss || props.annual_loss || 0);
-                
-                // Determine color value based on metric
-                let colorValue;
-                if (metric === 'loss_percent') {
-                    colorValue = lossFraction;
-                } else {
-                    colorValue = lossValue;
-                }
+                const colorValue = resolveFeatureMetricValue(props, metric, isCumulative);
                 
                 const fillColor = getColorFromScale(colorValue, scale);
                 
@@ -4644,9 +4814,7 @@
             let scale = currentMapColorScale;
             if (!scale) {
                 const countryValues = filteredData.map((c) =>
-                    metric === 'loss_percent'
-                        ? (c.loss_fraction || 0)
-                        : (isCumulative ? (c.cumulative_loss || 0) : (c.value_loss || 0))
+                    resolveCountryMetricValue(c, metric, isCumulative)
                 );
                 scale = buildColorScaleFromValues(countryValues, metric, isCumulative);
                 currentMapColorScale = scale;
@@ -4664,7 +4832,8 @@
                 // Store by multiple possible keys for flexible matching
                 countryMetrics[countryName] = {
                     value_loss: isCumulative ? (c.cumulative_loss || 0) : (c.value_loss || 0),
-                    loss_fraction: c.loss_fraction || 0, // Always use annual loss fraction
+                    loss_fraction: c.loss_fraction || 0,
+                    original_value: c.original_value || 0,
                     iso_a3: c.iso_a3 || ''
                 };
                 // Also try common name variations
@@ -4699,11 +4868,7 @@
                     // Determine color value based on metric
                     let colorValue = null;
                     if (countryMetric) {
-                        if (metric === 'loss_percent') {
-                            colorValue = countryMetric.loss_fraction;
-                        } else {
-                            colorValue = countryMetric.value_loss;
-                        }
+                        colorValue = resolveFeatureMetricValue(countryMetric, metric, isCumulative);
                     }
                     
                     const fillColor = colorValue !== null ? getColorFromScale(colorValue, scale) : '#64748b';
