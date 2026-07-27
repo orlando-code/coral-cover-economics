@@ -106,6 +106,27 @@
             background: var(--accent-blue);
             color: white;
         }
+
+        .site-back-link {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            margin-left: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .site-back-link:hover {
+            color: var(--text-primary);
+        }
+
+        .site-back-link-mobile {
+            display: block;
+            margin: 0 0 0.5rem;
+            padding: 0.75rem 1rem;
+        }
         
         /* Mobile menu button */
         .nav-menu-toggle {
@@ -816,6 +837,54 @@
             line-height: 1.7;
         }
 
+        .author-profile {
+            max-width: 520px;
+            margin: 1.75rem auto 1.5rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .author-profile-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: var(--text-primary);
+        }
+
+        .author-profile-role {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            line-height: 1.5;
+            margin-bottom: 0.85rem;
+        }
+
+        .author-profile-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.45rem 0.65rem;
+            font-size: 0.9rem;
+        }
+
+        .author-profile-links a {
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .author-profile-links a:hover {
+            color: var(--accent-teal);
+            text-decoration: underline;
+        }
+
+        .author-profile-sep {
+            color: var(--text-muted);
+        }
+
         .methods-figure {
             margin: 1.25rem 0 1.75rem;
             text-align: center;
@@ -1193,6 +1262,10 @@
             }
             
             .nav-links {
+                display: none;
+            }
+
+            .nav-inner > .site-back-link {
                 display: none;
             }
             

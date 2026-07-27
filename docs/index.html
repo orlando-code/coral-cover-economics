@@ -38,7 +38,7 @@
             --habitat-export-a: 0.4;
         }
     </style>
-    <link rel="stylesheet" href="assets/css/site.css?v=25" />
+    <link rel="stylesheet" href="assets/css/site.css?v=27" />
 
 </head>
 <body>
@@ -55,12 +55,14 @@
             </a>
 
             <div class="nav-links">
-                <a class="nav-link active" data-page="overview" href="/">Overview</a>
-                <a class="nav-link" data-page="map" href="/map">Map</a>
-                <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
-                <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="methods" href="/methods">Methods</a>
+                <a class="nav-link active" data-page="overview" href="#">Overview</a>
+                <a class="nav-link" data-page="map" href="#map">Map</a>
+                <a class="nav-link" data-page="trajectories" href="#trajectories">Trajectories</a>
+                <a class="nav-link" data-page="gdp" href="#gdp">Country-level Impact</a>
+                <a class="nav-link" data-page="methods" href="#methods">Methods</a>
             </div>
+
+            <a class="site-back-link" href="https://orlando-codes.com/">← Main site</a>
             
             <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu">
                 <span></span>
@@ -69,11 +71,12 @@
             </button>
             
             <div class="nav-mobile-menu" id="nav-mobile-menu">
-                <a class="nav-link active" data-page="overview" href="/">Overview</a>
-                <a class="nav-link" data-page="map" href="/map">Map</a>
-                <a class="nav-link" data-page="trajectories" href="/trajectories">Trajectories</a>
-                <a class="nav-link" data-page="gdp" href="/gdp">Country-level Impact</a>
-                <a class="nav-link" data-page="methods" href="/methods">Methods</a>
+                <a class="site-back-link site-back-link-mobile" href="https://orlando-codes.com/">← Main site</a>
+                <a class="nav-link active" data-page="overview" href="#">Overview</a>
+                <a class="nav-link" data-page="map" href="#map">Map</a>
+                <a class="nav-link" data-page="trajectories" href="#trajectories">Trajectories</a>
+                <a class="nav-link" data-page="gdp" href="#gdp">Country-level Impact</a>
+                <a class="nav-link" data-page="methods" href="#methods">Methods</a>
             </div>
         </div>
     </nav>
@@ -472,6 +475,17 @@
                         <p>
                             This page documents data and methodologies employed in the impact accounting throughout the dashboard.
                         </p>
+
+                        <div class="author-profile">
+                            <h2 class="author-profile-name">Orlando Timmerman</h2>
+                            <p class="author-profile-role">PhD researcher, Department of Earth Sciences, University of Cambridge</p>
+                            <div class="author-profile-links">
+                                <a href="https://orlando-code.github.io/" target="_blank" rel="noopener noreferrer">Personal site</a>
+                                <span class="author-profile-sep" aria-hidden="true">·</span>
+                                <a href="https://biomin.esc.cam.ac.uk/people/2023-Orlando-Timmerman/" target="_blank" rel="noopener noreferrer">University profile</a>
+                            </div>
+                        </div>
+
                         <p>
                             <strong>Note</strong>: It is the author's opinion that nature is invaluable. It is not a commodity that can be bought, sold, or traded. Peoples' connection to nature is not quantifiable. The purpose of this project is to speak to decision- and policy-makers to show them the impact of inaction in language and numbers that matter to them. I hope that this will add to the countless voices clamouring for faster, more equitable, and more meaningful action to curb emissions and protect these priceless ecosystems. 
                         </p>
@@ -955,6 +969,6 @@
         </div>
     </main>
 
-    <script src="assets/js/dashboard.js?v=40"></script>
+    <script src="assets/js/dashboard.js?v=41"></script>
 </body>
 </html>
