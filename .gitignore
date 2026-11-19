@@ -65,7 +65,7 @@ docs/_build/
 *.netcdf
 Present-and-future-bright-and-dark-spots-for-coral-reefs-through-climate-change*
 
-# Model outputs and figures (adjust as needed)
+# Model outputs and figures
 figures/
 outputs/
 output*/
@@ -80,12 +80,18 @@ results/
 *.bak
 *.cache
 *.matplotlib-cache/
+
+# private
 credentials.yaml
 
 # OS
 .DS_Store
 Thumbs.db
+
 # custom
-figures/
 data/
 comms/
+
+# IDE
+.cursor/
+.githooks/
